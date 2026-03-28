@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Phone, Mail } from 'lucide-react';
+import { API_URL } from '../config';
 
 interface ProfileProps {
   userId: string | null;
@@ -39,7 +40,7 @@ const Profile = ({ userId, balance }: ProfileProps) => {
     if (!userId) return;
 
     try {
-      const res = await fetch('https://tg-web-app-black.onrender.com/api/register', {
+      const res = await fetch(`${API_URL}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ telegramId: userId, phone, email }),

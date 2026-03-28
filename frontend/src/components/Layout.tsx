@@ -1,10 +1,14 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { Play, ShoppingBag, User, ShieldAlert } from 'lucide-react';
+import { Play, ShoppingBag, User } from 'lucide-react';
+import AdBanner from './AdBanner';
 
 const Layout = () => {
   return (
     <div className="app-container">
-      <Outlet />
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        <Outlet />
+      </div>
+      <AdBanner />
       
       <nav className="bottom-nav">
         <NavLink 
@@ -32,13 +36,6 @@ const Layout = () => {
           <span>Profile</span>
         </NavLink>
         
-        <NavLink 
-          to="/admin" 
-          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-        >
-          <ShieldAlert size={24} />
-          <span>Admin</span>
-        </NavLink>
       </nav>
     </div>
   );

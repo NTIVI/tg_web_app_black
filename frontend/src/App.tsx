@@ -5,6 +5,7 @@ import Start from './pages/Start';
 import Shop from './pages/Shop';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
+import { API_URL } from './config';
 
 function App() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -27,7 +28,7 @@ function App() {
            tg.ready();
         }
 
-        const res = await fetch('https://tg-web-app-black.onrender.com/api/auth', {
+        const res = await fetch(`${API_URL}/auth`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 

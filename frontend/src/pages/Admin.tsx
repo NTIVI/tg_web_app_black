@@ -1,24 +1,42 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 
 const Admin = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
   const [users, setUsers] = useState<any[]>([]);
   const [purchases, setPurchases] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'users' | 'purchases'>('purchases');
+  const [activeTab, setActiveTab] = useState<'users' | 'purchases' | 'ads'>('purchases');
   const [isLoading, setIsLoading] = useState(true);
+  const [adsEnabled, setAdsEnabled] = useState(false);
+  const [adsClientId, setAdsClientId] = useState('');
+  const [adsSlotId, setAdsSlotId] = useState('');
+  const [adsgramBlockId, setAdsgramBlockId] = useState('');
+  const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+    
     const fetchData = async () => {
       try {
-        const [usersRes, purchasesRes] = await Promise.all([
-          fetch('https://tg-web-app-black.onrender.com/api/admin/users'),
-          fetch('https://tg-web-app-black.onrender.com/api/admin/purchases')
+        const [usersRes, purchasesRes, adsRes] = await Promise.all([
+          fetch(`${API_URL}/admin/users`),
+          fetch(`${API_URL}/admin/purchases`),
+          fetch(`${API_URL}/settings/ads`)
         ]);
         
         const usersData = await usersRes.json();
         const purchasesData = await purchasesRes.json();
+        const adsData = await adsRes.json();
         
         setUsers(usersData.users || []);
         setPurchases(purchasesData.purchases || []);
+        if (adsData.settings) {
+          setAdsEnabled(adsData.settings.ads_enabled === 'true');
+          setAdsClientId(adsData.settings.ads_client_id || '');
+          setAdsSlotId(adsData.settings.ads_slot_id || '');
+          setAdsgramBlockId(adsData.settings.adsgram_block_id || '');
+        }
       } catch (err) {
         console.error("Failed to fetch admin data", err);
       } finally {
@@ -27,7 +45,58 @@ const Admin = () => {
     };
     
     fetchData();
-  }, [activeTab]); // Refresh on tab switch
+  }, [activeTab, isAuthenticated]); // Refresh on tab switch
+
+  const saveAdsSettings = async () => {
+    try {
+      const res = await fetch(`${API_URL}/admin/settings/ads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ads_enabled: adsEnabled,
+          ads_client_id: adsClientId,
+          ads_slot_id: adsSlotId,
+          adsgram_block_id: adsgramBlockId
+        })
+      });
+      if (res.ok) {
+        setSaveMessage('Settings saved successfully!');
+      } else {
+        setSaveMessage('Error saving settings: Server returned ' + res.status);
+      }
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (err) {
+      console.error("Failed to save ads settings", err);
+      setSaveMessage('Network error while saving settings.');
+      setTimeout(() => setSaveMessage(''), 3000);
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '100px', gap: '16px' }}>
+        <h2>Admin Panel Access</h2>
+        <input 
+          type="password" 
+          className="input-field" 
+          placeholder="Enter Passcode..." 
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{ width: '80%', maxWidth: '300px', textAlign: 'center' }}
+        />
+        <button 
+          className="btn-primary" 
+          onClick={() => { 
+            if (password === 'admin777') setIsAuthenticated(true); 
+            else alert('Access Denied'); 
+            setPassword('');
+          }}
+        >
+          Verify
+        </button>
+      </div>
+    );
+  }
 
   if (isLoading) return <div className="page"><div className="loader-container"><div className="spinner"></div></div></div>;
 
@@ -50,6 +119,13 @@ const Admin = () => {
           onClick={() => setActiveTab('users')}
         >
           Users Data
+        </button>
+        <button 
+          className={`btn-primary ${activeTab === 'ads' ? '' : 'inactive'}`} 
+          style={{ flex: 1, background: activeTab === 'ads' ? 'var(--primary-color)' : 'var(--surface-color)' }}
+          onClick={() => setActiveTab('ads')}
+        >
+          Ads Setup
         </button>
       </div>
 
@@ -94,6 +170,61 @@ const Admin = () => {
                 ))}
               </ul>
             )}
+          </div>
+        )}
+
+        {activeTab === 'ads' && (
+          <div>
+            <h2 style={{ fontSize: '18px', marginBottom: '16px' }}>Google AdSense Configuration</h2>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox" 
+                  checked={adsEnabled} 
+                  onChange={(e) => setAdsEnabled(e.target.checked)} 
+                  style={{ width: '20px', height: '20px', accentColor: 'var(--primary-color)' }}
+                />
+                Enable Google Ads
+              </label>
+            </div>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>Client ID (e.g., ca-pub-12345...)</label>
+              <input 
+                type="text" 
+                className="input-field" 
+                value={adsClientId} 
+                onChange={(e) => setAdsClientId(e.target.value)} 
+                placeholder="ca-pub-XXXXXXXXX" 
+                style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--surface-color)', color: 'white' }}
+              />
+            </div>
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>Slot ID</label>
+              <input 
+                type="text" 
+                className="input-field" 
+                value={adsSlotId} 
+                onChange={(e) => setAdsSlotId(e.target.value)} 
+                placeholder="1234567890" 
+                style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--surface-color)', color: 'white' }}
+              />
+            </div>
+            <div style={{ marginBottom: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
+              <h3 style={{ fontSize: '16px', marginBottom: '12px', color: 'var(--gold-color)' }}>AdsGram Configuration (Rewarded Video)</h3>
+              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>Block ID</label>
+              <input 
+                type="text" 
+                className="input-field" 
+                value={adsgramBlockId} 
+                onChange={(e) => setAdsgramBlockId(e.target.value)} 
+                placeholder="int-XXXXXX" 
+                style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--surface-color)', color: 'white' }}
+              />
+            </div>
+            <button className="btn-primary" onClick={saveAdsSettings} style={{ width: '100%' }}>
+              Save Ads Settings
+            </button>
+            {saveMessage && <p style={{ color: '#4caf50', marginTop: '12px', textAlign: 'center' }}>{saveMessage}</p>}
           </div>
         )}
       </div>

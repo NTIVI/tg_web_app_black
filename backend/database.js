@@ -36,6 +36,30 @@ const db = new sqlite3.Database(dbPath, (err) => {
         )`, (err) => {
             if (err) console.error('Error creating purchases table', err);
         });
+
+        // Create Settings table
+        db.run(`CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )`, (err) => {
+            if (err) {
+                console.error('Error creating settings table', err);
+            } else {
+                // Initialize default ad settings if they don't exist
+                const defaultSettings = [
+                    { key: 'ads_enabled', value: 'false' },
+                    { key: 'ads_client_id', value: '' },
+                    { key: 'ads_slot_id', value: '' },
+                    { key: 'adsgram_block_id', value: '' }
+                ];
+                
+                const stmt = db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`);
+                defaultSettings.forEach(setting => {
+                    stmt.run(setting.key, setting.value);
+                });
+                stmt.finalize();
+            }
+        });
     }
 });
 

@@ -28,7 +28,7 @@ const Shop = ({ userId, balance, setBalance }: ShopProps) => {
     }
 
     try {
-      const res = await fetch('http://localhost:3000/api/buy', {
+      const res = await fetch('https://tg-web-app-black.onrender.com/api/buy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ telegramId: userId, itemName: item.name, price: item.price }),

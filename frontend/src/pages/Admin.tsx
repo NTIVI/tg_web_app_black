@@ -10,8 +10,8 @@ const Admin = () => {
     const fetchData = async () => {
       try {
         const [usersRes, purchasesRes] = await Promise.all([
-          fetch('http://localhost:3000/api/admin/users'),
-          fetch('http://localhost:3000/api/admin/purchases')
+          fetch('https://tg-web-app-black.onrender.com/api/admin/users'),
+          fetch('https://tg-web-app-black.onrender.com/api/admin/purchases')
         ]);
         
         const usersData = await usersRes.json();

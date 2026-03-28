@@ -22,7 +22,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
       setAdMessage('Ad finished! Claiming reward...');
       
       try {
-        const res = await fetch('http://localhost:3000/api/watch-ad', {
+        const res = await fetch('https://tg-web-app-black.onrender.com/api/watch-ad', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ telegramId: userId }),

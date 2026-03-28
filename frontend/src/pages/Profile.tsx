@@ -16,7 +16,7 @@ const Profile = ({ userId, balance }: ProfileProps) => {
   useEffect(() => {
     if (userId) {
       // Fetch user data
-      fetch('http://localhost:3000/api/auth', {
+      fetch('https://tg-web-app-black.onrender.com/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ initDataUnsafe: { user: { id: userId, username: 'Current' } } })
@@ -39,7 +39,7 @@ const Profile = ({ userId, balance }: ProfileProps) => {
     if (!userId) return;
 
     try {
-      const res = await fetch('http://localhost:3000/api/register', {
+      const res = await fetch('https://tg-web-app-black.onrender.com/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ telegramId: userId, phone, email }),

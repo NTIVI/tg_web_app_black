@@ -127,7 +127,7 @@ app.get('/api/admin/purchases', (req, res) => {
 });
 
 app.get('/api/settings/ads', (req, res) => {
-    db.all(`SELECT key, value FROM settings WHERE key IN ('ads_enabled', 'ads_client_id', 'ads_slot_id', 'adsgram_block_id')`, [], (err, rows) => {
+    db.all(`SELECT key, value FROM settings WHERE key IN ('ads_enabled', 'ads_client_id', 'ads_slot_id', 'adsgram_block_id', 'rewarded_ad_provider')`, [], (err, rows) => {
         if (err) return res.status(500).json({ error: 'DB error' });
         
         const settings = {};
@@ -140,7 +140,7 @@ app.get('/api/settings/ads', (req, res) => {
 });
 
 app.post('/api/admin/settings/ads', (req, res) => {
-    const { ads_enabled, ads_client_id, ads_slot_id, adsgram_block_id } = req.body;
+    const { ads_enabled, ads_client_id, ads_slot_id, adsgram_block_id, rewarded_ad_provider } = req.body;
     
     db.serialize(() => {
         const stmt = db.prepare(`UPDATE settings SET value = ? WHERE key = ?`);
@@ -148,6 +148,7 @@ app.post('/api/admin/settings/ads', (req, res) => {
         stmt.run(ads_client_id || '', 'ads_client_id');
         stmt.run(ads_slot_id || '', 'ads_slot_id');
         stmt.run(adsgram_block_id || '', 'adsgram_block_id');
+        stmt.run(rewarded_ad_provider || 'adsgram', 'rewarded_ad_provider');
         stmt.finalize((err) => {
             if (err) return res.status(500).json({ error: 'DB error' });
             res.json({ success: true, message: 'Settings updated successfully' });

@@ -47,10 +47,11 @@ const db = new sqlite3.Database(dbPath, (err) => {
             } else {
                 // Initialize default ad settings if they don't exist
                 const defaultSettings = [
-                    { key: 'ads_enabled', value: 'false' },
-                    { key: 'ads_client_id', value: '' },
-                    { key: 'ads_slot_id', value: '' },
-                    { key: 'adsgram_block_id', value: '' }
+                    { key: 'ads_enabled', value: 'true' },
+                    { key: 'ads_client_id', value: 'ca-pub-5854666775312114' },
+                    { key: 'ads_slot_id', value: '9141571659' }, // Using the rewarded unit ID as a placeholder slot
+                    { key: 'adsgram_block_id', value: '' },
+                    { key: 'rewarded_ad_provider', value: 'google' }
                 ];
                 
                 const stmt = db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`);

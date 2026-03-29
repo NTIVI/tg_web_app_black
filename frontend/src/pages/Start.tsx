@@ -12,6 +12,8 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
   const [isWatching, setIsWatching] = useState(false);
   const [adMessage, setAdMessage] = useState('');
   const [adsgramBlockId, setAdsgramBlockId] = useState('');
+  const [adsClientId, setAdsClientId] = useState('');
+  const [rewardedAdProvider, setRewardedAdProvider] = useState('adsgram');
   const [showDemoAd, setShowDemoAd] = useState(false);
   const [demoAdTime, setDemoAdTime] = useState(3);
 
@@ -19,8 +21,10 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
     fetch(`${API_URL}/settings/ads`)
       .then(res => res.json())
       .then(data => {
-        if (data.settings && data.settings.adsgram_block_id) {
-          setAdsgramBlockId(data.settings.adsgram_block_id);
+        if (data.settings) {
+          setAdsgramBlockId(data.settings.adsgram_block_id || '');
+          setAdsClientId(data.settings.ads_client_id || '');
+          setRewardedAdProvider(data.settings.rewarded_ad_provider || 'adsgram');
         }
       })
       .catch(err => console.error("Could not load ads config", err));
@@ -52,7 +56,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
     setIsWatching(true);
     setAdMessage('Loading Advertisement...');
     
-    if (adsgramBlockId) {
+    if (rewardedAdProvider === 'adsgram' && adsgramBlockId) {
       try {
         const AdController = (window as any).Adsgram?.init({ blockId: adsgramBlockId });
         if (!AdController) throw new Error("Adsgram not loaded");
@@ -65,12 +69,39 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
         console.error("Adsgram error", err);
         setAdMessage('Ad skipped or unavailable.');
       }
-      
-      setTimeout(() => {
-        setIsWatching(false);
-        setAdMessage('');
-      }, 2000);
-      
+    } else if (rewardedAdProvider === 'google' && adsClientId) {
+      try {
+        // Google AdSense H5 adBreak
+        const adBreak = (window as any).adBreak;
+        if (adBreak) {
+          adBreak({
+            type: 'reward',
+            name: 'get_coins',
+            beforeAd: () => setAdMessage('Ad starting...'),
+            afterAd: () => setAdMessage('Ad finished!'),
+            beforeReward: (showAdFn: any) => {
+              showAdFn();
+            },
+            adDismissed: () => {
+              setAdMessage('Ad skipped.');
+              setIsWatching(false);
+            },
+            adViewed: () => {
+              setAdMessage('Ad viewed! Claiming reward...');
+              claimReward();
+            },
+            adBreakDone: () => {
+              setIsWatching(false);
+            }
+          });
+        } else {
+          throw new Error("Google AdSense H5 not ready");
+        }
+      } catch (err) {
+        console.error("Google Ad error", err);
+        setAdMessage('Google Ad unavailable.');
+        setTimeout(() => setIsWatching(false), 2000);
+      }
     } else {
       // Visual simulation of an ad when no AdsGram is configured
       setShowDemoAd(true);

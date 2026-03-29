@@ -12,6 +12,7 @@ const Admin = () => {
   const [adsClientId, setAdsClientId] = useState('');
   const [adsSlotId, setAdsSlotId] = useState('');
   const [adsgramBlockId, setAdsgramBlockId] = useState('');
+  const [rewardedAdProvider, setRewardedAdProvider] = useState<'adsgram' | 'google'>('adsgram');
   const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
@@ -36,6 +37,7 @@ const Admin = () => {
           setAdsClientId(adsData.settings.ads_client_id || '');
           setAdsSlotId(adsData.settings.ads_slot_id || '');
           setAdsgramBlockId(adsData.settings.adsgram_block_id || '');
+          setRewardedAdProvider(adsData.settings.rewarded_ad_provider || 'adsgram');
         }
       } catch (err) {
         console.error("Failed to fetch admin data", err);
@@ -56,7 +58,8 @@ const Admin = () => {
           ads_enabled: adsEnabled,
           ads_client_id: adsClientId,
           ads_slot_id: adsSlotId,
-          adsgram_block_id: adsgramBlockId
+          adsgram_block_id: adsgramBlockId,
+          rewarded_ad_provider: rewardedAdProvider
         })
       });
       if (res.ok) {
@@ -210,16 +213,50 @@ const Admin = () => {
               />
             </div>
             <div style={{ marginBottom: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
-              <h3 style={{ fontSize: '16px', marginBottom: '12px', color: 'var(--gold-color)' }}>AdsGram Configuration (Rewarded Video)</h3>
-              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>Block ID</label>
-              <input 
-                type="text" 
-                className="input-field" 
-                value={adsgramBlockId} 
-                onChange={(e) => setAdsgramBlockId(e.target.value)} 
-                placeholder="int-XXXXXX" 
-                style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--surface-color)', color: 'white' }}
-              />
+              <h3 style={{ fontSize: '16px', marginBottom: '12px', color: 'var(--gold-color)' }}>Rewarded Ad Provider</h3>
+              <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input 
+                    type="radio" 
+                    name="provider" 
+                    value="adsgram" 
+                    checked={rewardedAdProvider === 'adsgram'} 
+                    onChange={() => setRewardedAdProvider('adsgram')} 
+                  />
+                  AdsGram
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input 
+                    type="radio" 
+                    name="provider" 
+                    value="google" 
+                    checked={rewardedAdProvider === 'google'} 
+                    onChange={() => setRewardedAdProvider('google')} 
+                  />
+                  Google Ads (H5)
+                </label>
+              </div>
+              
+              {rewardedAdProvider === 'adsgram' ? (
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>AdsGram Block ID</label>
+                  <input 
+                    type="text" 
+                    className="input-field" 
+                    value={adsgramBlockId} 
+                    onChange={(e) => setAdsgramBlockId(e.target.value)} 
+                    placeholder="int-XXXXXX" 
+                    style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--surface-color)', color: 'white' }}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                    Google AdSense H5 Rewarded Ads will use the <strong>Client ID</strong> and <strong>Slot ID</strong> provided above. 
+                    Ensure your AdSense account is approved for H5 Games.
+                  </p>
+                </div>
+              )}
             </div>
             <button className="btn-primary" onClick={saveAdsSettings} style={{ width: '100%' }}>
               Save Ads Settings

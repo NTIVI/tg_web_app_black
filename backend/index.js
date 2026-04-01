@@ -64,6 +64,8 @@ app.post('/api/auth', (req, res) => {
     const tgUser = initDataUnsafe?.user || { id: 'mock_123', username: 'Guest' };
     const telegramId = tgUser.id.toString();
 
+    console.log(`Auth request for user: ${telegramId}`, tgUser);
+
     // Insert or Update user profile (Pro Sync)
     const sql = `
         INSERT INTO users (telegram_id, username, first_name, last_name, photo_url, last_seen)
@@ -86,14 +88,22 @@ app.post('/api/auth', (req, res) => {
 
     db.run(sql, params, function(err) {
         if (err) {
-            console.error("Auth DB Error:", err);
+            console.error("Auth DB Error (run):", err);
             // Fallback: try to just select if insert fails
             db.get(`SELECT * FROM users WHERE telegram_id = ?`, [telegramId], (err, row) => {
+                if (err) {
+                    console.error("Auth DB Error (get-fallback):", err);
+                    return res.status(500).json({ error: 'Database get error' });
+                }
                 if (row) return res.json({ user: row });
-                res.status(500).json({ error: 'Database record error' });
+                res.status(500).json({ error: 'User not found and could not be created' });
             });
         } else {
             db.get(`SELECT * FROM users WHERE telegram_id = ?`, [telegramId], (err, row) => {
+                if (err) {
+                    console.error("Auth DB Error (get-success):", err);
+                    return res.status(500).json({ error: 'Database result error' });
+                }
                 res.json({ user: row });
             });
         }

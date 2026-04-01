@@ -1,45 +1,59 @@
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import { Setting } from './models.js';
+import sqlite3 from 'sqlite3';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-dotenv.config();
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const dbPath = join(__dirname, 'database.sqlite');
 
-const mongoUri = process.env.MONGODB_URI;
-
-if (!mongoUri) {
-  console.error('CRITICAL: MONGODB_URI is not defined in .env file!');
-}
-
-const connectDB = async () => {
-  try {
-    await mongoose.connect(mongoUri);
-    console.log('MongoDB Connected successfully');
-    await initSettings();
-  } catch (err) {
-    console.error('MongoDB connection error:', err.message);
-    // Exit process with failure
-    // process.exit(1); 
-  }
-};
-
-const initSettings = async () => {
-    const defaultSettings = [
-        { key: 'ads_enabled', value: 'true' },
-        { key: 'ads_client_id', value: 'ca-pub-5854666775312114' },
-        { key: 'ads_slot_id', value: '9448831633' },
-        { key: 'adsgram_block_id', value: '3830' },
-        { key: 'rewarded_ad_provider', value: 'adsgram' }
-    ];
-
-    for (const s of defaultSettings) {
-        await Setting.findOneAndUpdate(
-            { key: s.key },
-            { $setOnInsert: s },
-            { upsert: true, new: true }
-        );
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) console.error('SQLite connection error:', err.message);
+    else {
+        console.log('Connected to SQLite database.');
+        initDB();
     }
+});
+
+const initDB = () => {
+    db.serialize(() => {
+        // Users Table
+        db.run(`CREATE TABLE IF NOT EXISTS users (
+            telegram_id TEXT PRIMARY KEY,
+            username TEXT,
+            first_name TEXT,
+            last_name TEXT,
+            photo_url TEXT,
+            balance INTEGER DEFAULT 0,
+            registered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            last_seen DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+
+        // Purchases Table
+        db.run(`CREATE TABLE IF NOT EXISTS purchases (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            telegram_id TEXT,
+            item_name TEXT,
+            price INTEGER,
+            purchased_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+
+        // Settings Table
+        db.run(`CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )`);
+
+        // Default Ads Settings
+        const defaults = [
+            ['ads_enabled', 'true'],
+            ['ads_client_id', 'ca-pub-5854666775312114'],
+            ['ads_slot_id', '9448831633'],
+            ['adsgram_block_id', '3830'],
+            ['rewarded_ad_provider', 'adsgram']
+        ];
+        defaults.forEach(([k, v]) => {
+            db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, [k, v]);
+        });
+    });
 };
 
-connectDB();
-
-export default mongoose.connection;
+export default db;

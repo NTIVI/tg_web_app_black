@@ -1,30 +1,23 @@
-import mongoose from 'mongoose';
+import db from './database.js';
 
-const userSchema = new mongoose.Schema({
-  telegram_id: { type: String, unique: true, required: true },
-  username: String,
-  first_name: String,
-  last_name: String,
-  photo_url: String,
-  balance: { type: Number, default: 0 },
-  phone: String,
-  email: String,
-  registered_at: { type: Date, default: Date.now },
-  last_seen: { type: Date, default: Date.now }
-});
-
-const purchaseSchema = new mongoose.Schema({
-  user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  item_name: String,
-  price: Number,
-  purchased_at: { type: Date, default: Date.now }
-});
-
-const settingSchema = new mongoose.Schema({
-  key: { type: String, unique: true },
-  value: String
-});
-
-export const User = mongoose.model('User', userSchema);
-export const Purchase = mongoose.model('Purchase', purchaseSchema);
-export const Setting = mongoose.model('Setting', settingSchema);
+// Simple wrappers for SQLite operations to keep index.js clean
+export const DB = {
+    run: (sql, params = []) => new Promise((resolve, reject) => {
+        db.run(sql, params, function(err) {
+            if (err) reject(err);
+            else resolve({ id: this.lastID, changes: this.changes });
+        });
+    }),
+    get: (sql, params = []) => new Promise((resolve, reject) => {
+        db.get(sql, params, (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+        });
+    }),
+    all: (sql, params = []) => new Promise((resolve, reject) => {
+        db.all(sql, params, (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows);
+        });
+    })
+};

@@ -9,7 +9,7 @@ const Profile = ({ userId, tgUser }: any) => {
   };
 
   const fullName = [tgUser?.first_name, tgUser?.last_name].filter(Boolean).join(' ') || 'User Name';
-  const initial = tgUser?.first_name?.[0] || tgUser?.username?.[0] || '?';
+
   const avatarUrl = tgUser?.photo_url || `${API_URL}/avatar/${userId}`;
 
   return (
@@ -42,7 +42,7 @@ const Profile = ({ userId, tgUser }: any) => {
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             onError={(e) => (e.currentTarget.style.display = 'none')}
           />
-          <span style={{ position: 'absolute' }}>{initial}</span>
+
         </div>
         
         <h2 style={{ marginBottom: '4px' }}>{fullName}</h2>

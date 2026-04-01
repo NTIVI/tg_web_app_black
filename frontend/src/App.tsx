@@ -8,49 +8,82 @@ import Admin from './pages/Admin';
 import { API_URL } from './config';
 
 function App() {
-  const [userId, setUserId] = useState<string | null>(null);
+  const [tgUser, setTgUser] = useState<any>(null);
   const [balance, setBalance] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   
-  // In a real Telegram Mini App, we would get initDataUnsafe. 
-  // For the sake of testing locally, we'll mock it if it's missing.
-  useEffect(() => {
-    // Attempt to authenticate
-    const attemptAuth = async () => {
-      try {
-        const tg = (window as any).Telegram?.WebApp;
-        let telegramId = "user_123"; 
-        let username = "Guest";
+  const init = async () => {
+    setLoading(true);
+    setError(null);
+    const tg = (window as any).Telegram?.WebApp;
+    
+    // Sync Theme Params
+    if (tg?.themeParams) {
+      const root = document.documentElement;
+      Object.entries(tg.themeParams).forEach(([key, val]: [string, any]) => {
+        root.style.setProperty(`--tg-${key.replace(/_/g, '-')}`, val);
+      });
+    }
 
-        tg?.expand?.();
-        tg?.ready?.();
+    const user = tg?.initDataUnsafe?.user || { id: "12345", username: "MockUser", first_name: "Mock", last_name: "Account" };
+    const initData = tg?.initData || "";
+    tg?.expand?.();
+    tg?.ready?.();
 
-        const res = await fetch(`${API_URL}/auth`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            initDataUnsafe: { user: { id: telegramId, username } } 
-          })
-        });
-        
-        const data = await res.json();
-        if (data.user) {
-          setUserId(telegramId);
-          setBalance(data.user.balance);
-        }
-      } catch (error) {
-        console.error("Auth failed", error);
+    try {
+      const res = await fetch(`${API_URL}/auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData, initDataUnsafe: { user } })
+      });
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      const data = await res.json();
+      if (data.user) {
+        setTgUser({ ...user, ...data.user });
+        setBalance(data.user.balance);
+      } else {
+        throw new Error("Invalid user data received");
       }
-    };
-    attemptAuth();
+    } catch (e: any) {
+      console.error("Auth failed", e);
+      setError(e.message || "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    init();
   }, []);
+
+  const props = { userId: tgUser?.telegram_id, balance, setBalance, tgUser };
+
+  if (loading || !tgUser) return (
+    <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px', textAlign: 'center' }}>
+      {error ? (
+        <>
+          <h2 style={{ color: '#ff3366' }}>Ошибка входа</h2>
+          <p>{error}</p>
+          <button className="btn-primary" onClick={init}>Попробовать снова</button>
+        </>
+      ) : (
+        <>
+          <div className="spinner"></div>
+          <h2 style={{ color: 'var(--primary-color)' }}>Вход...</h2>
+          <p>Авторизация через Telegram</p>
+        </>
+      )}
+    </div>
+  );
 
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<Start userId={userId} balance={balance} setBalance={setBalance} />} />
-          <Route path="shop" element={<Shop userId={userId} balance={balance} setBalance={setBalance} />} />
-          <Route path="profile" element={<Profile userId={userId} balance={balance} />} />
+          <Route index element={<Start {...props} />} />
+          <Route path="shop" element={<Shop {...props} />} />
+          <Route path="profile" element={<Profile {...props} />} />
           <Route path="admin" element={<Admin />} />
         </Route>
       </Routes>

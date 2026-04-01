@@ -1,114 +1,86 @@
-import { useState, useEffect } from 'react';
-import { User, Phone, Mail } from 'lucide-react';
+import { Phone, Mail, IdCard } from 'lucide-react';
 import { API_URL } from '../config';
 
-interface ProfileProps {
-  userId: string | null;
-  balance: number;
-}
-
-const Profile = ({ userId, balance }: ProfileProps) => {
-  const [userData, setUserData] = useState<any>(null);
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (userId) {
-      // Fetch user data
-      fetch('https://tg-web-app-black.onrender.com/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initDataUnsafe: { user: { id: userId, username: 'Current' } } })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUserData(data.user);
-          setPhone(data.user.phone || '');
-          setEmail(data.user.email || '');
-        }
-        setIsLoading(false);
-      })
-      .catch(() => setIsLoading(false));
-    }
-  }, [userId]);
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userId) return;
-
-    try {
-      const res = await fetch(`${API_URL}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegramId: userId, phone, email }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setUserData(data.user);
-        setMessage('Profile updated successfully!');
-      } else {
-        setMessage('Failed to update profile.');
-      }
-    } catch (err) {
-      setMessage('Network error.');
-    }
-    setTimeout(() => setMessage(''), 3000);
+const Profile = ({ userId, tgUser }: any) => {
+  const getAvatarColor = (id: string) => {
+    const colors = ['#9d50bb', '#6e48aa', '#ff00cc', '#3333ff', '#00f2fe', '#ffd700'];
+    const idx = parseInt(id) % colors.length || 0;
+    return colors[idx];
   };
 
-  if (isLoading) return <div className="page"><div className="loader-container"><div className="spinner"></div></div></div>;
+  const fullName = [tgUser?.first_name, tgUser?.last_name].filter(Boolean).join(' ') || 'User Name';
+  const initial = tgUser?.first_name?.[0] || tgUser?.username?.[0] || '?';
+  const avatarUrl = tgUser?.photo_url || `${API_URL}/avatar/${userId}`;
 
   return (
     <div className="page">
       <h1>Your Profile</h1>
-      <p>Manage your account settings and view info.</p>
+      <p>Management and stats.</p>
 
-      <div className="glass-panel" style={{ marginTop: '24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <div style={{ padding: '16px', background: 'var(--surface-color-light)', borderRadius: '50%' }}>
-          <User size={32} color="var(--primary-color)" />
+      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px', textAlign: 'center' }}>
+        <div 
+          style={{ 
+            width: '100px', 
+            height: '100px', 
+            borderRadius: '50%', 
+            marginBottom: '16px',
+            backgroundColor: getAvatarColor(userId),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '40px',
+            fontWeight: 'bold',
+            color: 'white',
+            overflow: 'hidden',
+            border: '4px solid var(--surface-color-light)',
+            boxShadow: '0 0 20px var(--primary-glow)'
+          }}
+        >
+          <img 
+            src={avatarUrl} 
+            alt="Profile" 
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            onError={(e) => (e.currentTarget.style.display = 'none')}
+          />
+          <span style={{ position: 'absolute' }}>{initial}</span>
         </div>
-        <div>
-          <h2>@{userData?.username || 'Unknown'}</h2>
-          <p style={{ color: 'var(--gold-color)', fontWeight: 'bold' }}>Balance: {balance} Coins</p>
+        
+        <h2 style={{ marginBottom: '4px' }}>{fullName}</h2>
+        <p style={{ marginBottom: '16px', color: 'var(--primary-color)' }}>@{tgUser?.username || 'no_username'}</p>
+        
+        <div style={{ display: 'flex', gap: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+          <span style={{ backgroundColor: 'rgba(255,255,255,0.05)', padding: '4px 12px', borderRadius: '20px' }}>ID: {userId}</span>
+          <span style={{ backgroundColor: 'rgba(157, 80, 187, 0.1)', padding: '4px 12px', borderRadius: '20px', color: 'var(--gold-color)' }}>Level 1</span>
         </div>
       </div>
 
-      <h2 style={{ marginTop: '32px' }}>Registration Details</h2>
-      <form onSubmit={handleRegister} className="glass-panel" style={{ marginTop: '16px' }}>
-        {message && <p style={{ color: 'var(--success-color)', marginBottom: '16px' }}>{message}</p>}
-        
-        <div style={{ marginBottom: '16px', position: 'relative' }}>
-          <Phone size={20} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-secondary)' }} />
-          <input 
-            type="tel" 
-            className="input-field" 
-            style={{ paddingLeft: '48px' }} 
-            placeholder="Phone Number (+1 234 ...)" 
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-          />
+      <div className="glass-panel" style={{ padding: '0' }}>
+        <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <IdCard size={24} color="var(--primary-color)" />
+          <div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Account Status</div>
+            <div style={{ fontWeight: '600' }}>Active Member</div>
+          </div>
         </div>
-        
-        <div style={{ marginBottom: '24px', position: 'relative' }}>
-          <Mail size={20} style={{ position: 'absolute', top: '14px', left: '16px', color: 'var(--text-secondary)' }} />
-          <input 
-            type="email" 
-            className="input-field" 
-            style={{ paddingLeft: '48px' }} 
-            placeholder="Gmail Address" 
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+        <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Phone size={24} color="var(--primary-color)" />
+          <div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Phone Number</div>
+            <div style={{ fontWeight: '600' }}>{tgUser?.phone || 'Not linked'}</div>
+          </div>
         </div>
+        <div style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Mail size={24} color="var(--primary-color)" />
+          <div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Email Address</div>
+            <div style={{ fontWeight: '600' }}>{tgUser?.email || 'Not linked'}</div>
+          </div>
+        </div>
+      </div>
 
-        <button type="submit" className="btn-primary" style={{ width: '100%' }}>
-          Save Profile
-        </button>
-      </form>
+      <button className="btn-primary" style={{ width: '100%', marginTop: '24px' }}>
+        Settings
+      </button>
     </div>
   );
 };

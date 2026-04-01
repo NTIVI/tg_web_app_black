@@ -160,6 +160,24 @@ app.get('/api/admin/purchases', (req, res) => {
     });
 });
 
+app.post('/api/admin/user/balance', (req, res) => {
+    const { telegramId, amount, action } = req.body;
+    const value = parseInt(amount);
+    
+    if (isNaN(value)) return res.status(400).json({ error: 'Invalid amount' });
+
+    const sql = action === 'add' 
+        ? `UPDATE users SET balance = balance + ? WHERE telegram_id = ?`
+        : `UPDATE users SET balance = MAX(0, balance - ?) WHERE telegram_id = ?`;
+
+    db.run(sql, [value, telegramId], function(err) {
+        if (err) return res.status(500).json({ error: 'DB error' });
+        db.get(`SELECT balance FROM users WHERE telegram_id = ?`, [telegramId], (err, row) => {
+            res.json({ success: true, newBalance: row.balance });
+        });
+    });
+});
+
 app.get('/api/settings/ads', (req, res) => {
     db.all(`SELECT key, value FROM settings`, [], (err, rows) => {
         const settings = {};

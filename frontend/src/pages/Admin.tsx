@@ -75,6 +75,23 @@ const Admin = () => {
     }
   };
 
+  const updateBalance = async (telegramId: string, amount: string, action: 'add' | 'remove') => {
+    if (!amount || isNaN(parseInt(amount))) return;
+    try {
+      const res = await fetch(`${API_URL}/admin/user/balance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegramId, amount: parseInt(amount), action })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(prev => prev.map(u => u.telegram_id === telegramId ? { ...u, balance: data.newBalance } : u));
+      }
+    } catch (err) {
+      console.error("Failed to update balance", err);
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '100px', gap: '16px' }}>
@@ -190,6 +207,45 @@ const Admin = () => {
                         <div style={{ color: 'white' }}>Joined: {new Date(u.registered_at).toLocaleDateString()}</div>
                         <div style={{ color: 'white' }}>Seen: {new Date(u.last_seen).toLocaleString()}</div>
                       </div>
+                    </div>
+
+                    <div style={{ marginTop: '16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <input 
+                        type="number" 
+                        placeholder="Amount" 
+                        id={`balance-input-${u.telegram_id}`}
+                        style={{ 
+                          width: '80px', 
+                          background: 'rgba(0,0,0,0.3)', 
+                          border: '1px solid var(--border-color)', 
+                          borderRadius: '8px', 
+                          padding: '6px 10px', 
+                          color: 'white',
+                          fontSize: '14px'
+                        }}
+                      />
+                      <button 
+                        className="btn-primary" 
+                        style={{ padding: '6px 12px', fontSize: '12px', background: '#4caf50' }}
+                        onClick={() => {
+                          const input = document.getElementById(`balance-input-${u.telegram_id}`) as HTMLInputElement;
+                          updateBalance(u.telegram_id, input.value, 'add');
+                          input.value = '';
+                        }}
+                      >
+                        + Add
+                      </button>
+                      <button 
+                        className="btn-primary" 
+                        style={{ padding: '6px 12px', fontSize: '12px', background: '#f44336' }}
+                        onClick={() => {
+                          const input = document.getElementById(`balance-input-${u.telegram_id}`) as HTMLInputElement;
+                          updateBalance(u.telegram_id, input.value, 'remove');
+                          input.value = '';
+                        }}
+                      >
+                        - Remove
+                      </button>
                     </div>
                   </div>
                 ))}

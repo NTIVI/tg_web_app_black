@@ -1,81 +1,68 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Layout from './components/Layout';
 import Start from './pages/Start';
 import Shop from './pages/Shop';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
-import { API_URL } from './config';
+import { useApi } from './hooks/useApi';
 
 function App() {
   const [tgUser, setTgUser] = useState<any>(null);
   const [balance, setBalance] = useState<number>(0);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { request, loading, error } = useApi();
   
-  const init = async () => {
-    setLoading(true);
-    setError(null);
+  const init = useCallback(async () => {
     const tg = (window as any).Telegram?.WebApp;
     
-    // Sync Theme Params
+    // Theme sync
     if (tg?.themeParams) {
-      const root = document.documentElement;
       Object.entries(tg.themeParams).forEach(([key, val]: [string, any]) => {
-        root.style.setProperty(`--tg-${key.replace(/_/g, '-')}`, val);
+        document.documentElement.style.setProperty(`--tg-${key.replace(/_/g, '-')}`, val);
       });
     }
 
-    const user = tg?.initDataUnsafe?.user || { id: "12345", username: "MockUser", first_name: "Mock", last_name: "Account" };
+    const user = tg?.initDataUnsafe?.user || { id: "123456", username: "MockUser", first_name: "Mock" };
     const initData = tg?.initData || "";
     tg?.expand?.();
     tg?.ready?.();
 
     try {
-      const res = await fetch(`${API_URL}/auth`, {
+      const data = await request('/auth', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ initData, initDataUnsafe: { user } })
       });
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
-      const data = await res.json();
       if (data.user) {
         setTgUser({ ...user, ...data.user });
         setBalance(data.user.balance);
-      } else {
-        throw new Error("Invalid user data received");
       }
-    } catch (e: any) {
+    } catch (e) {
       console.error("Auth failed", e);
-      setError(e.message || "Unknown error");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [request]);
 
   useEffect(() => {
     init();
-  }, []);
-
-  const props = { userId: tgUser?.telegram_id, balance, setBalance, tgUser };
+  }, [init]);
 
   if (loading || !tgUser) return (
-    <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px', textAlign: 'center' }}>
+    <div className="page loader-container">
       {error ? (
-        <>
-          <h2 style={{ color: '#ff3366' }}>Ошибка входа</h2>
+        <div style={{ textAlign: 'center' }}>
+          <h2 style={{ color: '#ff3366' }}>Login Error</h2>
           <p>{error}</p>
-          <button className="btn-primary" onClick={init}>Попробовать снова</button>
-        </>
+          <button className="btn-primary" onClick={init}>Try Again</button>
+        </div>
       ) : (
-        <>
+        <div style={{ textAlign: 'center' }}>
           <div className="spinner"></div>
-          <h2 style={{ color: 'var(--primary-color)' }}>Вход...</h2>
-          <p>Авторизация через Telegram</p>
-        </>
+          <h2 style={{ color: 'var(--primary-color)', marginTop: '16px' }}>Entering...</h2>
+        </div>
       )}
     </div>
   );
+
+  const props = { userId: tgUser?.telegram_id, balance, setBalance, tgUser };
 
   return (
     <Router>

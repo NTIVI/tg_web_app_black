@@ -18,15 +18,11 @@ function App() {
     const attemptAuth = async () => {
       try {
         const tg = (window as any).Telegram?.WebApp;
-        let telegramId = "mock_123"; // Fallback for local testing
-        let username = "MockUser";
+        let telegramId = "user_123"; 
+        let username = "Guest";
 
-        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-           telegramId = tg.initDataUnsafe.user.id.toString();
-           username = tg.initDataUnsafe.user.username;
-           tg.expand();
-           tg.ready();
-        }
+        tg?.expand?.();
+        tg?.ready?.();
 
         const res = await fetch(`${API_URL}/auth`, {
           method: 'POST',

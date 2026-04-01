@@ -24,22 +24,21 @@ db.serialize(() => {
         last_seen DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
-    // Ensure migration for existing databases
-    db.all("PRAGMA table_info(users)", (err, columns) => {
-        if (err) return;
-        const columnNames = columns.map(c => c.name);
-        if (!columnNames.includes('first_name')) {
-            db.run("ALTER TABLE users ADD COLUMN first_name TEXT");
-        }
-        if (!columnNames.includes('last_name')) {
-            db.run("ALTER TABLE users ADD COLUMN last_name TEXT");
-        }
-        if (!columnNames.includes('photo_url')) {
-            db.run("ALTER TABLE users ADD COLUMN photo_url TEXT");
-        }
-        if (!columnNames.includes('last_seen')) {
-            db.run("ALTER TABLE users ADD COLUMN last_seen DATETIME DEFAULT CURRENT_TIMESTAMP");
-        }
+    // Robust Migration: Add missing columns sequentially
+    const migrations = [
+        "ALTER TABLE users ADD COLUMN first_name TEXT",
+        "ALTER TABLE users ADD COLUMN last_name TEXT",
+        "ALTER TABLE users ADD COLUMN photo_url TEXT",
+        "ALTER TABLE users ADD COLUMN last_seen DATETIME DEFAULT CURRENT_TIMESTAMP"
+    ];
+
+    migrations.forEach(sql => {
+        db.run(sql, (err) => {
+            // Silently ignore "duplicate column name" errors
+            if (err && !err.message.includes("duplicate column name")) {
+                console.error("Migration Error:", err.message);
+            }
+        });
     });
 
     db.run(`CREATE TABLE IF NOT EXISTS purchases (

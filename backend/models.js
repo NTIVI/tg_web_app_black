@@ -17,7 +17,6 @@ const purchaseSchema = new mongoose.Schema({
   user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   item_name: String,
   price: Number,
-  status: { type: String, default: 'pending' }, // Added status field
   purchased_at: { type: Date, default: Date.now }
 });
 

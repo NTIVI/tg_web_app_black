@@ -35,8 +35,26 @@ const Profile = ({ userId, tgUser, balance }: any) => {
             <div style={{ position: 'absolute', bottom: '5px', right: '5px', background: 'var(--success-color)', width: '14px', height: '14px', borderRadius: '50%', border: '2px solid var(--background-color)' }}></div>
           </div>
           
-          <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '4px' }}>{tgUser?.first_name}</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '14px' }}>@{tgUser?.username || 'user'}</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: '800' }}>{tgUser?.first_name}</h2>
+            <span style={{ color: 'var(--primary-color)', fontSize: '15px', fontWeight: '600', opacity: 0.8 }}>@{tgUser?.username || 'user'}</span>
+          </div>
+
+          <div style={{ maxWidth: '240px', margin: '0 auto 24px auto' }}>
+            <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ 
+                width: `${(balance % 1000) / 10}%`, 
+                height: '100%', 
+                background: 'linear-gradient(to right, var(--primary-color), var(--success-color))',
+                borderRadius: '10px',
+                boxShadow: '0 0 8px var(--primary-glow)'
+              }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: '700', textTransform: 'uppercase' }}>Progress</span>
+              <span style={{ fontSize: '10px', color: 'var(--success-color)', fontWeight: '800' }}>{balance % 1000} / 1000 XP</span>
+            </div>
+          </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', padding: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>

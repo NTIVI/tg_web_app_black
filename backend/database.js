@@ -72,7 +72,7 @@ const initDB = () => {
             ['rewarded_ad_provider', 'adsgram']
         ];
         defaults.forEach(([k, v]) => {
-            db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, [k, v]);
+            db.run(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`, [k, v]);
         });
     });
 };

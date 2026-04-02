@@ -6,7 +6,6 @@ const Admin = () => {
   const [password, setPassword] = useState('');
   const [users, setUsers] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'users' | 'ads'>('users');
-  const [isLoading, setIsLoading] = useState(true);
   const [adsEnabled, setAdsEnabled] = useState(false);
   const [adsClientId, setAdsClientId] = useState('');
   const [adsSlotId, setAdsSlotId] = useState('');
@@ -36,7 +35,6 @@ const Admin = () => {
           setRewardedAdProvider(data.settings.rewarded_ad_provider || 'adsgram');
         }
       }
-      setIsLoading(false);
     } catch (err) { console.error(err); }
   };
 

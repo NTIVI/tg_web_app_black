@@ -69,12 +69,12 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Route path="/" element={<Layout />}>
+        <Route path="/" element={<Layout />}>
           <Route index element={<Start {...props} />} />
           <Route path="shop" element={<Shop {...props} />} />
           <Route path="profile" element={<Profile {...props} />} />
           <Route path="admin" element={<Admin />} />
-        </Route>} />
+        </Route>
       </Routes>
     </Router>
   );

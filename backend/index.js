@@ -28,7 +28,7 @@ const verifyInitData = (initData) => {
     } catch { return false; }
 };
 
-const bot = token ? new TelegramBot(token, { polling: true }) : null;
+const bot = token ? new TelegramBot(token, { polling: { interval: 300, autoStart: true } }) : null;
 if (bot) {
     bot.onText(/\/start/, (msg) => {
         bot.sendMessage(msg.chat.id, 'Welcome to YourTurn! 🎮', {

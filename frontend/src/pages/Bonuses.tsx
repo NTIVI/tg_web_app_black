@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
-import { Gift, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { Gift, ExternalLink, CheckCircle2, Clock } from 'lucide-react';
 
 const TelegramIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -28,15 +28,108 @@ const YoutubeIcon = () => (
   </svg>
 );
 
+const TikTokIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.06-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.9-.32-1.98-.23-2.81.3a2.98 2.98 0 0 0-1.43 2.05c-.13.84.15 1.73.72 2.38.56.67 1.4 1.11 2.26 1.15.89.06 1.83-.24 2.43-.91.68-.7 1.05-1.66 1.03-2.63l-.04-12.06Z"/>
+  </svg>
+);
+
 const BONUS_LIST = [
   { id: 'tg_channel', title: 'Join Telegram Channel', reward: 1000, icon: <TelegramIcon />, url: 'https://t.me/your_channel' },
-  { id: 'tg_group', title: 'Join Telegram Group', reward: 500, icon: <TelegramIcon />, url: 'https://t.me/your_group' },
+  { id: 'tiktok', title: 'Follow on TikTok', reward: 500, icon: <TikTokIcon />, url: 'https://www.tiktok.com/@your_account' },
   { id: 'twitter', title: 'Follow on X (Twitter)', reward: 750, icon: <TwitterIcon />, url: 'https://twitter.com/your_account' },
   { id: 'instagram', title: 'Follow on Instagram', reward: 750, icon: <InstagramIcon />, url: 'https://instagram.com/your_account' },
   { id: 'youtube', title: 'Subscribe to YouTube', reward: 1000, icon: <YoutubeIcon />, url: 'https://youtube.com/@your_channel' },
 ];
 
-const Bonuses = ({ user }: any) => {
+const DailyBonus = ({ userId, onClaim }: any) => {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [countdown, setCountdown] = useState<string>('');
+
+  const fetchStatus = async () => {
+    if (!userId) return;
+    try {
+      const res = await fetch(`${API_URL}/bonus/daily/${userId}`);
+      setData(await res.json());
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchStatus(); }, [userId]);
+
+  useEffect(() => {
+    if (data?.timeLeft > 0) {
+      let remaining = data.timeLeft;
+      const interval = setInterval(() => {
+        remaining -= 1000;
+        if (remaining <= 0) {
+          clearInterval(interval);
+          setData((prev: any) => ({ ...prev, canClaim: true, timeLeft: 0 }));
+        } else {
+          const h = Math.floor(remaining / 3600000);
+          const m = Math.floor((remaining % 3600000) / 60000);
+          const s = Math.floor((remaining % 60000) / 1000);
+          setCountdown(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+        }
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [data]);
+
+  const handleClaim = async () => {
+    if (!data?.canClaim || loading) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/bonus/daily/claim`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegramId: userId })
+      });
+      const resData = await res.json();
+      if (resData.success) {
+        onClaim(resData.reward);
+        fetchStatus();
+      }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="glass-panel" style={{ 
+      padding: '24px', 
+      background: 'linear-gradient(135deg, rgba(0, 242, 254, 0.1) 0%, rgba(79, 172, 254, 0.1) 100%)',
+      border: '1px solid rgba(0, 242, 254, 0.3)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px',
+      marginBottom: '24px'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h2 style={{ fontSize: '20px', marginBottom: '4px' }}>Ежедневный бонус</h2>
+          <p style={{ margin: 0, opacity: 0.8, fontSize: '14px' }}>Заходи каждый день и забирай монеты!</p>
+        </div>
+        <div style={{ fontSize: '24px', fontWeight: '900', color: 'var(--gold-color)' }}>+250</div>
+      </div>
+      <button 
+        className="btn-primary" 
+        disabled={!data?.canClaim || loading} 
+        onClick={handleClaim}
+        style={{ height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      >
+        {loading ? <div className="spinner" style={{ width: '20px', height: '20px', borderTopColor: 'white' }}></div> : 
+         data?.canClaim ? 'Забрать бонус' : (
+           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+             <Clock size={16} /> Доступно через {countdown}
+           </div>
+         )}
+      </button>
+    </div>
+  );
+};
+
+const Bonuses = ({ user, setBalance }: any) => {
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
   const [claiming, setClaiming] = useState<string | null>(null);
 
@@ -72,7 +165,7 @@ const Bonuses = ({ user }: any) => {
         
         if (res.ok) {
           setClaimedIds([...claimedIds, bonus.id]);
-          // Optional: Refresh local balance or notify parent
+          setBalance((prev: number) => prev + bonus.reward);
         }
       } catch (err) {
         console.error("Claim error:", err);
@@ -82,14 +175,20 @@ const Bonuses = ({ user }: any) => {
     }, 2000);
   };
 
+  const handleDailyClaim = (reward: number) => {
+    setBalance((prev: number) => prev + reward);
+  };
+
   return (
-    <div className="page">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+    <div className="page" style={{ paddingBottom: '100px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
         <Gift size={32} color="var(--primary-color)" />
         <h1>Bonuses</h1>
       </div>
-      <p>Complete simple tasks to earn extra coins.</p>
+      
+      <DailyBonus userId={user?.telegram_id} onClaim={handleDailyClaim} />
 
+      <h3 style={{ marginBottom: '16px', opacity: 0.8 }}>Социальные задания</h3>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {BONUS_LIST.map((bonus) => (
           <div 

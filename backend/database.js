@@ -28,10 +28,15 @@ const initDB = () => {
             last_seen DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
 
-        // Migration: ensure level column exists
+        // Migration: ensure level and daily bonus columns exist
         db.run(`ALTER TABLE users ADD COLUMN level INTEGER DEFAULT 1`, (err) => {
             if (err && !err.message.includes("duplicate column name")) {
                 console.error("Migration error (level):", err.message);
+            }
+        });
+        db.run(`ALTER TABLE users ADD COLUMN last_daily_claim DATETIME`, (err) => {
+            if (err && !err.message.includes("duplicate column name")) {
+                console.error("Migration error (last_daily_claim):", err.message);
             }
         });
 

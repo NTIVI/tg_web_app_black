@@ -110,6 +110,37 @@ app.post('/api/bonus/claim', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Claim error' }); }
 });
 
+app.get('/api/bonus/daily/:telegramId', async (req, res) => {
+    try {
+        const user = await DB.get('SELECT last_daily_claim FROM users WHERE telegram_id = ?', [req.params.telegramId]);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        const lastClaim = user.last_daily_claim ? new Date(user.last_daily_claim + 'Z') : null;
+        const now = new Date();
+        const canClaim = !lastClaim || (now - lastClaim) > 24 * 60 * 60 * 1000;
+        const timeLeft = canClaim ? 0 : 24 * 60 * 60 * 1000 - (now - lastClaim);
+        
+        res.json({ canClaim, timeLeft, lastClaim: user.last_daily_claim });
+    } catch (err) { res.status(500).json({ error: 'Daily check error' }); }
+});
+
+app.post('/api/bonus/daily/claim', async (req, res) => {
+    const { telegramId } = req.body;
+    try {
+        const user = await DB.get('SELECT last_daily_claim FROM users WHERE telegram_id = ?', [telegramId]);
+        const lastClaim = user.last_daily_claim ? new Date(user.last_daily_claim + 'Z') : null;
+        const now = new Date();
+        
+        if (lastClaim && (now - lastClaim) < 24 * 60 * 60 * 1000) {
+            return res.status(400).json({ error: 'Too early' });
+        }
+        
+        const reward = 250; 
+        await DB.run('UPDATE users SET balance = balance + ?, last_daily_claim = CURRENT_TIMESTAMP WHERE telegram_id = ?', [reward, telegramId]);
+        res.json({ success: true, reward });
+    } catch (err) { res.status(500).json({ error: 'Daily claim error' }); }
+});
+
 // Admin Routes
 app.get('/api/admin/users', async (req, res) => res.json({ users: await DB.all('SELECT * FROM users ORDER BY last_seen DESC') }));
 

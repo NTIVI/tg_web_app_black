@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { Play, ShoppingBag, User, Trophy } from 'lucide-react';
+import { Play, ShoppingBag, User, Trophy, Gift } from 'lucide-react';
 import AdBanner from './AdBanner';
 
 const Layout = () => {
@@ -34,6 +34,14 @@ const Layout = () => {
         >
           <Trophy size={24} />
           <span>Top</span>
+        </NavLink>
+
+        <NavLink 
+          to="/bonuses" 
+          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+        >
+          <Gift size={24} />
+          <span>Bonus</span>
         </NavLink>
         
         <NavLink 

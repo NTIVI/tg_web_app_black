@@ -200,7 +200,20 @@ const Admin = () => {
                       alt="User"
                     />
                     <div>
-                      <div style={{ fontWeight: '700', fontSize: '16px' }}>{u.first_name}</div>
+                      <div style={{ fontWeight: '700', fontSize: '16px' }}>
+                        {u.first_name}
+                        <span style={{ 
+                          marginLeft: '8px', 
+                          background: 'linear-gradient(135deg, var(--gold-color), #ff9900)', 
+                          color: '#000', 
+                          padding: '1px 6px', 
+                          borderRadius: '6px', 
+                          fontSize: '10px', 
+                          fontWeight: '800' 
+                        }}>
+                          LVL {u.level || 1}
+                        </span>
+                      </div>
                       <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>@{u.username || 'user'}</div>
                     </div>
                   </div>

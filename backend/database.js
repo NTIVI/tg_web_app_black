@@ -44,6 +44,14 @@ const initDB = () => {
             purchased_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
 
+        // Bonuses Claimed Table
+        db.run(`CREATE TABLE IF NOT EXISTS bonuses_claimed (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            telegram_id TEXT,
+            bonus_id TEXT,
+            claimed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+
         // Settings Table
         db.run(`CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,

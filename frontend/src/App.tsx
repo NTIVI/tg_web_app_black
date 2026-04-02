@@ -5,6 +5,7 @@ import Start from './pages/Start';
 import Shop from './pages/Shop';
 import Profile from './pages/Profile';
 import Top from './pages/Top';
+import Bonuses from './pages/Bonuses';
 import Admin from './pages/Admin';
 import { API_URL } from './config';
 
@@ -74,6 +75,7 @@ function App() {
           <Route index element={<Start {...props} />} />
           <Route path="shop" element={<Shop {...props} />} />
           <Route path="top" element={<Top />} />
+          <Route path="bonuses" element={<Bonuses {...props} />} />
           <Route path="profile" element={<Profile {...props} />} />
           <Route path="admin" element={<Admin />} />
         </Route>

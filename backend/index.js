@@ -85,6 +85,25 @@ app.get('/api/top', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Top query error' }); }
 });
 
+app.get('/api/bonuses/:telegramId', async (req, res) => {
+    try {
+        const claimed = await DB.all('SELECT bonus_id FROM bonuses_claimed WHERE telegram_id = ?', [req.params.telegramId]);
+        res.json({ claimed: claimed.map(c => c.bonus_id) });
+    } catch (err) { res.status(500).json({ error: 'Bonuses fetch error' }); }
+});
+
+app.post('/api/bonus/claim', async (req, res) => {
+    const { telegramId, bonusId, reward } = req.body;
+    try {
+        const existing = await DB.get('SELECT id FROM bonuses_claimed WHERE telegram_id = ? AND bonus_id = ?', [telegramId, bonusId]);
+        if (existing) return res.status(400).json({ error: 'Already claimed' });
+        
+        await DB.run('INSERT INTO bonuses_claimed (telegram_id, bonus_id) VALUES (?, ?)', [telegramId, bonusId]);
+        await DB.run('UPDATE users SET balance = balance + ? WHERE telegram_id = ?', [reward, telegramId]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: 'Claim error' }); }
+});
+
 // Admin Routes
 app.get('/api/admin/users', async (req, res) => res.json({ users: await DB.all('SELECT * FROM users ORDER BY last_seen DESC') }));
 

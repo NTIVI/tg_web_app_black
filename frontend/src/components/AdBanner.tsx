@@ -14,8 +14,10 @@ const AdBanner = () => {
         if (data.settings) {
           if (data.settings.ads_enabled === 'true') {
             setAdsEnabled(true);
-            setAdsClientId(data.settings.ads_client_id);
+            setAdsClientId(data.settings.ads_client_id); +
+              console.error("setAdsClientId", data.settings.ads_client_id);
             setAdsSlotId(data.settings.ads_slot_id);
+            console.error("setAdsSlotId", data.settings.ads_slot_id);
           }
         }
       } catch (err) {

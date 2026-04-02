@@ -12,6 +12,7 @@ const AdBanner = () => {
         const res = await fetch(`${API_URL}/settings/ads`);
         const data = await res.json();
         if (data.settings) {
+          if (data.settings.ads_enabled === 'true') {
             setAdsEnabled(true);
             setAdsClientId(data.settings.ads_client_id);
             console.error("setAdsClientId", data.settings.ads_client_id);

@@ -80,6 +80,10 @@ const DailyBonus = ({ userId, onClaim }: any) => {
   const handleClaim = async () => {
     if (!data?.canClaim || loading) return;
     setLoading(true);
+    
+    // Optimistic UI update: disable button immediately
+    setData((prev: any) => ({ ...prev, canClaim: false }));
+    
     try {
       const res = await fetch(`${API_URL}/bonus/daily/claim`, {
         method: 'POST',
@@ -89,9 +93,19 @@ const DailyBonus = ({ userId, onClaim }: any) => {
       const resData = await res.json();
       if (resData.success) {
         onClaim(resData.reward);
+        // Update with precise data from server
+        setData({ 
+          canClaim: resData.canClaim, 
+          timeLeft: resData.timeLeft 
+        });
+      } else {
+        // Revert on error
         fetchStatus();
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e);
+      fetchStatus();
+    }
     finally { setLoading(false); }
   };
 

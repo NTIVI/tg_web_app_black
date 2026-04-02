@@ -150,18 +150,26 @@ app.post('/api/bonus/daily/claim', async (req, res) => {
         const lastNoon = new Date(now);
         lastNoon.setUTCHours(12,0,0,0);
 
-        let windowStart;
-        if (now >= lastNoon) windowStart = lastNoon;
-        else windowStart = lastMidnight;
+        let windowStart, nextWindow;
+        if (now >= lastNoon) {
+            windowStart = lastNoon;
+            nextWindow = new Date(lastMidnight);
+            nextWindow.setUTCDate(nextWindow.getUTCDate() + 1);
+        } else {
+            windowStart = lastMidnight;
+            nextWindow = lastNoon;
+        }
 
         const lastClaim = user.last_daily_claim ? new Date(user.last_daily_claim + 'Z') : null;
         if (lastClaim && lastClaim >= windowStart) {
-            return res.status(400).json({ error: 'Already claimed in this window' });
+            return res.status(400).json({ error: 'Too early' });
         }
         
         const reward = 250; 
         await DB.run('UPDATE users SET balance = balance + ?, last_daily_claim = CURRENT_TIMESTAMP WHERE telegram_id = ?', [reward, telegramId]);
-        res.json({ success: true, reward });
+        
+        // Return same status as GET
+        res.json({ success: true, reward, canClaim: false, timeLeft: nextWindow - now });
     } catch (err) { res.status(500).json({ error: 'Daily claim error' }); }
 });
 

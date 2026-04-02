@@ -107,8 +107,8 @@ const DailyBonus = ({ userId, onClaim }: any) => {
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2 style={{ fontSize: '20px', marginBottom: '4px' }}>Ежедневный бонус</h2>
-          <p style={{ margin: 0, opacity: 0.8, fontSize: '14px' }}>Заходи каждый день и забирай монеты!</p>
+          <h2 style={{ fontSize: '20px', marginBottom: '4px' }}>Бонус 2 раза в день</h2>
+          <p style={{ margin: 0, opacity: 0.8, fontSize: '14px' }}>Заходи в 12:00 и 00:00 (UTC) и забирай монеты!</p>
         </div>
         <div style={{ fontSize: '24px', fontWeight: '900', color: 'var(--gold-color)' }}>+250</div>
       </div>

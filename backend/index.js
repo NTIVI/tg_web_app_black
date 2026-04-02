@@ -115,10 +115,25 @@ app.get('/api/bonus/daily/:telegramId', async (req, res) => {
         const user = await DB.get('SELECT last_daily_claim FROM users WHERE telegram_id = ?', [req.params.telegramId]);
         if (!user) return res.status(404).json({ error: 'User not found' });
         
-        const lastClaim = user.last_daily_claim ? new Date(user.last_daily_claim + 'Z') : null;
         const now = new Date();
-        const canClaim = !lastClaim || (now - lastClaim) > 24 * 60 * 60 * 1000;
-        const timeLeft = canClaim ? 0 : 24 * 60 * 60 * 1000 - (now - lastClaim);
+        const lastMidnight = new Date(now);
+        lastMidnight.setUTCHours(0,0,0,0);
+        const lastNoon = new Date(now);
+        lastNoon.setUTCHours(12,0,0,0);
+
+        let windowStart, nextWindow;
+        if (now >= lastNoon) {
+            windowStart = lastNoon;
+            nextWindow = new Date(lastMidnight);
+            nextWindow.setUTCDate(nextWindow.getUTCDate() + 1);
+        } else {
+            windowStart = lastMidnight;
+            nextWindow = lastNoon;
+        }
+
+        const lastClaim = user.last_daily_claim ? new Date(user.last_daily_claim + 'Z') : null;
+        const canClaim = !lastClaim || lastClaim < windowStart;
+        const timeLeft = canClaim ? 0 : nextWindow - now;
         
         res.json({ canClaim, timeLeft, lastClaim: user.last_daily_claim });
     } catch (err) { res.status(500).json({ error: 'Daily check error' }); }
@@ -128,11 +143,20 @@ app.post('/api/bonus/daily/claim', async (req, res) => {
     const { telegramId } = req.body;
     try {
         const user = await DB.get('SELECT last_daily_claim FROM users WHERE telegram_id = ?', [telegramId]);
-        const lastClaim = user.last_daily_claim ? new Date(user.last_daily_claim + 'Z') : null;
-        const now = new Date();
         
-        if (lastClaim && (now - lastClaim) < 24 * 60 * 60 * 1000) {
-            return res.status(400).json({ error: 'Too early' });
+        const now = new Date();
+        const lastMidnight = new Date(now);
+        lastMidnight.setUTCHours(0,0,0,0);
+        const lastNoon = new Date(now);
+        lastNoon.setUTCHours(12,0,0,0);
+
+        let windowStart;
+        if (now >= lastNoon) windowStart = lastNoon;
+        else windowStart = lastMidnight;
+
+        const lastClaim = user.last_daily_claim ? new Date(user.last_daily_claim + 'Z') : null;
+        if (lastClaim && lastClaim >= windowStart) {
+            return res.status(400).json({ error: 'Already claimed in this window' });
         }
         
         const reward = 250; 

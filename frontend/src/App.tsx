@@ -15,21 +15,26 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   
+  useEffect(() => {
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      if (tg.themeParams) {
+        Object.entries(tg.themeParams).forEach(([key, val]: [string, any]) => {
+          document.documentElement.style.setProperty(`--tg-${key.replace(/_/g, '-')}`, val);
+        });
+      }
+    }
+    init();
+  }, []);
+
   const init = async () => {
     setLoading(true);
     setError(null);
     const tg = (window as any).Telegram?.WebApp;
-    
-    if (tg?.themeParams) {
-      Object.entries(tg.themeParams).forEach(([key, val]: [string, any]) => {
-        document.documentElement.style.setProperty(`--tg-${key.replace(/_/g, '-')}`, val);
-      });
-    }
-
     const user = tg?.initDataUnsafe?.user || { id: "12345", username: "MockUser", first_name: "Mock", last_name: "Account" };
     const initData = tg?.initData || "";
-    tg?.expand?.();
-    tg?.ready?.();
 
     try {
       const res = await fetch(`${API_URL}/auth`, {
@@ -51,10 +56,6 @@ function App() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    init();
-  }, []);
 
   const props = { userId: tgUser?.telegram_id, balance, setBalance, tgUser };
 

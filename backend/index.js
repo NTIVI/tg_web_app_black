@@ -13,6 +13,7 @@ const token = process.env.BOT_TOKEN;
 app.use(cors());
 app.use(express.json());
 
+let memoizedSecretKey = null;
 const verifyInitData = (initData) => {
     if (!token) return true;
     try {
@@ -23,8 +24,10 @@ const verifyInitData = (initData) => {
         let dataCheckString = '';
         for (const [key, value] of urlParams.entries()) dataCheckString += `${key}=${value}\n`;
         dataCheckString = dataCheckString.slice(0, -1);
-        const secretKey = crypto.createHmac('sha256', 'WebAppData').update(token).digest();
-        return crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex') === hash;
+        if (!memoizedSecretKey) {
+            memoizedSecretKey = crypto.createHmac('sha256', 'WebAppData').update(token).digest();
+        }
+        return crypto.createHmac('sha256', memoizedSecretKey).update(dataCheckString).digest('hex') === hash;
     } catch { return false; }
 };
 
@@ -45,15 +48,18 @@ app.post('/api/auth', async (req, res) => {
     const tid = tgUser.id.toString();
 
     try {
-        let user = await DB.get('SELECT * FROM users WHERE telegram_id = ?', [tid]);
-        if (user) {
-            await DB.run('UPDATE users SET username=?, first_name=?, last_name=?, photo_url=?, last_seen=CURRENT_TIMESTAMP WHERE telegram_id=?',
-                [tgUser.username || '', tgUser.first_name || '', tgUser.last_name || '', tgUser.photo_url || '', tid]);
-        } else {
-            await DB.run('INSERT INTO users (telegram_id, username, first_name, last_name, photo_url) VALUES (?,?,?,?,?)',
-                [tid, tgUser.username || '', tgUser.first_name || '', tgUser.last_name || '', tgUser.photo_url || '']);
-        }
-        user = await DB.get('SELECT * FROM users WHERE telegram_id = ?', [tid]);
+        await DB.run(`
+            INSERT INTO users (telegram_id, username, first_name, last_name, photo_url, last_seen)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(telegram_id) DO UPDATE SET
+                username=excluded.username,
+                first_name=excluded.first_name,
+                last_name=excluded.last_name,
+                photo_url=excluded.photo_url,
+                last_seen=excluded.last_seen
+        `, [tid, tgUser.username || '', tgUser.first_name || '', tgUser.last_name || '', tgUser.photo_url || '']);
+
+        const user = await DB.get('SELECT * FROM users WHERE telegram_id = ?', [tid]);
         res.json({ user });
     } catch (err) { console.error(err); res.status(500).json({ error: 'DB error' }); }
 });

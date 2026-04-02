@@ -61,7 +61,7 @@ const Admin = () => {
     <div className="page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '100px', gap: '16px' }}>
       <h2>Admin Panel</h2>
       <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Passcode..." className="input-field" style={{ width: '200px' }} />
-      <button className="btn-primary" onClick={() => { if (password === 'admin777') setIsAuthenticated(true); else alert('Access Denied'); }}>Enter</button>
+      <button className="btn-primary" onClick={() => { if (password.trim() === 'admin777') setIsAuthenticated(true); else alert('Access Denied'); }}>Enter</button>
     </div>
   );
 

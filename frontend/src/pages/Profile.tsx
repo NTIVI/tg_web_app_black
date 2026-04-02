@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
+import { Wallet, Trophy, Package, Calendar, ShieldCheck } from 'lucide-react';
 
-const Profile = ({ userId, tgUser }: any) => {
+const Profile = ({ userId, tgUser, balance }: any) => {
   const [purchases, setPurchases] = useState<any[]>([]);
 
   useEffect(() => {
@@ -12,22 +13,82 @@ const Profile = ({ userId, tgUser }: any) => {
   }, [userId]);
 
   return (
-    <div className="page">
-      <h1>Profile</h1>
-      <div className="glass-panel" style={{ textAlign: 'center', marginBottom: '20px' }}>
-        <img src={tgUser?.photo_url || ''} style={{ width: '80px', height: '80px', borderRadius: '40px' }} />
-        <h2>{tgUser?.first_name}</h2>
-        <p>@{tgUser?.username}</p>
-        <p style={{ color: 'var(--gold-color)', fontSize: '20px', fontWeight: 'bold' }}>{tgUser?.balance} Coins</p>
+    <div className="page" style={{ background: 'var(--background-color)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <h1>Profile</h1>
+        <div className="glass-panel" style={{ padding: '8px 16px', margin: 0, borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--primary-color)' }}>
+          <Trophy size={16} color="var(--gold-color)" />
+          <span style={{ fontWeight: '800', color: 'var(--gold-color)', fontSize: '14px' }}>LVL {tgUser?.level || 1}</span>
+        </div>
       </div>
 
-      <div className="glass-panel">
-        <h3>My Purchases</h3>
-        {purchases.map((p, i) => (
-          <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid var(--border-color)' }}>
-            <strong>{p.item_name}</strong> - {p.price} coins
+      <div className="glass-panel" style={{ textAlign: 'center', position: 'relative', overflow: 'hidden', padding: '40px 24px' }}>
+        <div style={{ position: 'absolute', top: '-20px', left: '50%', transform: 'translateX(-50%)', width: '200px', height: '200px', background: 'var(--primary-glow)', filter: 'blur(60px)', borderRadius: '50%', zIndex: 0, opacity: 0.5 }}></div>
+        
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ position: 'relative', display: 'inline-block', marginBottom: '20px' }}>
+            <img 
+              src={tgUser?.photo_url || ''} 
+              style={{ width: '100px', height: '100px', borderRadius: '50%', border: '3px solid var(--primary-color)', padding: '4px', background: 'rgba(0,0,0,0.3)', objectFit: 'cover' }} 
+              alt="Avatar"
+            />
+            <div style={{ position: 'absolute', bottom: '5px', right: '5px', background: 'var(--success-color)', width: '14px', height: '14px', borderRadius: '50%', border: '2px solid var(--background-color)' }}></div>
           </div>
-        ))}
+          
+          <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '4px' }}>{tgUser?.first_name}</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '14px' }}>@{tgUser?.username || 'user'}</p>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', padding: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '4px', justifyContent: 'center' }}>
+                <Wallet size={12} />
+                <span>Balance</span>
+              </div>
+              <div style={{ color: 'var(--gold-color)', fontSize: '18px', fontWeight: '800' }}>{balance}</div>
+            </div>
+            
+            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', padding: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '4px', justifyContent: 'center' }}>
+                <ShieldCheck size={12} />
+                <span>Status</span>
+              </div>
+              <div style={{ color: 'var(--primary-color)', fontSize: '18px', fontWeight: '800' }}>Active</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+        <Package size={20} color="var(--primary-color)" />
+        <h3 style={{ fontSize: '18px', fontWeight: '700' }}>My Purchases</h3>
+      </div>
+
+      <div className="glass-panel" style={{ padding: '0 20px' }}>
+        {purchases.length > 0 ? (
+          purchases.map((p, i) => (
+            <div key={i} style={{ padding: '20px 0', borderBottom: i === purchases.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'linear-gradient(135deg, var(--surface-color-light), #1a1a1a)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-color)', position: 'relative' }}>
+                <img src={p.photo_url || tgUser?.photo_url || ''} style={{ width: '100%', height: '100%', borderRadius: '14px', opacity: 0.8, objectFit: 'cover' }} alt="User" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: '700', fontSize: '15px' }}>{p.item_name}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)', fontSize: '12px', marginTop: '2px' }}>
+                  <Calendar size={12} />
+                  <span>{new Date(p.purchased_at).toLocaleDateString()}</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                <div style={{ color: 'var(--gold-color)', fontWeight: '800', fontSize: '14px' }}>-{p.price}</div>
+                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Completed</div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div style={{ padding: '40px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+            <Package size={32} style={{ opacity: 0.2 }} />
+            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '14px', margin: 0 }}>You haven't made any purchases yet.</p>
+          </div>
+        )}
       </div>
     </div>
   );

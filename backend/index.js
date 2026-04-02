@@ -82,7 +82,7 @@ app.post('/api/buy', async (req, res) => {
 app.get('/api/admin/users', async (req, res) => res.json({ users: await DB.all('SELECT * FROM users ORDER BY last_seen DESC') }));
 
 app.get('/api/admin/purchases', async (req, res) => {
-  const p = await DB.all('SELECT p.*, u.username FROM purchases p LEFT JOIN users u ON p.telegram_id = u.telegram_id ORDER BY purchased_at DESC');
+  const p = await DB.all('SELECT p.*, u.username, u.first_name, u.photo_url FROM purchases p LEFT JOIN users u ON p.telegram_id = u.telegram_id ORDER BY purchased_at DESC');
   res.json({ purchases: p });
 });
 

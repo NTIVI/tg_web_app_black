@@ -23,9 +23,17 @@ const initDB = () => {
             last_name TEXT,
             photo_url TEXT,
             balance INTEGER DEFAULT 0,
+            level INTEGER DEFAULT 1,
             registered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             last_seen DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
+
+        // Migration: ensure level column exists
+        db.run(`ALTER TABLE users ADD COLUMN level INTEGER DEFAULT 1`, (err) => {
+            if (err && !err.message.includes("duplicate column name")) {
+                console.error("Migration error (level):", err.message);
+            }
+        });
 
         // Purchases Table
         db.run(`CREATE TABLE IF NOT EXISTS purchases (

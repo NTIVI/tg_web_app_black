@@ -1,5 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
 import Layout from './components/Layout';
 import Start from './pages/Start';
 import Shop from './pages/Shop';
@@ -14,6 +14,8 @@ function App() {
   const [balance, setBalance] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const isInitialMount = useRef(true);
   
   useEffect(() => {
     const tg = (window as any).Telegram?.WebApp;
@@ -26,11 +28,19 @@ function App() {
         });
       }
     }
-    init();
   }, []);
 
-  const init = async () => {
-    setLoading(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+        init(true);
+        isInitialMount.current = false;
+    } else {
+        init(false); // Background refresh on nav
+    }
+  }, [location.pathname]);
+
+  const init = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     setError(null);
     const tg = (window as any).Telegram?.WebApp;
     const user = tg?.initDataUnsafe?.user || { id: "12345", username: "MockUser", first_name: "Mock", last_name: "Account" };
@@ -53,7 +63,7 @@ function App() {
     } catch (e: any) {
       setError(e.message || "Unknown error");
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
@@ -62,7 +72,7 @@ function App() {
   if (loading || !tgUser) return (
     <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px', textAlign: 'center' }}>
       {error ? (
-        <><h2>Ошибка входа</h2><p>{error}</p><button className="btn-primary" onClick={init}>Попробовать снова</button></>
+        <><h2>Ошибка входа</h2><p>{error}</p><button className="btn-primary" onClick={() => init(true)}>Попробовать снова</button></>
       ) : (
         <><div className="spinner"></div><h2 style={{ color: 'var(--primary-color)' }}>Вход...</h2><p>Авторизация через Telegram</p></>
       )}
@@ -70,18 +80,16 @@ function App() {
   );
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Start {...props} />} />
-          <Route path="shop" element={<Shop {...props} />} />
-          <Route path="top" element={<Top />} />
-          <Route path="bonuses" element={<Bonuses {...props} />} />
-          <Route path="profile" element={<Profile {...props} />} />
-          <Route path="admin" element={<Admin />} />
-        </Route>
-      </Routes>
-    </Router>
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        <Route index element={<Start {...props} />} />
+        <Route path="shop" element={<Shop {...props} />} />
+        <Route path="top" element={<Top />} />
+        <Route path="bonuses" element={<Bonuses {...props} />} />
+        <Route path="profile" element={<Profile {...props} />} />
+        <Route path="admin" element={<Admin />} />
+      </Route>
+    </Routes>
   );
 }
 

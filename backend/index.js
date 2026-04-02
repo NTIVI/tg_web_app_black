@@ -72,6 +72,22 @@ app.post('/api/watch-ad', async (req, res) => {
     } catch { res.status(500).json({ error: 'Error' }); }
 });
 
+// Adsgram Server-to-Server reward callback
+app.get('/api/adsgram-reward', async (req, res) => {
+    const { user } = req.query;
+    if (!user) return res.status(400).send('Missing user');
+    
+    try {
+        // Standard reward is 50
+        await DB.run('UPDATE users SET balance = balance + 50 WHERE telegram_id = ?', [user]);
+        console.log(`Rewarded user ${user} via Adsgram s2s`);
+        res.send('OK');
+    } catch (err) {
+        console.error('Adsgram reward error:', err);
+        res.status(500).send('Error');
+    }
+});
+
 app.post('/api/buy', async (req, res) => {
     const { telegramId, itemName, price } = req.body;
     try {

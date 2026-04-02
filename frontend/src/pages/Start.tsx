@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Coins, PlayCircle } from 'lucide-react';
 import { API_URL } from '../config';
+import { useAdsgram } from '../hooks/useAdsgram';
 
 interface StartProps {
   userId: string | null;
@@ -30,7 +31,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
       .catch(err => console.error("Could not load ads config", err));
   }, []);
 
-  const claimReward = async () => {
+  const claimReward = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/watch-ad`, {
         method: 'POST',
@@ -47,8 +48,23 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
       }
     } catch (err) {
       setAdMessage('Network error.');
+    } finally {
+      setIsWatching(false);
     }
-  };
+  }, [userId, setBalance]);
+
+  const showAdsgram = useAdsgram({
+    blockId: adsgramBlockId,
+    onReward: () => {
+        setAdMessage('Ad finished! Claiming reward...');
+        claimReward();
+    },
+    onError: (result) => {
+        console.error('Adsgram error:', result);
+        setAdMessage('Ad skipped or unavailable.');
+        setIsWatching(false);
+    }
+  });
 
   const handleWatchAd = async () => {
     if (!userId) return;
@@ -57,18 +73,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
     setAdMessage('Loading Advertisement...');
     
     if (rewardedAdProvider === 'adsgram' && adsgramBlockId) {
-      try {
-        const AdController = (window as any).Adsgram?.init({ blockId: adsgramBlockId });
-        if (!AdController) throw new Error("Adsgram not loaded");
-        
-        await AdController.show();
-        // user watched ad to the end
-        setAdMessage('Ad finished! Claiming reward...');
-        await claimReward();
-      } catch (err) {
-        console.error("Adsgram error", err);
-        setAdMessage('Ad skipped or unavailable.');
-      }
+      showAdsgram();
     } else if (rewardedAdProvider === 'google' && adsClientId) {
       try {
         // Google AdSense H5 adBreak

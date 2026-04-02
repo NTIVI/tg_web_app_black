@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { API_URL } from '../config';
-import { Gift, ExternalLink, CheckCircle2, Clock } from 'lucide-react';
+import { Gift, ExternalLink, CheckCircle2, Clock, Video, TikTokIcon as TikTokIconLucide } from 'lucide-react';
+import { useAdsgram } from '../hooks/useAdsgram';
 
 const TelegramIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -47,16 +48,18 @@ const DailyBonus = ({ userId, onClaim }: any) => {
   const [loading, setLoading] = useState(true);
   const [countdown, setCountdown] = useState<string>('');
 
-  const fetchStatus = async () => {
+  const fetchStatus = useCallback(async () => {
     if (!userId) return;
     try {
       const res = await fetch(`${API_URL}/bonus/daily/${userId}`);
       setData(await res.json());
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  };
+  }, [userId]);
 
-  useEffect(() => { fetchStatus(); }, [userId]);
+  useEffect(() => { 
+    fetchStatus(); 
+  }, [fetchStatus]);
 
   useEffect(() => {
     if (data?.timeLeft > 0) {
@@ -80,8 +83,6 @@ const DailyBonus = ({ userId, onClaim }: any) => {
   const handleClaim = async () => {
     if (!data?.canClaim || loading) return;
     setLoading(true);
-    
-    // Optimistic UI update: disable button immediately
     setData((prev: any) => ({ ...prev, canClaim: false }));
     
     try {
@@ -93,13 +94,11 @@ const DailyBonus = ({ userId, onClaim }: any) => {
       const resData = await res.json();
       if (resData.success) {
         onClaim(resData.reward);
-        // Update with precise data from server
         setData({ 
           canClaim: resData.canClaim, 
           timeLeft: resData.timeLeft 
         });
       } else {
-        // Revert on error
         fetchStatus();
       }
     } catch (e) { 
@@ -146,6 +145,7 @@ const DailyBonus = ({ userId, onClaim }: any) => {
 const Bonuses = ({ user, setBalance }: any) => {
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
   const [claiming, setClaiming] = useState<string | null>(null);
+  const [adsgramBlockId, setAdsgramBlockId] = useState('');
 
   useEffect(() => {
     if (user?.telegram_id) {
@@ -156,15 +156,36 @@ const Bonuses = ({ user, setBalance }: any) => {
     }
   }, [user]);
 
+  useEffect(() => {
+    fetch(`${API_URL}/settings/ads`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.settings) setAdsgramBlockId(data.settings.adsgram_block_id || '');
+      })
+      .catch(err => console.error("Could not load ads config", err));
+  }, []);
+
+  const showAdsgram = useAdsgram({
+    blockId: adsgramBlockId,
+    onReward: () => {
+        const reward = 50;
+        fetch(`${API_URL}/watch-ad`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telegramId: user?.telegram_id }),
+        }).then(res => res.json()).then(data => {
+            if (data.success) {
+                setBalance((prev: number) => prev + reward);
+            }
+        });
+    },
+    onError: (err) => console.error('Adsgram error:', err)
+  });
+
   const handleClaim = async (bonus: any) => {
     if (!user || claimedIds.includes(bonus.id)) return;
-    
-    // Open link
     window.open(bonus.url, '_blank');
-    
     setClaiming(bonus.id);
-    
-    // Simulate verification delay
     setTimeout(async () => {
       try {
         const res = await fetch(`${API_URL}/bonus/claim`, {
@@ -176,7 +197,6 @@ const Bonuses = ({ user, setBalance }: any) => {
             reward: bonus.reward 
           })
         });
-        
         if (res.ok) {
           setClaimedIds([...claimedIds, bonus.id]);
           setBalance((prev: number) => prev + bonus.reward);
@@ -202,15 +222,49 @@ const Bonuses = ({ user, setBalance }: any) => {
       
       <DailyBonus userId={user?.telegram_id} onClaim={handleDailyClaim} />
 
-      <h3 style={{ marginBottom: '16px', opacity: 0.8 }}>Социальные задания</h3>
+      <h3 style={{ marginBottom: '16px', opacity: 0.8 }}>Реклама и задания</h3>
+      
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* Ad Bonus */}
+        <div 
+          className="glass-panel" 
+          onClick={showAdsgram} 
+          style={{ 
+            cursor: 'pointer', 
+            padding: '20px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '16px' 
+          }}
+        >
+          <div style={{ 
+            width: '48px', 
+            height: '48px', 
+            borderRadius: '14px', 
+            background: 'linear-gradient(135deg, #FF0000, #CC0000)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <Video size={24} color="white" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: '700', fontSize: '15px' }}>Смотреть рекламу</div>
+            <div style={{ color: 'var(--gold-color)', fontWeight: '800', fontSize: '14px' }}>
+              +50 coins
+            </div>
+          </div>
+          <div style={{ opacity: 0.5 }}>
+            <ExternalLink size={14} />
+          </div>
+        </div>
+
         {BONUS_LIST.map((bonus) => (
           <div 
             key={bonus.id} 
             className="glass-panel" 
             style={{ 
               padding: '20px', 
-              marginBottom: 0, 
               display: 'flex', 
               alignItems: 'center', 
               gap: '16px',

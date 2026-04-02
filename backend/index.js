@@ -78,6 +78,13 @@ app.post('/api/buy', async (req, res) => {
     } catch { res.status(500).json({ error: 'Buy error' }); }
 });
 
+app.get('/api/top', async (req, res) => {
+    try {
+        const users = await DB.all('SELECT username, first_name, photo_url, balance FROM users ORDER BY balance DESC LIMIT 50');
+        res.json({ users });
+    } catch (err) { res.status(500).json({ error: 'Top query error' }); }
+});
+
 // Admin Routes
 app.get('/api/admin/users', async (req, res) => res.json({ users: await DB.all('SELECT * FROM users ORDER BY last_seen DESC') }));
 

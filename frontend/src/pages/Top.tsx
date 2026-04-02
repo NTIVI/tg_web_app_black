@@ -74,8 +74,18 @@ const Top = () => {
               />
               
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: '700', fontSize: '15px' }}>
+                <div style={{ fontWeight: '700', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   {user.first_name} {index === 0 && '👑'}
+                  <span style={{ 
+                    background: 'linear-gradient(135deg, var(--gold-color), #ff9900)', 
+                    color: '#000', 
+                    padding: '1px 6px', 
+                    borderRadius: '6px', 
+                    fontSize: '9px', 
+                    fontWeight: '800' 
+                  }}>
+                    LVL {user.level || 1}
+                  </span>
                 </div>
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                   @{user.username || 'user'}

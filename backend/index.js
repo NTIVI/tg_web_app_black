@@ -80,7 +80,7 @@ app.post('/api/buy', async (req, res) => {
 
 app.get('/api/top', async (req, res) => {
     try {
-        const users = await DB.all('SELECT username, first_name, photo_url, balance FROM users ORDER BY balance DESC LIMIT 50');
+        const users = await DB.all('SELECT username, first_name, photo_url, balance, level FROM users ORDER BY balance DESC LIMIT 50');
         res.json({ users });
     } catch (err) { res.status(500).json({ error: 'Top query error' }); }
 });

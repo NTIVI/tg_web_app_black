@@ -3,8 +3,7 @@ import { API_URL } from '../config';
 
 const AdBanner = () => {
   const [adsEnabled, setAdsEnabled] = useState(false);
-  const [adsClientId, setAdsClientId] = useState('');
-  const [adsSlotId, setAdsSlotId] = useState('');
+  const [bannerId, setBannerId] = useState('');
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -14,10 +13,7 @@ const AdBanner = () => {
         if (data.settings) {
           if (data.settings.ads_enabled === 'true') {
             setAdsEnabled(true);
-            setAdsClientId(data.settings.ads_client_id);
-            console.error("setAdsClientId", data.settings.ads_client_id);
-            setAdsSlotId(data.settings.ads_slot_id);
-            console.error("setAdsSlotId", data.settings.ads_slot_id);
+            setBannerId(data.settings.adsgram_banner_id || 'task-26664');
           }
         }
       } catch (err) {
@@ -27,30 +23,20 @@ const AdBanner = () => {
     fetchSettings();
   }, []);
 
-  useEffect(() => {
-    if (adsEnabled && adsClientId && adsSlotId) {
-      try {
-        // Run adsbygoogle push
-        ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
-      } catch (err) {
-        console.error("AdSense error", err);
-      }
-    }
-  }, [adsEnabled, adsClientId, adsSlotId]);
-
-  if (!adsEnabled || !adsClientId || !adsSlotId) return null;
+  if (!adsEnabled || !bannerId) return null;
 
   return (
     <div style={{ width: '100%', textAlign: 'center', padding: '10px 0', background: 'var(--surface-color)' }}>
-      {/* Google AdSense Banner */}
-      <ins
-        className="adsbygoogle"
-        style={{ display: 'block', width: '100%', minHeight: '50px' }}
-        data-ad-client={adsClientId}
-        data-ad-slot={adsSlotId}
-        data-ad-format="auto"
-        data-full-width-responsive="true"
-      ></ins>
+      {/* Adsgram Task Banner */}
+      <adsgram-task
+        data-block-id={bannerId}
+        style={{ display: 'inline-block' }}
+      >
+        <span slot="reward">50 coins</span>
+        <div slot="button">Go</div>
+        <div slot="claim">Claim</div>
+        <div slot="done">Done</div>
+      </adsgram-task>
     </div>
   );
 };

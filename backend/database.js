@@ -69,6 +69,7 @@ const initDB = () => {
             ['ads_client_id', 'ca-pub-5854666775312114'],
             ['ads_slot_id', '9448831633'],
             ['adsgram_block_id', '26661'],
+            ['adsgram_banner_id', 'task-26664'],
             ['rewarded_ad_provider', 'adsgram']
         ];
         defaults.forEach(([k, v]) => {

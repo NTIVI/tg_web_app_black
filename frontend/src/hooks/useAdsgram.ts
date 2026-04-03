@@ -29,14 +29,16 @@ export function useAdsgram({ blockId, onReward, onError }: UseAdsgramProps) {
                 if (result.done) {
                     onReward();
                 } else {
+                    // Ad was skipped or failed to render
                     if (onError) onError(result);
                 }
             } catch (err: any) {
+                // Network error or script blocked
                 if (onError) onError(err);
-                else console.error('Adsgram error:', err);
+                else console.error('Adsgram', err);
             }
         } else {
-            console.warn("Adsgram script not loaded or blockId missing");
+            if (onError) onError({ error: true, done: false, state: 'load', description: 'Adsgram not initialized' });
         }
     }, [onReward, onError, blockId]);
 

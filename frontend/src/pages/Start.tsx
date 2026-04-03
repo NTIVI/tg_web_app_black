@@ -15,8 +15,6 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
   const [adsgramBlockId, setAdsgramBlockId] = useState('');
   const [adsClientId, setAdsClientId] = useState('');
   const [rewardedAdProvider, setRewardedAdProvider] = useState('adsgram');
-  const [showDemoAd, setShowDemoAd] = useState(false);
-  const [demoAdTime, setDemoAdTime] = useState(3);
   const [cooldownTime, setCooldownTime] = useState(0);
 
   useEffect(() => {
@@ -132,117 +130,122 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
         setTimeout(() => setIsWatching(false), 2000);
       }
     } else {
-      // Visual simulation of an ad when no AdsGram is configured
-      setShowDemoAd(true);
-      setDemoAdTime(3);
-      
-      const timer = setInterval(() => {
-        setDemoAdTime(prev => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            setShowDemoAd(false);
-            setAdMessage('Ad finished! Claiming reward...');
-            claimReward().then(() => {
-              setTimeout(() => {
-                setIsWatching(false);
-                setAdMessage('');
-              }, 2000);
-            });
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      setAdMessage('Ad provider not configured.');
+      setTimeout(() => setIsWatching(false), 2000);
     }
   };
 
   return (
-    <div className="page">
-      <h1>Start Playing</h1>
-      <p>Watch ads to earn game coins and buy premium items.</p>
+    <div className="page" style={{ paddingBottom: '120px' }}>
+      <h1 style={{ textAlign: 'center', marginBottom: '4px' }}>Welcome Back!</h1>
+      <p style={{ textAlign: 'center', maxWidth: '300px', margin: '0 auto 32px auto' }}>
+        Complete daily tasks and boost your balance to unlock exclusive items.
+      </p>
       
-      <div className="balance-card" style={{ marginTop: '32px' }}>
+      <div className="balance-card">
         <div>
-          <h2>Your Balance</h2>
-          <p>Available coins to spend</p>
+          <h2 style={{ fontSize: '18px', opacity: 0.9 }}>Your Balance</h2>
+          <p style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>Total coins earned</p>
         </div>
         <div className="balance-amount">
-          <Coins size={32} />
-          <span>{balance}</span>
+          <Coins size={28} />
+          <span>{balance.toLocaleString()}</span>
         </div>
       </div>
       
-      <div className="glass-panel" style={{ textAlign: 'center', padding: '40px 20px' }}>
-        {isWatching ? (
-          <div className="loader-container">
-            <div className="spinner"></div>
-            <h3>{adMessage}</h3>
-          </div>
-        ) : (
-          <div>
-            <PlayCircle size={64} color="var(--primary-color)" style={{ marginBottom: '16px' }} />
-            <h2 style={{ marginBottom: '8px', fontSize: '24px', fontWeight: '800' }}>Ready to earn?</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Watch a short video to get 50 coins instantly.</p>
-            {adMessage && (
+      <div className="glass-panel" style={{ 
+        textAlign: 'center', 
+        padding: '32px 24px',
+        background: 'linear-gradient(180deg, rgba(157, 80, 187, 0.1) 0%, rgba(110, 72, 170, 0.05) 100%)',
+        border: '1px solid rgba(157, 80, 187, 0.3)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Decorative elements */}
+        <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', background: 'var(--primary-glow)', filter: 'blur(40px)', zIndex: 0 }} />
+        
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          {isWatching ? (
+            <div className="loader-container">
+              <div className="spinner" style={{ width: '48px', height: '48px' }}></div>
+              <h3 style={{ fontSize: '18px', fontWeight: '700' }}>{adMessage || 'Preparing your reward...'}</h3>
+            </div>
+          ) : (
+            <div>
               <div style={{ 
-                background: 'rgba(0, 242, 254, 0.1)', 
-                padding: '12px', 
-                borderRadius: '12px', 
-                marginBottom: '20px',
-                color: adMessage.includes('error') || adMessage.includes('skipped') ? '#ff4b4b' : 'var(--success-color)',
-                fontSize: '14px',
-                fontWeight: '600',
-                border: '1px solid rgba(0, 242, 254, 0.2)'
-              }}>
-                {adMessage}
-              </div>
-            )}
-            <button 
-              className="btn-primary" 
-              disabled={cooldownTime > 0}
-              style={{ 
-                width: '100%', 
-                height: '56px',
-                fontSize: '18px',
-                fontWeight: '800',
+                width: '72px', 
+                height: '72px', 
+                borderRadius: '24px', 
+                background: 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '12px',
-                boxShadow: cooldownTime > 0 ? 'none' : '0 8px 20px rgba(0, 242, 254, 0.3)',
-                background: cooldownTime > 0 ? 'rgba(255,255,255,0.05)' : '',
-                opacity: cooldownTime > 0 ? 0.7 : 1,
-                color: cooldownTime > 0 ? 'var(--text-secondary)' : ''
-              }} 
-              onClick={handleWatchAd}
-            >
-              {cooldownTime > 0 ? (
-                <>
-                   Available in {Math.floor(cooldownTime / 60)}:{(cooldownTime % 60).toString().padStart(2, '0')}
-                </>
-              ) : (
-                <>
-                  <PlayCircle size={24} />
-                  Watch Ad
-                </>
-              )}
-            </button>
-          </div>
-        )}
-      </div>
+                margin: '0 auto 20px auto',
+                boxShadow: '0 8px 16px rgba(157, 80, 187, 0.4)'
+              }}>
+                <PlayCircle size={36} color="white" />
+              </div>
+              
+              <h2 style={{ marginBottom: '8px', fontSize: '22px', fontWeight: '800' }}>Lucky Booster</h2>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '14px' }}>
+                Watch a quick spotlight video to claim <span style={{ color: 'var(--gold-color)', fontWeight: '700' }}>50 coins</span> instantly.
+              </p>
 
-      {showDemoAd && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.95)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <h2 style={{ color: 'white', marginBottom: '16px', letterSpacing: '2px' }}>TEST ADVERTISEMENT</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', textAlign: 'center', padding: '0 20px', maxWidth: '400px', lineHeight: '1.6' }}>
-            Real video ads will appear here once you enter your <strong style={{color: 'var(--primary-color)'}}>AdsGram Block ID</strong> in the Admin Panel.<br/><br/>
-            (You provided Google AdSense IDs, which are used for the bottom banner, not for video rewards!)
-          </p>
-          <div style={{ width: '60px', height: '60px', borderRadius: '50%', border: '4px solid var(--gold-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: 'var(--gold-color)', fontWeight: 'bold' }}>
-            {demoAdTime}
-          </div>
+              {adMessage && (
+                <div style={{ 
+                  background: 'rgba(255, 255, 255, 0.05)', 
+                  padding: '12px', 
+                  borderRadius: '16px', 
+                  marginBottom: '20px',
+                  color: adMessage.includes('error') || adMessage.includes('skipped') || adMessage.includes('unavailable') ? '#ff4b4b' : 'var(--success-color)',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }}>
+                  {adMessage}
+                </div>
+              )}
+
+              <button 
+                className="btn-primary" 
+                disabled={cooldownTime > 0}
+                style={{ 
+                  width: '100%', 
+                  height: '56px',
+                  fontSize: '17px',
+                  fontWeight: '700',
+                  borderRadius: '18px',
+                  boxShadow: cooldownTime > 0 ? 'none' : '0 10px 25px rgba(157, 80, 187, 0.3)'
+                }} 
+                onClick={handleWatchAd}
+              >
+                {cooldownTime > 0 ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                     Next reward in {Math.floor(cooldownTime / 60)}:{(cooldownTime % 60).toString().padStart(2, '0')}
+                  </div>
+                ) : (
+                  <>Claim My Reward</>
+                )}
+              </button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
+      
+      {/* Help section to make app feel more substantial */}
+      <div style={{ padding: '0 10px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '12px' }}>How it works?</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary-color)' }} />
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Watch ads every 2 minutes to grow your balance.</div>
+           </div>
+           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary-color)' }} />
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Use coins in the Shop to buy premium access.</div>
+           </div>
+        </div>
+      </div>
     </div>
   );
 };

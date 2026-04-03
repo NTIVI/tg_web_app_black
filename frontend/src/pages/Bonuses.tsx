@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { API_URL } from '../config';
-import { Gift, ExternalLink, CheckCircle2, Clock, Video, PlayCircle } from 'lucide-react';
+import { Gift, ExternalLink, CheckCircle2, Clock, Video, PlayCircle, Coins } from 'lucide-react';
 import { useAdsgram } from '../hooks/useAdsgram';
 
 const TelegramIcon = () => (
@@ -261,56 +261,63 @@ const Bonuses = ({ user, setBalance }: any) => {
       <h3 style={{ marginBottom: '16px', opacity: 0.8 }}>Реклама и задания</h3>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {/* Ad Bonus */}
+        {/* Ad Booster Task */}
         <div 
           className="glass-panel" 
           style={{ 
-            padding: '20px', 
+            padding: '24px', 
             display: 'flex', 
             alignItems: 'center', 
             gap: '16px',
-            border: '1px solid rgba(255, 0, 0, 0.2)'
+            background: 'linear-gradient(135deg, rgba(157, 80, 187, 0.15) 0%, rgba(110, 72, 170, 0.1) 100%)',
+            border: '1px solid rgba(157, 80, 187, 0.4)',
+            boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
           }}
         >
           <div style={{ 
-            width: '48px', 
-            height: '48px', 
-            borderRadius: '14px', 
-            background: 'linear-gradient(135deg, #FF0000, #CC0000)',
+            width: '56px', 
+            height: '56px', 
+            borderRadius: '18px', 
+            background: 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(255, 0, 0, 0.3)'
+            boxShadow: '0 6px 12px rgba(157, 80, 187, 0.3)'
           }}>
-            <Video size={24} color="white" />
+            <Video size={28} color="white" />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: '700', fontSize: '15px' }}>Смотреть рекламу</div>
-            <div style={{ color: 'var(--gold-color)', fontWeight: '800', fontSize: '14px' }}>
-              +50 coins
+            <div style={{ fontWeight: '800', fontSize: '16px', letterSpacing: '-0.2px' }}>Lucky Video</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+              <Coins size={14} color="var(--gold-color)" />
+              <span style={{ color: 'var(--gold-color)', fontWeight: '700', fontSize: '14px' }}>+50 coins</span>
             </div>
           </div>
           <button 
             className="btn-primary"
             disabled={cooldownTime > 0}
             style={{ 
-              padding: '8px 16px', 
-              fontSize: '13px', 
-              borderRadius: '12px',
-              minWidth: '90px',
-              opacity: cooldownTime > 0 ? 0.7 : 1,
-              background: cooldownTime > 0 ? 'rgba(255,255,255,0.05)' : ''
+              padding: '10px 20px', 
+              fontSize: '14px', 
+              borderRadius: '14px',
+              minWidth: '95px',
+              height: '44px',
+              background: cooldownTime > 0 ? 'rgba(255,255,255,0.05)' : '',
+              color: cooldownTime > 0 ? 'var(--text-secondary)' : '',
+              border: cooldownTime > 0 ? '1px solid rgba(255,255,255,0.1)' : 'none',
+              boxShadow: cooldownTime > 0 ? 'none' : '0 6px 12px rgba(157, 80, 187, 0.2)'
             }}
-            onClick={() => {
-                showAdsgram();
-                // Note: showAdsgram's onReward should handle the cooldown set
-            }}
+            onClick={() => showAdsgram()}
           >
             {cooldownTime > 0 ? (
-                <span>{Math.floor(cooldownTime / 60)}:{(cooldownTime % 60).toString().padStart(2, '0')}</span>
-            ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <PlayCircle size={14} /> Watch
+                  <Clock size={14} /> 
+                  <span>{Math.floor(cooldownTime / 60)}:{(cooldownTime % 60).toString().padStart(2, '0')}</span>
+                </div>
+            ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <PlayCircle size={16} /> 
+                  <span>Watch</span>
                 </div>
             )}
           </button>

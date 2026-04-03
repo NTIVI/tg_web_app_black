@@ -142,7 +142,7 @@ const DailyBonus = ({ userId, onClaim }: any) => {
           </div>
           <div>
             <h2 style={{ fontSize: '18px', margin: 0 }}>Бонус 2 раза в день</h2>
-            <p style={{ margin: 0, opacity: 0.6, fontSize: '12px' }}>Заходи каждые 12 часов</p>
+            <p style={{ margin: 0, opacity: 0.6, fontSize: '12px' }}>Заходи в 12:00 и 00:00 (UTC) и забирай монеты!</p>
           </div>
         </div>
         <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--primary-color)' }}>+250</div>

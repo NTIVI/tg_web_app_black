@@ -31,6 +31,7 @@ Render идеально подходит для Node.js приложений.
 ## 3. Adsgram Конфигурация
 В репозитории уже настроен новый Block ID: `26661`. 
 - **Callback URL:** `https://tg-web-app-black.onrender.com/api/adsgram-reward?user=[userId]` (нужно указать в Adsgram Panel).
+- **Compliance:** В приложении настроен принудительный интервал в **2 минуты** между показами рекламы для соответствия правилам модерации Adsgram.
 
 ---
 *Сделано с помощью Antigravity AI*

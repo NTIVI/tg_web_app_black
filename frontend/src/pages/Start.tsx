@@ -137,8 +137,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
 
   return (
     <div className="page" style={{ paddingBottom: '120px' }}>
-      <h1 style={{ textAlign: 'center', marginBottom: '4px' }}>Welcome Back!</h1>
-        Complete tasks and boost your balance to unlock exclusive items.
+      <h1 style={{ textAlign: 'center', marginBottom: '32px' }}>Welcome YourTurn</h1>
       
       <div className="balance-card">
         <div>
@@ -184,7 +183,8 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
                 <PlayCircle size={36} color="white" />
               </div>
               
-              <h2 style={{ marginBottom: '8px', fontSize: '22px', fontWeight: '800' }}>Lucky Booster</h2>
+              <h2 style={{ marginBottom: '8px', fontSize: '22px', fontWeight: '800' }}>Watch ADS</h2>
+
               <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '14px' }}>
                 Watch a quick spotlight video to claim <span style={{ color: 'var(--gold-color)', fontWeight: '700' }}>50 coins</span> instantly.
               </p>

@@ -7,6 +7,7 @@ import Profile from './pages/Profile';
 import Top from './pages/Top';
 import Bonuses from './pages/Bonuses';
 import Admin from './pages/Admin';
+import DailyBonusModal from './components/DailyBonusModal';
 import { API_URL } from './config';
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
   const [balance, setBalance] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showDailyModal, setShowDailyModal] = useState(false);
   const location = useLocation();
   const isInitialMount = useRef(true);
   
@@ -58,6 +60,11 @@ function App() {
       if (data.user) {
         setTgUser({ ...user, ...data.user });
         setBalance(data.user.balance);
+        
+        // Show daily bonus modal for home page if available
+        if (showLoading && location.pathname === '/') {
+            checkDailyBonus(data.user.telegram_id);
+        }
       } else {
         throw new Error("Invalid user data");
       }
@@ -67,6 +74,20 @@ function App() {
       if (showLoading) setLoading(false);
     }
   };
+
+  const checkDailyBonus = async (userId: string) => {
+      try {
+          const res = await fetch(`${API_URL}/bonus/daily/${userId}`);
+          const data = await res.json();
+          if (data.canClaim) {
+              setShowDailyModal(true);
+          }
+      } catch (e) { console.error(e); }
+  }
+
+  const handleClaimReward = (reward: number) => {
+      setBalance(prev => prev + reward);
+  }
 
   const props = { userId: tgUser?.telegram_id, balance, setBalance, tgUser };
 
@@ -81,16 +102,26 @@ function App() {
   );
 
   return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Start {...props} />} />
-        <Route path="shop" element={<Shop {...props} />} />
-        <Route path="top" element={<Top />} />
-        <Route path="bonuses" element={<Bonuses {...props} />} />
-        <Route path="profile" element={<Profile {...props} />} />
-        <Route path="admin" element={<Admin />} />
-      </Route>
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Start {...props} />} />
+          <Route path="shop" element={<Shop {...props} />} />
+          <Route path="top" element={<Top />} />
+          <Route path="bonuses" element={<Bonuses {...props} />} />
+          <Route path="profile" element={<Profile {...props} />} />
+          <Route path="admin" element={<Admin />} />
+        </Route>
+      </Routes>
+      
+      {showDailyModal && tgUser && (
+          <DailyBonusModal 
+            userId={tgUser.telegram_id} 
+            onClaim={handleClaimReward} 
+            onClose={() => setShowDailyModal(false)} 
+          />
+      )}
+    </>
   );
 }
 

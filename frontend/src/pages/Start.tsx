@@ -75,7 +75,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
     }
   }, [userId, setBalance]);
 
-  const showAdsgram = useAdsgram({
+  const { showAd: showAdsgram } = useAdsgram({
     blockId: adsgramBlockId,
     onReward: () => {
         setAdMessage('Ad finished! Claiming reward...');
@@ -138,9 +138,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
   return (
     <div className="page" style={{ paddingBottom: '120px' }}>
       <h1 style={{ textAlign: 'center', marginBottom: '4px' }}>Welcome Back!</h1>
-      <p style={{ textAlign: 'center', maxWidth: '300px', margin: '0 auto 32px auto' }}>
-        Complete daily tasks and boost your balance to unlock exclusive items.
-      </p>
+        Complete tasks and boost your balance to unlock exclusive items.
       
       <div className="balance-card">
         <div>

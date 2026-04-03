@@ -34,11 +34,6 @@ const initDB = () => {
                 console.error("Migration error (level):", err.message);
             }
         });
-        db.run(`ALTER TABLE users ADD COLUMN last_daily_claim DATETIME`, (err) => {
-            if (err && !err.message.includes("duplicate column name")) {
-                console.error("Migration error (last_daily_claim):", err.message);
-            }
-        });
         db.run(`ALTER TABLE users ADD COLUMN last_ad_watch DATETIME`, (err) => {
             if (err && !err.message.includes("duplicate column name")) {
                 console.error("Migration error (last_ad_watch):", err.message);

@@ -1,5 +1,5 @@
-import { Routes, Route, useLocation } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import Layout from './components/Layout';
 import Start from './pages/Start';
 import Shop from './pages/Shop';
@@ -14,8 +14,6 @@ function App() {
   const [balance, setBalance] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const location = useLocation();
-  const isInitialMount = useRef(true);
   
   useEffect(() => {
     const tg = (window as any).Telegram?.WebApp;
@@ -31,26 +29,38 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (isInitialMount.current) {
-        init(true);
-        isInitialMount.current = false;
-    } else {
-        init(false); // Background refresh on nav
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      if (tg.themeParams) {
+        Object.entries(tg.themeParams).forEach(([key, val]: [string, any]) => {
+          document.documentElement.style.setProperty(`--tg-${key.replace(/_/g, '-')}`, val);
+        });
+      }
     }
-  }, [location.pathname]);
+    
+    // Initial load: Auth once on mount
+    init(true);
+  }, []);
 
   const init = async (showLoading = true) => {
-    if (showLoading) setLoading(true);
-    setError(null);
     const tg = (window as any).Telegram?.WebApp;
     const user = tg?.initDataUnsafe?.user || { id: "12345", username: "MockUser", first_name: "Mock", last_name: "Account" };
     const initData = tg?.initData || "";
 
+    // Optimistically set user data from TG immediately if not already set
+    if (!tgUser) {
+        setTgUser(user);
+    }
+
+    if (showLoading && !tgUser) setLoading(true);
+    setError(null);
+
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 7000); // 7s timeout
 
     try {
-      console.log('Fetching from:', `${API_URL}/auth`);
       const res = await fetch(`${API_URL}/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -62,28 +72,36 @@ function App() {
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
       if (data.user) {
-        setTgUser({ ...user, ...data.user });
+        // Merge server data (balance, etc) with TG user data
+        setTgUser((prev: any) => ({ ...prev, ...data.user }));
         setBalance(data.user.balance);
-      } else {
-        throw new Error("Invalid user data");
       }
     } catch (e: any) {
       console.error('Init error:', e);
-      setError(e.name === 'AbortError' ? 'Сервер долго не отвечает. Проверьте интернет или попробуйте позже.' : e.message);
+      if (showLoading) {
+        setError(e.name === 'AbortError' ? 'Сервер долго не отвечает. Проверяйте интернет.' : e.message);
+      }
     } finally {
-      if (showLoading) setLoading(false);
+      setLoading(false);
     }
   };
 
-  const props = { userId: tgUser?.telegram_id, balance, setBalance, tgUser };
+  const props = { userId: tgUser?.telegram_id || tgUser?.id, balance, setBalance, tgUser };
 
-  if (loading || !tgUser) return (
+  // Only show error or blocking loader if we have NO user data at all (not even from initDataUnsafe)
+  if (loading && !tgUser) return (
     <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px', textAlign: 'center' }}>
-      {error ? (
-        <><h2>Ошибка входа</h2><p>{error}</p><button className="btn-primary" onClick={() => init(true)}>Попробовать снова</button></>
-      ) : (
-        <><div className="spinner"></div><h2 style={{ color: 'var(--primary-color)' }}>Вход...</h2><p>Авторизация через Telegram</p></>
-      )}
+      <div className="spinner"></div>
+      <h2 style={{ color: 'var(--primary-color)' }}>Вход...</h2>
+      <p>Загрузка данных</p>
+    </div>
+  );
+
+  if (error && !tgUser) return (
+    <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px', textAlign: 'center' }}>
+      <h2>Ошибка входа</h2>
+      <p>{error}</p>
+      <button className="btn-primary" onClick={() => init(true)}>Попробовать снова</button>
     </div>
   );
 

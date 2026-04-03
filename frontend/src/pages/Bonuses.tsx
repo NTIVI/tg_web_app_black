@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
 import { Gift, ExternalLink, CheckCircle2, Clock, Video, PlayCircle, Coins } from 'lucide-react';
 import { useAdsgram } from '../hooks/useAdsgram';
@@ -42,134 +42,6 @@ const BONUS_LIST = [
   { id: 'instagram', title: 'Follow on Instagram', reward: 750, icon: <InstagramIcon />, url: 'https://instagram.com/your_account' },
   { id: 'youtube', title: 'Subscribe to YouTube', reward: 1000, icon: <YoutubeIcon />, url: 'https://youtube.com/@your_channel' },
 ];
-
-const DailyBonus = ({ userId, onClaim }: any) => {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [countdown, setCountdown] = useState<string>('');
-
-  const fetchStatus = useCallback(async () => {
-    if (!userId) return;
-    try {
-      const res = await fetch(`${API_URL}/bonus/daily/${userId}`);
-      setData(await res.json());
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  }, [userId]);
-
-  useEffect(() => { 
-    fetchStatus(); 
-  }, [fetchStatus]);
-
-  useEffect(() => {
-    if (data?.timeLeft > 0) {
-      let remaining = data.timeLeft;
-      const interval = setInterval(() => {
-        remaining -= 1000;
-        if (remaining <= 0) {
-          clearInterval(interval);
-          setData((prev: any) => ({ ...prev, canClaim: true, timeLeft: 0 }));
-        } else {
-          const h = Math.floor(remaining / 3600000);
-          const m = Math.floor((remaining % 3600000) / 60000);
-          const s = Math.floor((remaining % 60000) / 1000);
-          setCountdown(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
-        }
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [data]);
-
-  const handleClaim = async () => {
-    if (!data?.canClaim || loading) return;
-    setLoading(true);
-    
-    // Add a notification or state for error if needed, but for now we'll just handle finally
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
-    try {
-      const res = await fetch(`${API_URL}/bonus/daily/claim`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegramId: userId }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
-      
-      const resData = await res.json();
-      if (resData.success) {
-        onClaim(resData.reward);
-        setData({ 
-          canClaim: resData.canClaim, 
-          timeLeft: resData.timeLeft 
-        });
-      } else {
-        await fetchStatus();
-      }
-    } catch (e: any) { 
-      console.error('Claim failed:', e);
-      alert(e.name === 'AbortError' ? 'Сервер долго не отвечает. Попробуй еще раз через минуту.' : `Ошибка: ${e.message}`);
-      await fetchStatus();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="glass-panel" style={{ 
-      padding: '20px', 
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '12px',
-      marginBottom: '24px'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ 
-            width: '40px', 
-            height: '40px', 
-            borderRadius: '12px', 
-            background: 'rgba(255, 255, 255, 0.05)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
-          }}>
-            <Gift size={24} color="var(--primary-color)" />
-          </div>
-          <div>
-            <h2 style={{ fontSize: '18px', margin: 0 }}>Бонус 2 раза в день</h2>
-            <p style={{ margin: 0, opacity: 0.6, fontSize: '12px' }}>Заходи в 12:00 и 00:00 (UTC) и забирай монеты!</p>
-          </div>
-        </div>
-        <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--primary-color)' }}>+250</div>
-      </div>
-
-      <button 
-        className="btn-primary" 
-        disabled={!data?.canClaim || loading} 
-        onClick={handleClaim}
-        style={{ 
-            height: '48px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            fontSize: '15px'
-        }}
-      >
-        {loading ? <div className="spinner" style={{ width: '20px', height: '20px' }}></div> : 
-         data?.canClaim ? 'Получить бонус' : (
-           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', opacity: 0.8 }}>
-             <Clock size={16} /> Доступно через {countdown}
-           </div>
-         )}
-      </button>
-    </div>
-  );
-};
 
 const Bonuses = ({ user, setBalance }: any) => {
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
@@ -246,7 +118,6 @@ const Bonuses = ({ user, setBalance }: any) => {
     },
     onError: (err) => {
         console.error('Adsgram error:', err);
-        // Reset loading state if error occurs
     }
   });
 
@@ -277,10 +148,6 @@ const Bonuses = ({ user, setBalance }: any) => {
     }, 2000);
   };
 
-  const handleDailyClaim = (reward: number) => {
-    setBalance((prev: number) => prev + reward);
-  };
-
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -294,9 +161,8 @@ const Bonuses = ({ user, setBalance }: any) => {
         <h1>Бонусы</h1>
       </div>
       
-      <DailyBonus userId={user?.telegram_id} onClaim={handleDailyClaim} />
-
       <h3 style={{ marginBottom: '16px', opacity: 0.8 }}>Реклама и задания</h3>
+
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {/* Ad Booster Task */}

@@ -28,6 +28,7 @@ const AdBanner = () => {
   return (
     <div style={{ width: '100%', textAlign: 'center', padding: '10px 0', background: 'var(--surface-color)' }}>
       {/* Adsgram Task Banner */}
+      {/* @ts-ignore */}
       <adsgram-task
         data-block-id={bannerId}
         style={{ display: 'inline-block' }}
@@ -36,6 +37,7 @@ const AdBanner = () => {
         <div slot="button">Go</div>
         <div slot="claim">Claim</div>
         <div slot="done">Done</div>
+      {/* @ts-ignore */}
       </adsgram-task>
     </div>
   );

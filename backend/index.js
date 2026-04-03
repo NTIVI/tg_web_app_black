@@ -33,12 +33,25 @@ const verifyInitData = (initData) => {
 
 const bot = token ? new TelegramBot(token, { polling: { interval: 300, autoStart: true } }) : null;
 if (bot) {
+    console.log('Bot initialized successfully');
+    bot.on('message', (msg) => {
+        console.log('Received message:', msg.text, 'from', msg.from?.username);
+    });
     bot.onText(/\/start/, (msg) => {
+        console.log('Start command received from:', msg.from?.username);
         bot.sendMessage(msg.chat.id, 'Welcome to YourTurn! 🎮', {
             reply_markup: { inline_keyboard: [[{ text: 'Open App', web_app: { url: process.env.WEB_APP_URL || '' } }]] }
-        });
+        }).then(() => console.log('Start message sent')).catch(err => console.error('Error sending start message:', err));
     });
+    bot.on('polling_error', (error) => {
+        console.error('Polling error:', error.code, error.message);
+    });
+} else {
+    console.warn('Bot token not provided, bot disabled');
 }
+
+// Health check
+app.get('/api/health', (req, res) => res.json({ status: 'ok', botInitialized: !!bot, time: new Date() }));
 
 // API Routes
 app.post('/api/auth', async (req, res) => {
@@ -48,6 +61,7 @@ app.post('/api/auth', async (req, res) => {
     const tid = tgUser.id.toString();
 
     try {
+        console.log('Authenticating user:', tid);
         await DB.run(`
             INSERT INTO users (telegram_id, username, first_name, last_name, photo_url, last_seen)
             VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
@@ -60,8 +74,9 @@ app.post('/api/auth', async (req, res) => {
         `, [tid, tgUser.username || '', tgUser.first_name || '', tgUser.last_name || '', tgUser.photo_url || '']);
 
         const user = await DB.get('SELECT * FROM users WHERE telegram_id = ?', [tid]);
+        console.log('User authenticated:', user?.username);
         res.json({ user });
-    } catch (err) { console.error(err); res.status(500).json({ error: 'DB error' }); }
+    } catch (err) { console.error('Auth error:', err); res.status(500).json({ error: 'DB error' }); }
 });
 
 app.post('/api/watch-ad', async (req, res) => {

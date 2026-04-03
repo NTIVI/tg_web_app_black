@@ -47,6 +47,7 @@ function App() {
     const initData = tg?.initData || "";
 
     try {
+      console.log('Fetching from:', `${API_URL}/auth`);
       const res = await fetch(`${API_URL}/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

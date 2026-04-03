@@ -157,13 +157,38 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
         ) : (
           <div>
             <PlayCircle size={64} color="var(--primary-color)" style={{ marginBottom: '16px' }} />
-            <h2 style={{ marginBottom: '24px' }}>Ready to earn?</h2>
-            {adMessage && <p style={{ color: 'var(--success-color)', marginBottom: '16px' }}>{adMessage}</p>}
+            <h2 style={{ marginBottom: '8px', fontSize: '24px', fontWeight: '800' }}>Ready to earn?</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Watch a short video to get 50 coins instantly.</p>
+            {adMessage && (
+              <div style={{ 
+                background: 'rgba(0, 242, 254, 0.1)', 
+                padding: '12px', 
+                borderRadius: '12px', 
+                marginBottom: '20px',
+                color: adMessage.includes('error') || adMessage.includes('skipped') ? '#ff4b4b' : 'var(--success-color)',
+                fontSize: '14px',
+                fontWeight: '600',
+                border: '1px solid rgba(0, 242, 254, 0.2)'
+              }}>
+                {adMessage}
+              </div>
+            )}
             <button 
               className="btn-primary" 
-              style={{ width: '100%', padding: '16px' }} 
+              style={{ 
+                width: '100%', 
+                height: '56px',
+                fontSize: '18px',
+                fontWeight: '800',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+                boxShadow: '0 8px 20px rgba(0, 242, 254, 0.3)'
+              }} 
               onClick={handleWatchAd}
             >
+              <PlayCircle size={24} />
               Watch Ad
             </button>
           </div>

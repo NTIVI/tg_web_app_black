@@ -65,11 +65,16 @@ app.post('/api/auth', async (req, res) => {
 });
 
 app.post('/api/watch-ad', async (req, res) => {
+    const { telegramId } = req.body;
+    if (!telegramId) return res.status(400).json({ error: 'Missing telegramId' });
     try {
-        await DB.run('UPDATE users SET balance = balance + 50 WHERE telegram_id = ?', [req.body.telegramId]);
-        const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [req.body.telegramId]);
+        await DB.run('UPDATE users SET balance = balance + 50 WHERE telegram_id = ?', [telegramId]);
+        const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
         res.json({ success: !!user, newBalance: user?.balance });
-    } catch { res.status(500).json({ error: 'Error' }); }
+    } catch (err) { 
+        console.error('Watch ad error:', err);
+        res.status(500).json({ error: 'Error' }); 
+    }
 });
 
 // Adsgram Server-to-Server reward callback

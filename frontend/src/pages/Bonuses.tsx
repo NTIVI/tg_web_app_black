@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { API_URL } from '../config';
-import { Gift, ExternalLink, CheckCircle2, Clock, Video, TikTokIcon as TikTokIconLucide } from 'lucide-react';
+import { Gift, ExternalLink, CheckCircle2, Clock, Video, PlayCircle } from 'lucide-react';
 import { useAdsgram } from '../hooks/useAdsgram';
 
 const TelegramIcon = () => (
@@ -228,13 +228,12 @@ const Bonuses = ({ user, setBalance }: any) => {
         {/* Ad Bonus */}
         <div 
           className="glass-panel" 
-          onClick={showAdsgram} 
           style={{ 
-            cursor: 'pointer', 
             padding: '20px', 
             display: 'flex', 
             alignItems: 'center', 
-            gap: '16px' 
+            gap: '16px',
+            border: '1px solid rgba(255, 0, 0, 0.2)'
           }}
         >
           <div style={{ 
@@ -244,7 +243,8 @@ const Bonuses = ({ user, setBalance }: any) => {
             background: 'linear-gradient(135deg, #FF0000, #CC0000)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(255, 0, 0, 0.3)'
           }}>
             <Video size={24} color="white" />
           </div>
@@ -254,9 +254,20 @@ const Bonuses = ({ user, setBalance }: any) => {
               +50 coins
             </div>
           </div>
-          <div style={{ opacity: 0.5 }}>
-            <ExternalLink size={14} />
-          </div>
+          <button 
+            className="btn-primary"
+            style={{ 
+              padding: '8px 16px', 
+              fontSize: '13px', 
+              borderRadius: '12px',
+              minWidth: '90px'
+            }}
+            onClick={showAdsgram}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <PlayCircle size={14} /> Watch
+            </div>
+          </button>
         </div>
 
         {BONUS_LIST.map((bonus) => (

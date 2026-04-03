@@ -48,13 +48,19 @@ function App() {
     const user = tg?.initDataUnsafe?.user || { id: "12345", username: "MockUser", first_name: "Mock", last_name: "Account" };
     const initData = tg?.initData || "";
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
     try {
       console.log('Fetching from:', `${API_URL}/auth`);
       const res = await fetch(`${API_URL}/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData, initDataUnsafe: { user } })
+        body: JSON.stringify({ initData, initDataUnsafe: { user } }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
+
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
       if (data.user) {
@@ -69,20 +75,25 @@ function App() {
         throw new Error("Invalid user data");
       }
     } catch (e: any) {
-      setError(e.message || "Unknown error");
+      console.error('Init error:', e);
+      setError(e.name === 'AbortError' ? 'Сервер долго не отвечает. Проверьте интернет или попробуйте позже.' : e.message);
     } finally {
       if (showLoading) setLoading(false);
     }
   };
 
   const checkDailyBonus = async (userId: string) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout for background check
+
       try {
-          const res = await fetch(`${API_URL}/bonus/daily/${userId}`);
+          const res = await fetch(`${API_URL}/bonus/daily/${userId}`, { signal: controller.signal });
+          clearTimeout(timeoutId);
           const data = await res.json();
           if (data.canClaim) {
               setShowDailyModal(true);
           }
-      } catch (e) { console.error(e); }
+      } catch (e) { console.error('Bonus check error:', e); }
   }
 
   const handleClaimReward = (reward: number) => {

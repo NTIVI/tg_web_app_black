@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { API_URL } from '../config';
-import { Gift, ExternalLink, CheckCircle2, Clock, Video, PlayCircle, Coins, Sparkles } from 'lucide-react';
+import { Gift, ExternalLink, CheckCircle2, Clock, Video, PlayCircle, Coins } from 'lucide-react';
 import { useAdsgram } from '../hooks/useAdsgram';
 
 const TelegramIcon = () => (
@@ -83,14 +83,22 @@ const DailyBonus = ({ userId, onClaim }: any) => {
   const handleClaim = async () => {
     if (!data?.canClaim || loading) return;
     setLoading(true);
-    setData((prev: any) => ({ ...prev, canClaim: false }));
     
+    // Add a notification or state for error if needed, but for now we'll just handle finally
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
     try {
       const res = await fetch(`${API_URL}/bonus/daily/claim`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegramId: userId })
+        body: JSON.stringify({ telegramId: userId }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      
       const resData = await res.json();
       if (resData.success) {
         onClaim(resData.reward);
@@ -99,13 +107,15 @@ const DailyBonus = ({ userId, onClaim }: any) => {
           timeLeft: resData.timeLeft 
         });
       } else {
-        fetchStatus();
+        await fetchStatus();
       }
-    } catch (e) { 
-      console.error(e);
-      fetchStatus();
+    } catch (e: any) { 
+      console.error('Claim failed:', e);
+      alert(e.name === 'AbortError' ? 'Сервер долго не отвечает. Попробуй еще раз через минуту.' : `Ошибка: ${e.message}`);
+      await fetchStatus();
+    } finally {
+      setLoading(false);
     }
-    finally { setLoading(false); }
   };
 
   return (

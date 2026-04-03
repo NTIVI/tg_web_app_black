@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Gift, X, Sparkles, Coins, Clock } from 'lucide-react';
+import { Gift, X, Sparkles, Coins } from 'lucide-react';
 import { API_URL } from '../config';
 
 interface DailyBonusModalProps {
@@ -38,19 +38,29 @@ const DailyBonusModal = ({ userId, onClaim, onClose }: DailyBonusModalProps) => 
   const handleClaim = async () => {
     if (!data?.canClaim || claiming) return;
     setClaiming(true);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
     try {
       const res = await fetch(`${API_URL}/bonus/daily/claim`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegramId: userId })
+        body: JSON.stringify({ telegramId: userId }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
       const resData = await res.json();
       if (resData.success) {
         onClaim(resData.reward);
         onClose();
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error('Modal claim failed:', e);
+      alert(e.name === 'AbortError' ? 'Сервер спит. Попробуй нажать кнопку еще раз через пару секунд.' : `Ошибка: ${e.message}`);
     } finally {
       setClaiming(false);
     }

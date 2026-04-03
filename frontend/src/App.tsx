@@ -7,6 +7,7 @@ import Profile from './pages/Profile';
 import Top from './pages/Top';
 import Bonuses from './pages/Bonuses';
 import Admin from './pages/Admin';
+import DailyBonusModal from './components/DailyBonusModal';
 import { API_URL } from './config';
 
 function App() {
@@ -14,6 +15,9 @@ function App() {
   const [balance, setBalance] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showDailyModal, setShowDailyModal] = useState(false);
+  const [dailyStatus, setDailyStatus] = useState<any>(null);
+  const [claimingDaily, setClaimingDaily] = useState(false);
   
   useEffect(() => {
     const tg = (window as any).Telegram?.WebApp;
@@ -75,6 +79,9 @@ function App() {
         // Merge server data (balance, etc) with TG user data
         setTgUser((prev: any) => ({ ...prev, ...data.user }));
         setBalance(data.user.balance);
+        
+        // After successful auth, check daily bonus
+        checkDailyBonus(user.id);
       }
     } catch (e: any) {
       console.error('Init error:', e);
@@ -83,6 +90,40 @@ function App() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkDailyBonus = async (userId: string) => {
+    try {
+      const res = await fetch(`${API_URL}/bonus/daily-status/${userId}`);
+      const data = await res.json();
+      if (data.canClaim) {
+        setDailyStatus(data);
+        setShowDailyModal(true);
+      }
+    } catch (e) {
+      console.error('Check daily error:', e);
+    }
+  };
+
+  const handleClaimDaily = async () => {
+    if (!tgUser) return;
+    setClaimingDaily(true);
+    try {
+      const res = await fetch(`${API_URL}/bonus/daily-claim`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegramId: tgUser.telegram_id || tgUser.id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBalance((prev: number) => prev + data.reward);
+        setShowDailyModal(false);
+      }
+    } catch (e) {
+      console.error('Claim daily error:', e);
+    } finally {
+      setClaimingDaily(false);
     }
   };
 
@@ -117,6 +158,15 @@ function App() {
           <Route path="admin" element={<Admin />} />
         </Route>
       </Routes>
+      
+      <DailyBonusModal 
+        isOpen={showDailyModal}
+        onClaim={handleClaimDaily}
+
+        streak={dailyStatus?.currentStreak || 0}
+        reward={dailyStatus?.nextReward || 0}
+        loading={claimingDaily}
+      />
     </>
   );
 }

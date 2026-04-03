@@ -273,3 +273,12 @@ p {
   background: rgba(157, 80, 187, 0.2);
   border-radius: 10px;
 }
+
+.modal-overlay {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

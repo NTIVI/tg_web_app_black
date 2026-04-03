@@ -110,56 +110,32 @@ const DailyBonus = ({ userId, onClaim }: any) => {
 
   return (
     <div className="glass-panel" style={{ 
-      padding: '24px', 
-      background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 165, 0, 0.1) 100%)',
-      border: '2px solid rgba(255, 215, 0, 0.4)',
-      boxShadow: '0 8px 32px rgba(255, 165, 0, 0.15)',
+      padding: '20px', 
       display: 'flex',
       flexDirection: 'column',
-      gap: '16px',
-      marginBottom: '24px',
-      position: 'relative',
-      overflow: 'hidden'
+      gap: '12px',
+      marginBottom: '24px'
     }}>
-      {/* Decorative sparkle background element */}
-      <div style={{ position: 'absolute', top: '-20px', right: '-20px', opacity: 0.2 }}>
-        <Sparkles size={100} color="#FFD700" />
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ 
-            width: '56px', 
-            height: '56px', 
-            borderRadius: '18px', 
-            background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+            width: '40px', 
+            height: '40px', 
+            borderRadius: '12px', 
+            background: 'rgba(255, 255, 255, 0.05)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 6px 12px rgba(255, 165, 0, 0.3)'
+            border: '1px solid rgba(255, 255, 255, 0.1)'
           }}>
-            <Gift size={32} color="white" />
+            <Gift size={24} color="var(--primary-color)" />
           </div>
           <div>
-            <h2 style={{ fontSize: '20px', marginBottom: '4px', fontWeight: '900' }}>Ежедневный Бонус</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.8 }}>
-              <Sparkles size={14} color="#FFD700" />
-              <span style={{ fontSize: '13px' }}>Доступно каждые 12 часов</span>
-            </div>
+            <h2 style={{ fontSize: '18px', margin: 0 }}>Бонус 2 раза в день</h2>
+            <p style={{ margin: 0, opacity: 0.6, fontSize: '12px' }}>Заходи каждые 12 часов</p>
           </div>
         </div>
-        <div style={{ 
-          background: 'rgba(255, 215, 0, 0.15)', 
-          padding: '8px 16px', 
-          borderRadius: '12px',
-          border: '1px solid rgba(255, 215, 0, 0.3)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <Coins size={18} color="#FFD700" />
-          <span style={{ fontSize: '20px', fontWeight: '900', color: '#FFD700' }}>+250</span>
-        </div>
+        <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--primary-color)' }}>+250</div>
       </div>
 
       <button 
@@ -167,23 +143,17 @@ const DailyBonus = ({ userId, onClaim }: any) => {
         disabled={!data?.canClaim || loading} 
         onClick={handleClaim}
         style={{ 
-            height: '52px', 
+            height: '48px', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
-            background: data?.canClaim ? 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)' : 'rgba(255,255,255,0.05)',
-            border: 'none',
-            color: data?.canClaim ? 'black' : 'var(--text-secondary)',
-            fontWeight: '800',
-            fontSize: '16px',
-            boxShadow: data?.canClaim ? '0 6px 15px rgba(255, 165, 0, 0.3)' : 'none',
-            transition: 'all 0.3s ease'
+            fontSize: '15px'
         }}
       >
-        {loading ? <div className="spinner" style={{ width: '20px', height: '20px', borderTopColor: data?.canClaim ? 'black' : 'white' }}></div> : 
-         data?.canClaim ? 'Получить бонус прямо сейчас' : (
-           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-             <Clock size={18} /> Доступно через {countdown}
+        {loading ? <div className="spinner" style={{ width: '20px', height: '20px' }}></div> : 
+         data?.canClaim ? 'Получить бонус' : (
+           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', opacity: 0.8 }}>
+             <Clock size={16} /> Доступно через {countdown}
            </div>
          )}
       </button>

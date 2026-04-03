@@ -13,7 +13,7 @@ const AdBanner = () => {
         if (data.settings) {
           if (data.settings.ads_enabled === 'true') {
             setAdsEnabled(true);
-            setBannerId(data.settings.adsgram_banner_id || 'task-26664');
+            setBannerId(data.settings.adsgram_banner_id || '');
           }
         }
       } catch (err) {

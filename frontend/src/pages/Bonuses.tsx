@@ -199,7 +199,7 @@ const Bonuses = ({ user, setBalance }: any) => {
       .catch(err => console.error("Could not load ads config", err));
   }, []);
 
-  const showAdsgram = useAdsgram({
+  const { showAd, isReady, isLoading: adLoading } = useAdsgram({
     blockId: adsgramBlockId,
     onReward: () => {
         const reward = 50;
@@ -215,7 +215,10 @@ const Bonuses = ({ user, setBalance }: any) => {
             }
         });
     },
-    onError: (err) => console.error('Adsgram error:', err)
+    onError: (err) => {
+        console.error('Adsgram error:', err);
+        // Reset loading state if error occurs
+    }
   });
 
   const handleClaim = async (bonus: any) => {
@@ -249,11 +252,17 @@ const Bonuses = ({ user, setBalance }: any) => {
     setBalance((prev: number) => prev + reward);
   };
 
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
   return (
     <div className="page" style={{ paddingBottom: '100px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
         <Gift size={32} color="var(--primary-color)" />
-        <h1>Bonuses</h1>
+        <h1>Бонусы</h1>
       </div>
       
       <DailyBonus userId={user?.telegram_id} onClaim={handleDailyClaim} />
@@ -287,37 +296,44 @@ const Bonuses = ({ user, setBalance }: any) => {
             <Video size={28} color="white" />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: '800', fontSize: '16px', letterSpacing: '-0.2px' }}>Lucky Video</div>
+            <div style={{ fontWeight: '800', fontSize: '16px', letterSpacing: '-0.2px' }}>Удачное Видео</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
               <Coins size={14} color="var(--gold-color)" />
-              <span style={{ color: 'var(--gold-color)', fontWeight: '700', fontSize: '14px' }}>+50 coins</span>
+              <span style={{ color: 'var(--gold-color)', fontWeight: '700', fontSize: '14px' }}>+50 монет</span>
             </div>
           </div>
           <button 
             className="btn-primary"
-            disabled={cooldownTime > 0}
+            disabled={cooldownTime > 0 || !isReady || adLoading}
             style={{ 
               padding: '10px 20px', 
               fontSize: '14px', 
               borderRadius: '14px',
-              minWidth: '95px',
+              minWidth: '110px',
               height: '44px',
-              background: cooldownTime > 0 ? 'rgba(255,255,255,0.05)' : '',
-              color: cooldownTime > 0 ? 'var(--text-secondary)' : '',
-              border: cooldownTime > 0 ? '1px solid rgba(255,255,255,0.1)' : 'none',
-              boxShadow: cooldownTime > 0 ? 'none' : '0 6px 12px rgba(157, 80, 187, 0.2)'
+              background: (cooldownTime > 0 || !isReady || adLoading) ? 'rgba(255,255,255,0.05)' : '',
+              color: (cooldownTime > 0 || !isReady || adLoading) ? 'var(--text-secondary)' : '',
+              border: (cooldownTime > 0 || !isReady || adLoading) ? '1px solid rgba(255,255,255,0.1)' : 'none',
+              boxShadow: (cooldownTime > 0 || !isReady || adLoading) ? 'none' : '0 6px 12px rgba(157, 80, 187, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
-            onClick={() => showAdsgram()}
+            onClick={() => showAd()}
           >
-            {cooldownTime > 0 ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Clock size={14} /> 
-                  <span>{Math.floor(cooldownTime / 60)}:{(cooldownTime % 60).toString().padStart(2, '0')}</span>
+            {adLoading ? (
+                <div className="spinner" style={{ width: '18px', height: '18px', borderTopColor: 'white' }}></div>
+            ) : cooldownTime > 0 ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Clock size={16} /> 
+                  <span>{formatTime(cooldownTime)}</span>
                 </div>
+            ) : !isReady ? (
+                <span>Загрузка...</span>
             ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <PlayCircle size={16} /> 
-                  <span>Watch</span>
+                  <PlayCircle size={18} /> 
+                  <span>Смотреть</span>
                 </div>
             )}
           </button>

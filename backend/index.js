@@ -68,9 +68,16 @@ app.post('/api/watch-ad', async (req, res) => {
     const { telegramId } = req.body;
     if (!telegramId) return res.status(400).json({ error: 'Missing telegramId' });
     try {
-        await DB.run('UPDATE users SET balance = balance + 50 WHERE telegram_id = ?', [telegramId]);
-        const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-        res.json({ success: !!user, newBalance: user?.balance });
+        const user = await DB.get('SELECT last_ad_watch FROM users WHERE telegram_id = ?', [telegramId]);
+        if (user?.last_ad_watch) {
+            const lastWatch = new Date(user.last_ad_watch + 'Z');
+            const diff = (new Date() - lastWatch) / 1000;
+            if (diff < 120) return res.status(429).json({ error: 'Cooldown active', timeLeft: 120 - diff });
+        }
+
+        await DB.run('UPDATE users SET balance = balance + 50, last_ad_watch = CURRENT_TIMESTAMP WHERE telegram_id = ?', [telegramId]);
+        const updatedUser = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+        res.json({ success: !!updatedUser, newBalance: updatedUser?.balance });
     } catch (err) { 
         console.error('Watch ad error:', err);
         res.status(500).json({ error: 'Error' }); 
@@ -83,8 +90,14 @@ app.get('/api/adsgram-reward', async (req, res) => {
     if (!user) return res.status(400).send('Missing user');
     
     try {
-        // Standard reward is 50
-        await DB.run('UPDATE users SET balance = balance + 50 WHERE telegram_id = ?', [user]);
+        const userData = await DB.get('SELECT last_ad_watch FROM users WHERE telegram_id = ?', [user]);
+        if (userData?.last_ad_watch) {
+            const lastWatch = new Date(userData.last_ad_watch + 'Z');
+            const diff = (new Date() - lastWatch) / 1000;
+            if (diff < 110) return res.status(429).send('Cooldown'); // Slightly shorter for S2S to allow for network delay
+        }
+
+        await DB.run('UPDATE users SET balance = balance + 50, last_ad_watch = CURRENT_TIMESTAMP WHERE telegram_id = ?', [user]);
         console.log(`Rewarded user ${user} via Adsgram s2s`);
         res.send('OK');
     } catch (err) {

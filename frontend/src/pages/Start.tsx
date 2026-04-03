@@ -17,6 +17,30 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
   const [rewardedAdProvider, setRewardedAdProvider] = useState('adsgram');
   const [showDemoAd, setShowDemoAd] = useState(false);
   const [demoAdTime, setDemoAdTime] = useState(3);
+  const [cooldownTime, setCooldownTime] = useState(0);
+
+  useEffect(() => {
+    const lastWatch = localStorage.getItem('last_ad_watch');
+    if (lastWatch) {
+      const diff = 120 - Math.floor((Date.now() - parseInt(lastWatch)) / 1000);
+      if (diff > 0) setCooldownTime(diff);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (cooldownTime > 0) {
+      const timer = setInterval(() => {
+        setCooldownTime(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [cooldownTime]);
 
   useEffect(() => {
     fetch(`${API_URL}/settings/ads`)
@@ -175,6 +199,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
             )}
             <button 
               className="btn-primary" 
+              disabled={cooldownTime > 0}
               style={{ 
                 width: '100%', 
                 height: '56px',
@@ -184,12 +209,23 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '12px',
-                boxShadow: '0 8px 20px rgba(0, 242, 254, 0.3)'
+                boxShadow: cooldownTime > 0 ? 'none' : '0 8px 20px rgba(0, 242, 254, 0.3)',
+                background: cooldownTime > 0 ? 'rgba(255,255,255,0.05)' : '',
+                opacity: cooldownTime > 0 ? 0.7 : 1,
+                color: cooldownTime > 0 ? 'var(--text-secondary)' : ''
               }} 
               onClick={handleWatchAd}
             >
-              <PlayCircle size={24} />
-              Watch Ad
+              {cooldownTime > 0 ? (
+                <>
+                   Available in {Math.floor(cooldownTime / 60)}:{(cooldownTime % 60).toString().padStart(2, '0')}
+                </>
+              ) : (
+                <>
+                  <PlayCircle size={24} />
+                  Watch Ad
+                </>
+              )}
             </button>
           </div>
         )}

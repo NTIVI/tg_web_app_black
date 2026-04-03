@@ -146,6 +146,40 @@ const Bonuses = ({ user, setBalance }: any) => {
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [adsgramBlockId, setAdsgramBlockId] = useState('');
+  const [cooldownTime, setCooldownTime] = useState(0);
+
+  useEffect(() => {
+    const lastWatch = localStorage.getItem('last_ad_watch');
+    if (lastWatch) {
+      const diff = 120 - Math.floor((Date.now() - parseInt(lastWatch)) / 1000);
+      if (diff > 0) setCooldownTime(diff);
+    }
+    
+    const handleStorage = () => {
+      const lastWatch = localStorage.getItem('last_ad_watch');
+      if (lastWatch) {
+        const diff = 120 - Math.floor((Date.now() - parseInt(lastWatch)) / 1000);
+        if (diff > 0) setCooldownTime(diff);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  useEffect(() => {
+    if (cooldownTime > 0) {
+      const timer = setInterval(() => {
+        setCooldownTime(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [cooldownTime]);
 
   useEffect(() => {
     if (user?.telegram_id) {
@@ -169,6 +203,8 @@ const Bonuses = ({ user, setBalance }: any) => {
     blockId: adsgramBlockId,
     onReward: () => {
         const reward = 50;
+        localStorage.setItem('last_ad_watch', Date.now().toString());
+        setCooldownTime(120);
         fetch(`${API_URL}/watch-ad`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -256,17 +292,27 @@ const Bonuses = ({ user, setBalance }: any) => {
           </div>
           <button 
             className="btn-primary"
+            disabled={cooldownTime > 0}
             style={{ 
               padding: '8px 16px', 
               fontSize: '13px', 
               borderRadius: '12px',
-              minWidth: '90px'
+              minWidth: '90px',
+              opacity: cooldownTime > 0 ? 0.7 : 1,
+              background: cooldownTime > 0 ? 'rgba(255,255,255,0.05)' : ''
             }}
-            onClick={showAdsgram}
+            onClick={() => {
+                showAdsgram();
+                // Note: showAdsgram's onReward should handle the cooldown set
+            }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <PlayCircle size={14} /> Watch
-            </div>
+            {cooldownTime > 0 ? (
+                <span>{Math.floor(cooldownTime / 60)}:{(cooldownTime % 60).toString().padStart(2, '0')}</span>
+            ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <PlayCircle size={14} /> Watch
+                </div>
+            )}
           </button>
         </div>
 

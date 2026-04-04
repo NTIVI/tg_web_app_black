@@ -165,7 +165,7 @@ const Bonuses = ({ user, setBalance, dailyStatus, handleClaimDaily, claimingDail
               left: 0,
               top: 0,
               height: '100%',
-              width: `${(Math.max(0, streak - 1) / 6) * 100}%`,
+              width: `${(streak / 7) * 100}%`,
               background: 'linear-gradient(90deg, var(--primary-color), var(--secondary-color))',
               borderRadius: '3px',
               transition: 'width 0.5s ease-out',

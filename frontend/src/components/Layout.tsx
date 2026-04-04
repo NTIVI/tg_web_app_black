@@ -1,14 +1,11 @@
 import { Outlet, NavLink } from 'react-router-dom';
 import { Play, ShoppingBag, User, Trophy, Gift } from 'lucide-react';
-import AdBanner from './AdBanner';
-
 const Layout = () => {
   return (
     <div className="app-container">
       <div style={{ flex: 1, overflowY: 'auto' }}>
         <Outlet />
       </div>
-      <AdBanner />
       
       <nav className="bottom-nav">
         <NavLink 

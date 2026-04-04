@@ -28,7 +28,9 @@ async function updateBot() {
                 web_app: { url: webAppUrl }
             }
         });
-        console.log('✅ Menu Button updated successfully!');
+        console.log('✅ Menu Button update command sent.');
+        const currentMenu = await bot.getChatMenuButton();
+        console.log('Current Menu Status:', JSON.stringify(currentMenu, null, 2));
 
         // Optional: Send a test message to the developer (if chatId was known)
         // For now, we just update the global settings.

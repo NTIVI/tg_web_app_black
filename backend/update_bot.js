@@ -24,7 +24,7 @@ async function updateBot() {
         await bot.setChatMenuButton({
             menu_button: {
                 type: 'web_app',
-                text: 'YourTurn 🎮',
+                text: 'YourTurn',
                 web_app: { url: webAppUrl }
             }
         });

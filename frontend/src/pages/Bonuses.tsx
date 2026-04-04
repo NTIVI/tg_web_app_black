@@ -70,7 +70,7 @@ const Bonuses = ({ user, setBalance, dailyStatus, handleClaimDaily, claimingDail
   }, [user, setBalance]);
 
   const { showAd, isLoading: isAdLoading } = useAdsgram({
-    blockId: '26661',
+    blockId: '26825',
     onReward: onAdReward,
     onError: (err) => console.error('Ad error:', err)
   });

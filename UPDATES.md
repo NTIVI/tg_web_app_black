@@ -16,8 +16,8 @@ The repository has been updated with the following final changes:
 
 ## 5. Adsgram Rewarded Ads
 - **Feature Restored**: Re-integrated Rewarded Video ads into the Bonuses page.
-- **Automated Configuration**: Performed automated setup of the Adsgram Partner Panel for the `YourTur` platform (ID: 25907).
-- **New Block ID**: Configured Unit ID `26825` with a 2-minute cooldown for compliance.
+- **Automated Configuration**: Performed automated setup of the Adsgram Partner Panel for the **YourTurn** platform (ID: **25943**).
+- **New Block ID**: Configured Unit ID **26845** with a 2-minute cooldown for compliance.
 
 ## 6. Layout Improvements
 - **Banner Removed**: Deleted the unwanted `AdBanner` component from the main layout for a cleaner UI.

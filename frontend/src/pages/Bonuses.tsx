@@ -1,25 +1,10 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
-import { Gift, ExternalLink, CheckCircle2, Clock, Video, PlayCircle, Coins } from 'lucide-react';
-import { useAdsgram } from '../hooks/useAdsgram';
+import { Gift, ExternalLink, CheckCircle2 } from 'lucide-react';
 
 const TelegramIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.891 8.146l-2.003 9.464c-.15.672-.546.837-1.112.518l-3.057-2.254-1.475 1.417c-.163.163-.3.299-.614.299l.22-3.103 5.646-5.105c.246-.219-.054-.341-.381-.123l-6.98 4.394-3.003-1.041c-.653-.204-.664-.653.136-.966l11.728-4.514c.542-.196 1.017.13 1.017.914z"/>
-  </svg>
-);
-
-const TwitterIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-  </svg>
-);
-
-const InstagramIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
   </svg>
 );
 
@@ -36,51 +21,14 @@ const TikTokIcon = () => (
 );
 
 const BONUS_LIST = [
-  { id: 'tg_channel', title: 'Join Telegram Channel', reward: 1000, icon: <TelegramIcon />, url: 'https://t.me/your_channel' },
-  { id: 'tiktok', title: 'Follow on TikTok', reward: 500, icon: <TikTokIcon />, url: 'https://www.tiktok.com/@your_account' },
-  { id: 'twitter', title: 'Follow on X (Twitter)', reward: 750, icon: <TwitterIcon />, url: 'https://twitter.com/your_account' },
-  { id: 'instagram', title: 'Follow on Instagram', reward: 750, icon: <InstagramIcon />, url: 'https://instagram.com/your_account' },
-  { id: 'youtube', title: 'Subscribe to YouTube', reward: 1000, icon: <YoutubeIcon />, url: 'https://youtube.com/@your_channel' },
+  { id: 'tg_channel', title: 'Join Telegram Channel', reward: 1000, icon: <TelegramIcon />, url: 'https://t.me/+CVRfTOr2cCdhYTU6' },
+  { id: 'tiktok', title: 'Follow on TikTok', reward: 500, icon: <TikTokIcon />, url: 'https://www.tiktok.com/@just___000' },
+  { id: 'youtube', title: 'Subscribe to YouTube', reward: 1000, icon: <YoutubeIcon />, url: 'https://www.youtube.com/@Devki_keksi' },
 ];
 
 const Bonuses = ({ user, setBalance }: any) => {
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
   const [claiming, setClaiming] = useState<string | null>(null);
-  const [adsgramBlockId, setAdsgramBlockId] = useState('');
-  const [cooldownTime, setCooldownTime] = useState(0);
-
-  useEffect(() => {
-    const lastWatch = localStorage.getItem('last_ad_watch');
-    if (lastWatch) {
-      const diff = 120 - Math.floor((Date.now() - parseInt(lastWatch)) / 1000);
-      if (diff > 0) setCooldownTime(diff);
-    }
-    
-    const handleStorage = () => {
-      const lastWatch = localStorage.getItem('last_ad_watch');
-      if (lastWatch) {
-        const diff = 120 - Math.floor((Date.now() - parseInt(lastWatch)) / 1000);
-        if (diff > 0) setCooldownTime(diff);
-      }
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
-
-  useEffect(() => {
-    if (cooldownTime > 0) {
-      const timer = setInterval(() => {
-        setCooldownTime(prev => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [cooldownTime]);
 
   useEffect(() => {
     if (user?.telegram_id) {
@@ -90,36 +38,6 @@ const Bonuses = ({ user, setBalance }: any) => {
         .catch(err => console.error("Error fetching claimed bonuses:", err));
     }
   }, [user]);
-
-  useEffect(() => {
-    fetch(`${API_URL}/settings/ads`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.settings) setAdsgramBlockId(data.settings.adsgram_block_id || '');
-      })
-      .catch(err => console.error("Could not load ads config", err));
-  }, []);
-
-  const { showAd, isReady, isLoading: adLoading } = useAdsgram({
-    blockId: adsgramBlockId,
-    onReward: () => {
-        const reward = 50;
-        localStorage.setItem('last_ad_watch', Date.now().toString());
-        setCooldownTime(120);
-        fetch(`${API_URL}/watch-ad`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ telegramId: user?.telegram_id }),
-        }).then(res => res.json()).then(data => {
-            if (data.success) {
-                setBalance((prev: number) => prev + reward);
-            }
-        });
-    },
-    onError: (err) => {
-        console.error('Adsgram error:', err);
-    }
-  });
 
   const handleClaim = async (bonus: any) => {
     if (!user || claimedIds.includes(bonus.id)) return;
@@ -148,12 +66,6 @@ const Bonuses = ({ user, setBalance }: any) => {
     }, 2000);
   };
 
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  };
-
   return (
     <div className="page" style={{ paddingBottom: '100px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
@@ -161,79 +73,9 @@ const Bonuses = ({ user, setBalance }: any) => {
         <h1>Бонусы</h1>
       </div>
       
-      <h3 style={{ marginBottom: '16px', opacity: 0.8 }}>Реклама и задания</h3>
+      <h3 style={{ marginBottom: '16px', opacity: 0.8 }}>Задания</h3>
 
-      
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {/* Ad Booster Task */}
-        <div 
-          className="glass-panel" 
-          style={{ 
-            padding: '24px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '16px',
-            background: 'linear-gradient(135deg, rgba(157, 80, 187, 0.15) 0%, rgba(110, 72, 170, 0.1) 100%)',
-            border: '1px solid rgba(157, 80, 187, 0.4)',
-            boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
-          }}
-        >
-          <div style={{ 
-            width: '56px', 
-            height: '56px', 
-            borderRadius: '18px', 
-            background: 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 6px 12px rgba(157, 80, 187, 0.3)'
-          }}>
-            <Video size={28} color="white" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: '800', fontSize: '16px', letterSpacing: '-0.2px' }}>Удачное Видео</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-              <Coins size={14} color="var(--gold-color)" />
-              <span style={{ color: 'var(--gold-color)', fontWeight: '700', fontSize: '14px' }}>+50 монет</span>
-            </div>
-          </div>
-          <button 
-            className="btn-primary"
-            disabled={cooldownTime > 0 || !isReady || adLoading}
-            style={{ 
-              padding: '10px 20px', 
-              fontSize: '14px', 
-              borderRadius: '14px',
-              minWidth: '110px',
-              height: '44px',
-              background: (cooldownTime > 0 || !isReady || adLoading) ? 'rgba(255,255,255,0.05)' : '',
-              color: (cooldownTime > 0 || !isReady || adLoading) ? 'var(--text-secondary)' : '',
-              border: (cooldownTime > 0 || !isReady || adLoading) ? '1px solid rgba(255,255,255,0.1)' : 'none',
-              boxShadow: (cooldownTime > 0 || !isReady || adLoading) ? 'none' : '0 6px 12px rgba(157, 80, 187, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-            onClick={() => showAd()}
-          >
-            {adLoading ? (
-                <div className="spinner" style={{ width: '18px', height: '18px', borderTopColor: 'white' }}></div>
-            ) : cooldownTime > 0 ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Clock size={16} /> 
-                  <span>{formatTime(cooldownTime)}</span>
-                </div>
-            ) : !isReady ? (
-                <span>Загрузка...</span>
-            ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <PlayCircle size={18} /> 
-                  <span>Смотреть</span>
-                </div>
-            )}
-          </button>
-        </div>
-
         {BONUS_LIST.map((bonus) => (
           <div 
             key={bonus.id} 

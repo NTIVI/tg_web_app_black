@@ -127,7 +127,15 @@ function App() {
     }
   };
 
-  const props = { userId: tgUser?.telegram_id || tgUser?.id, balance, setBalance, tgUser };
+  const props = { 
+    userId: tgUser?.telegram_id || tgUser?.id, 
+    balance, 
+    setBalance, 
+    tgUser,
+    dailyStatus,
+    handleClaimDaily,
+    claimingDaily
+  };
 
   // Only show error or blocking loader if we have NO user data at all (not even from initDataUnsafe)
   if (loading && !tgUser) return (

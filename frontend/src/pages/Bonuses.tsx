@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
-import { Gift, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { Gift, ExternalLink, CheckCircle2, Coins } from 'lucide-react';
 
 const TelegramIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -26,9 +26,12 @@ const BONUS_LIST = [
   { id: 'youtube', title: 'Subscribe to YouTube', reward: 1000, icon: <YoutubeIcon />, url: 'https://www.youtube.com/@Devki_keksi' },
 ];
 
-const Bonuses = ({ user, setBalance }: any) => {
+const Bonuses = ({ user, setBalance, dailyStatus, handleClaimDaily, claimingDaily }: any) => {
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
   const [claiming, setClaiming] = useState<string | null>(null);
+
+  const streak = dailyStatus?.currentStreak || 0;
+  const steps = [10, 20, 50, 100, 150, 200, 500];
 
   useEffect(() => {
     if (user?.telegram_id) {
@@ -41,7 +44,14 @@ const Bonuses = ({ user, setBalance }: any) => {
 
   const handleClaim = async (bonus: any) => {
     if (!user || claimedIds.includes(bonus.id)) return;
-    window.open(bonus.url, '_blank');
+    
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg?.openLink) {
+        tg.openLink(bonus.url);
+    } else {
+        window.open(bonus.url, '_blank');
+    }
+
     setClaiming(bonus.id);
     setTimeout(async () => {
       try {
@@ -55,8 +65,11 @@ const Bonuses = ({ user, setBalance }: any) => {
           })
         });
         if (res.ok) {
-          setClaimedIds([...claimedIds, bonus.id]);
-          setBalance((prev: number) => prev + bonus.reward);
+          const data = await res.json();
+          if (data.success) {
+            setClaimedIds(prev => [...prev, bonus.id]);
+            setBalance((prev: number) => prev + bonus.reward);
+          }
         }
       } catch (err) {
         console.error("Claim error:", err);
@@ -73,6 +86,70 @@ const Bonuses = ({ user, setBalance }: any) => {
         <h1>Бонусы</h1>
       </div>
       
+      {/* Daily Bonus Section */}
+      <div 
+        className="glass-panel" 
+        style={{ 
+          padding: '24px', 
+          marginBottom: '24px',
+          background: 'linear-gradient(135deg, rgba(157, 80, 187, 0.1) 0%, rgba(157, 80, 187, 0.05) 100%)',
+          border: '1px solid rgba(157, 80, 187, 0.2)'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div>
+            <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '4px' }}>Ежедневный вход</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Заходите каждый день и получайте монеты!</p>
+          </div>
+          {dailyStatus?.canClaim && (
+            <button 
+              className="btn-primary" 
+              onClick={handleClaimDaily}
+              disabled={claimingDaily}
+              style={{ padding: '8px 16px', fontSize: '13px', borderRadius: '12px', minWidth: '90px' }}
+            >
+              {claimingDaily ? <div className="spinner" style={{ width: '16px', height: '16px' }}></div> : 'Забрать'}
+            </button>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+          {steps.map((reward, i) => (
+            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              <div style={{
+                width: '100%',
+                height: '40px',
+                borderRadius: '10px',
+                background: i < streak ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+                border: i === streak && dailyStatus?.canClaim ? '2px solid var(--primary-color)' : '1px solid rgba(255,255,255,0.05)'
+              }}>
+                <Coins size={14} color={i < streak ? 'white' : 'var(--gold-color)'} />
+                <div style={{ 
+                  fontSize: '9px', 
+                  fontWeight: '800', 
+                  color: i < streak ? 'white' : 'white',
+                  position: 'absolute',
+                  top: '22px'
+                }}>
+                  +{reward}
+                </div>
+              </div>
+              <span style={{ 
+                fontSize: '10px', 
+                fontWeight: '700', 
+                color: i < streak ? 'var(--primary-color)' : 'rgba(255,255,255,0.4)' 
+              }}>
+                Дн {i + 1}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <h3 style={{ marginBottom: '16px', opacity: 0.8 }}>Задания</h3>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

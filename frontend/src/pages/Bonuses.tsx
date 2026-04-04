@@ -149,25 +149,53 @@ const Bonuses = ({ user, setBalance, dailyStatus, handleClaimDaily, claimingDail
           ))}
         </div>
 
-        {/* Progress Slider */}
-        <div style={{ 
-          width: '100%', 
-          height: '6px', 
-          background: 'rgba(255, 255, 255, 0.05)', 
-          borderRadius: '3px', 
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
+        {/* Progress Slider with Checkpoints */}
+        <div style={{ position: 'relative', width: '100%', padding: '0 4px' }}>
+          {/* Background Bar */}
           <div style={{ 
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            height: '100%',
-            width: `${(streak / 7) * 100}%`,
-            background: 'linear-gradient(90deg, var(--primary-color), var(--secondary-color))',
-            borderRadius: '3px',
-            transition: 'width 0.5s ease-out'
-          }} />
+            width: '100%', 
+            height: '6px', 
+            background: 'rgba(255, 255, 255, 0.05)', 
+            borderRadius: '3px', 
+            position: 'relative'
+          }}>
+            {/* Fill Bar */}
+            <div style={{ 
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              height: '100%',
+              width: `${(Math.max(0, streak - 1) / 6) * 100}%`,
+              background: 'linear-gradient(90deg, var(--primary-color), var(--secondary-color))',
+              borderRadius: '3px',
+              transition: 'width 0.5s ease-out',
+              zIndex: 1
+            }} />
+
+            {/* Checkpoints (Dots) */}
+            <div style={{ 
+              position: 'absolute',
+              top: '50%',
+              left: 0,
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'space-between',
+              transform: 'translateY(-50%)',
+              zIndex: 2
+            }}>
+              {steps.map((_, i) => (
+                <div key={i} style={{ 
+                  width: '12px', 
+                  height: '12px', 
+                  borderRadius: '50%',
+                  background: i < streak ? 'var(--primary-color)' : 'rgba(30, 20, 45, 1)',
+                  border: i < streak ? '2px solid white' : '2px solid rgba(255,255,255,0.1)',
+                  boxShadow: i < streak ? '0 0 10px var(--primary-color)' : 'none',
+                  transition: 'all 0.3s ease'
+                }} />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 

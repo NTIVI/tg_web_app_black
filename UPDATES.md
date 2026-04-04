@@ -14,6 +14,14 @@ The repository has been updated with the following final changes:
 ## 3. Bug Fixes (Adsgram)
 - **Inactive Block Fixed**: Disabled the `task-26664` block in the frontend (AdBanner) which was causing an "AdsgramError" modal on entry. This ensures a smooth user experience.
 
-## 4. Repository Sync
+## 5. Adsgram Rewarded Ads
+- **Feature Restored**: Re-integrated Rewarded Video ads into the Bonuses page.
+- **Automated Configuration**: Performed automated setup of the Adsgram Partner Panel for the `YourTur` platform (ID: 25907).
+- **New Block ID**: Configured Unit ID `26825` with a 2-minute cooldown for compliance.
+
+## 6. Layout Improvements
+- **Banner Removed**: Deleted the unwanted `AdBanner` component from the main layout for a cleaner UI.
+
+## 7. Repository Sync
 - All code is synced with the `main` branch.
 - Production build verified via `npm run build`.

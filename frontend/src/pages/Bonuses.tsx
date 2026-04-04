@@ -31,6 +31,7 @@ const Bonuses = ({ user, setBalance, dailyStatus, handleClaimDaily, claimingDail
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [adCooldown, setAdCooldown] = useState<number>(0);
+  const [adsgramBlockId, setAdsgramBlockId] = useState('');
 
   const streak = dailyStatus?.currentStreak || 0;
   const steps = [10, 20, 50, 100, 150, 200, 500];
@@ -43,6 +44,18 @@ const Bonuses = ({ user, setBalance, dailyStatus, handleClaimDaily, claimingDail
         .catch(err => console.error("Error fetching claimed bonuses:", err));
     }
   }, [user]);
+
+  // Fetch ad settings
+  useEffect(() => {
+    fetch(`${API_URL}/settings/ads`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.settings) {
+          setAdsgramBlockId(data.settings.adsgram_block_id || '');
+        }
+      })
+      .catch(err => console.error("Could not load ads config", err));
+  }, []);
 
   // Cooldown timer
   useEffect(() => {
@@ -70,7 +83,7 @@ const Bonuses = ({ user, setBalance, dailyStatus, handleClaimDaily, claimingDail
   }, [user, setBalance]);
 
   const { showAd, isLoading: isAdLoading } = useAdsgram({
-    blockId: '26825',
+    blockId: adsgramBlockId,
     onReward: onAdReward,
     onError: (err) => console.error('Ad error:', err)
   });

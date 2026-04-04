@@ -31,7 +31,7 @@ const verifyInitData = (initData) => {
     } catch { return false; }
 };
 
-const bot = token ? new TelegramBot(token, { polling: { interval: 300, autoStart: true } }) : null;
+const bot = token ? new TelegramBot(token, { polling: { interval: 300, autoStart: true, params: { timeout: 10 } } }) : null;
 if (bot) {
     console.log('Bot initialized successfully');
     bot.on('message', (msg) => {

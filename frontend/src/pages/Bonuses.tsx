@@ -113,7 +113,7 @@ const Bonuses = ({ user, setBalance, dailyStatus, handleClaimDaily, claimingDail
           )}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', marginBottom: '20px' }}>
           {steps.map((reward, i) => (
             <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
               <div style={{
@@ -131,7 +131,7 @@ const Bonuses = ({ user, setBalance, dailyStatus, handleClaimDaily, claimingDail
                 <div style={{ 
                   fontSize: '9px', 
                   fontWeight: '800', 
-                  color: i < streak ? 'white' : 'white',
+                  color: 'white',
                   position: 'absolute',
                   top: '22px'
                 }}>
@@ -147,6 +147,27 @@ const Bonuses = ({ user, setBalance, dailyStatus, handleClaimDaily, claimingDail
               </span>
             </div>
           ))}
+        </div>
+
+        {/* Progress Slider */}
+        <div style={{ 
+          width: '100%', 
+          height: '6px', 
+          background: 'rgba(255, 255, 255, 0.05)', 
+          borderRadius: '3px', 
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <div style={{ 
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            height: '100%',
+            width: `${(streak / 7) * 100}%`,
+            background: 'linear-gradient(90deg, var(--primary-color), var(--secondary-color))',
+            borderRadius: '3px',
+            transition: 'width 0.5s ease-out'
+          }} />
         </div>
       </div>
 

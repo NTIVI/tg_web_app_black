@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { API_URL } from '../config';
-import { TrendingUp, TrendingDown, Coins, Clock, BarChart3, Activity, ListFilter, ArrowRightLeft } from 'lucide-react';
+import { TrendingUp, TrendingDown, Coins, Clock, BarChart3, Activity, ArrowRightLeft } from 'lucide-react';
 
 const Trade = ({ tgUser, balance, setBalance }: any) => {
   const [tradeStatus, setTradeStatus] = useState<any>(null);
@@ -9,7 +9,6 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
   const [isPlacing, setIsPlacing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeBet, setActiveBet] = useState<any>(null);
-  const [orderBook, setOrderBook] = useState<any>({ bids: [], asks: [] });
   const [recentTrades, setRecentTrades] = useState<any[]>([]);
   const [priceOffset, setPriceOffset] = useState<number>(0);
   const pollInterval = useRef<any>(null);
@@ -61,23 +60,6 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
     if (!tradeStatus) return;
     const price = tradeStatus.currentPrice;
     
-    const usernames = ['@crypto_pro', '@luck_master', '@yt_whale', '@king_trader', '@moon_boy', '@bit_boss', '@alpha_trader', '@zen_trade', '@rich_pavel', '@durov_fan'];
-    
-    // Generate User Orders around current price
-    const newBids = Array.from({ length: 5 }).map((_, i) => ({
-      username: usernames[Math.floor(Math.random() * usernames.length)],
-      price: price - (i + 1) * (Math.random() * 5 + 2),
-      amount: (Math.random() * 5000 + 50).toFixed(0)
-    })).sort((a, b) => b.price - a.price);
-
-    const newAsks = Array.from({ length: 5 }).map((_, i) => ({
-      username: usernames[Math.floor(Math.random() * usernames.length)],
-      price: price + (i + 1) * (Math.random() * 5 + 2),
-      amount: (Math.random() * 5000 + 50).toFixed(0)
-    })).sort((a, b) => b.price - a.price);
-
-    setOrderBook({ bids: newBids, asks: newAsks });
-
     // Occasional new trade
     if (Math.random() > 0.6) {
         const newTrade = {
@@ -148,11 +130,11 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
 
   // Custom SVG Candlestick Chart
   const renderEmulatorChart = () => {
-    if (!tradeStatus?.history || tradeStatus.history.length < 2) return null;
-    const history = tradeStatus.history;
+    if (!tradeStatus?.history) return null;
+    const history = tradeStatus.history.length > 1 ? tradeStatus.history : [tradeStatus.history[0] || 7000, tradeStatus.history[0] || 7000];
     const min = Math.min(...history) * 0.998;
     const max = Math.max(...history) * 1.002;
-    const range = max - min;
+    const range = (max - min) || 1;
     const width = 1000;
     const height = 400;
 
@@ -185,9 +167,7 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
 
                 return (
                     <g key={i}>
-                        {/* Shadow/Wick */}
                         <line x1={x} y1={yHigh} x2={x} y2={yLow} stroke={color} strokeWidth="2" />
-                        {/* Body */}
                         <rect 
                             x={x - candleWidth / 2} 
                             y={Math.min(yOpen, yClose)} 
@@ -200,7 +180,6 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
                 );
             })}
             
-            {/* Current Price Line */}
             <line 
                 x1="0" 
                 y1={height - ((history[history.length - 1] - min) / range) * height} 
@@ -220,32 +199,6 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
       </div>
     );
   };
-
-  const renderOrderBook = () => (
-    <div className="glass-panel" style={{ padding: '12px', fontSize: '10px', flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            <ListFilter size={12} /> Ордера пользователей
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                {orderBook.asks.map((ask: any, i: number) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', color: '#f87171' }}>
-                        <span style={{ opacity: 0.7 }}>{ask.username}</span>
-                        <span>{ask.amount}</span>
-                    </div>
-                ))}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                {orderBook.bids.map((bid: any, i: number) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', color: '#4ade80' }}>
-                        <span style={{ opacity: 0.7 }}>{bid.username}</span>
-                        <span>{bid.amount}</span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    </div>
-  );
 
   const renderRecentTrades = () => (
     <div className="glass-panel" style={{ padding: '12px', fontSize: '10px', flex: 1, maxHeight: '110px', overflow: 'hidden' }}>
@@ -330,7 +283,6 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
       </div>
 
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-         {renderOrderBook()}
          {renderRecentTrades()}
       </div>
 

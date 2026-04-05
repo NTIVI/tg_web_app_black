@@ -25,7 +25,8 @@ const initDB = () => {
             balance INTEGER DEFAULT 0,
             level INTEGER DEFAULT 1,
             registered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            last_seen DATETIME DEFAULT CURRENT_TIMESTAMP
+            last_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
+            yt_balance INTEGER DEFAULT 0
         )`);
 
         // Migration: ensure level and daily bonus columns exist
@@ -47,6 +48,11 @@ const initDB = () => {
         db.run(`ALTER TABLE users ADD COLUMN last_ad_watch DATETIME`, (err) => {
             if (err && !err.message.includes("duplicate column name")) {
                 console.error("Migration error (last_ad_watch):", err.message);
+            }
+        });
+        db.run(`ALTER TABLE users ADD COLUMN yt_balance INTEGER DEFAULT 0`, (err) => {
+            if (err && !err.message.includes("duplicate column name")) {
+                console.error("Migration error (yt_balance):", err.message);
             }
         });
 

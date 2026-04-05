@@ -265,15 +265,33 @@ app.get('/api/trade/status', (req, res) => {
     res.json(tradeState);
 });
 
+app.post('/api/trade/exchange', async (req, res) => {
+    const { telegramId, amount } = req.body;
+    const monetkiToExchange = parseInt(amount);
+    if (isNaN(monetkiToExchange) || monetkiToExchange < 100) return res.status(400).json({ error: 'Min exchange 100' });
+    
+    try {
+        const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+        if (!user || user.balance < monetkiToExchange) return res.status(400).json({ error: 'Insufficient monetki' });
+        
+        const ytGained = Math.floor(monetkiToExchange / 100);
+        const actualMonetkiDeducted = ytGained * 100;
+        
+        await DB.run('UPDATE users SET balance = balance - ?, yt_balance = yt_balance + ? WHERE telegram_id = ?', [actualMonetkiDeducted, ytGained, telegramId]);
+        const updated = await DB.get('SELECT balance, yt_balance FROM users WHERE telegram_id = ?', [telegramId]);
+        res.json({ success: true, balance: updated.balance, yt_balance: updated.yt_balance });
+    } catch (err) { res.status(500).json({ error: 'Exchange error' }); }
+});
+
 app.post('/api/trade/bet', async (req, res) => {
     const { telegramId, amount, direction, duration } = req.body;
     const startPrice = tradeState.currentPrice;
     
     try {
-        const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-        if (!user || user.balance < amount) return res.status(400).json({ error: 'No funds' });
+        const user = await DB.get('SELECT yt_balance FROM users WHERE telegram_id = ?', [telegramId]);
+        if (!user || user.yt_balance < amount) return res.status(400).json({ error: 'No YT funds' });
 
-        await DB.run('UPDATE users SET balance = balance - ? WHERE telegram_id = ?', [amount, telegramId]);
+        await DB.run('UPDATE users SET yt_balance = yt_balance - ? WHERE telegram_id = ?', [amount, telegramId]);
         
         setTimeout(async () => {
             const endPrice = tradeState.currentPrice;
@@ -284,10 +302,10 @@ app.post('/api/trade/bet', async (req, res) => {
             if (won) {
                 const multiplier = Math.random() * (2.3 - 1.9) + 1.9;
                 payout = Math.round(amount * multiplier);
-                await DB.run('UPDATE users SET balance = balance + ? WHERE telegram_id = ?', [payout, telegramId]);
+                await DB.run('UPDATE users SET yt_balance = yt_balance + ? WHERE telegram_id = ?', [payout, telegramId]);
             } else if (endPrice === startPrice) {
                 payout = amount;
-                await DB.run('UPDATE users SET balance = balance + ? WHERE telegram_id = ?', [payout, telegramId]);
+                await DB.run('UPDATE users SET yt_balance = yt_balance + ? WHERE telegram_id = ?', [payout, telegramId]);
             }
             
             // Bot notification removed per user request for privacy

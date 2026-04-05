@@ -4,7 +4,8 @@ import { TrendingUp, TrendingDown, Coins, Activity, Zap, ShieldCheck, Globe } fr
 
 const Trade = ({ tgUser, balance, setBalance }: any) => {
   const [tradeStatus, setTradeStatus] = useState<any>(null);
-  const [selectedAmount, setSelectedAmount] = useState<number>(100);
+  const [ytBalance, setYtBalance] = useState<number>(0);
+  const [selectedAmount, setSelectedAmount] = useState<number>(1);
   const [selectedDuration, setSelectedDuration] = useState<number>(30);
   const [isPlacing, setIsPlacing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -43,7 +44,7 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
 
 
   const handlePlaceBet = async (direction: 'up' | 'down') => {
-    if (!tgUser || isPlacing || balance < selectedAmount) return;
+    if (!tgUser || isPlacing || ytBalance < selectedAmount) return;
     setIsPlacing(true);
     const tid = tgUser.telegram_id || tgUser.id;
     try {
@@ -54,11 +55,26 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
       });
       if (res.ok) {
         const data = await res.json();
-        setBalance((prev: number) => prev - selectedAmount);
+        setYtBalance((prev: number) => prev - selectedAmount);
         setActiveBet({ direction, amount: selectedAmount, duration: selectedDuration, startPrice: data.startPrice, endTime: Date.now() + (selectedDuration * 1000) });
         setTimeout(() => { setActiveBet(null); setTimeout(() => initUser(), 2000); }, selectedDuration * 1000);
       }
     } catch (err) { console.error("Bet error:", err); } finally { setIsPlacing(false); }
+  };
+
+  const handleExchange = async () => {
+    if (!tgUser || balance < 100) return;
+    const tid = tgUser.telegram_id || tgUser.id;
+    try {
+        const res = await fetch(`${API_URL}/trade/exchange`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telegramId: tid, amount: 100 })
+        });
+        if (res.ok) {
+            initUser();
+        }
+    } catch(e) {}
   };
 
   const initUser = async () => {
@@ -67,7 +83,10 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
     try {
         const res = await fetch(`${API_URL}/auth`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initDataUnsafe: { user: { id: tid } } }) });
         const data = await res.json();
-        if (data.user) setBalance(data.user.balance);
+        if (data.user) {
+            setBalance(data.user.balance);
+            setYtBalance(data.user.yt_balance || 0);
+        }
     } catch(e) {}
   };
 
@@ -100,7 +119,7 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
     </div>
   );
 
-  const amounts = [100, 500, 1000, 2500, 5000];
+  const amounts = [1, 5, 10, 25, 50];
   const durations = [{ label: '30S', value: 30 }, { label: '1M', value: 60 }, { label: '3M', value: 180 }];
 
   if (loading && !tradeStatus) return (
@@ -123,9 +142,15 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
                   <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: 'bold' }}>VERSION 2.0 • PRO</span>
               </div>
           </div>
-          <div className="glass-panel" style={{ padding: '8px 14px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
-             <Coins size={14} color="var(--gold-color)" />
-             <span style={{ fontWeight: '900', fontSize: '14px' }}>{balance.toLocaleString()}</span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+              <div className="glass-panel" style={{ padding: '8px 14px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                 <Coins size={14} color="var(--text-secondary)" />
+                 <span style={{ fontWeight: '500', fontSize: '14px', opacity: 0.7 }}>{balance.toLocaleString()}</span>
+              </div>
+              <div className="glass-panel" style={{ padding: '8px 14px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                 <div style={{ width: '16px', height: '16px', background: 'var(--secondary-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold' }}>YT</div>
+                 <span style={{ fontWeight: '900', fontSize: '14px' }}>{ytBalance.toLocaleString()}</span>
+              </div>
           </div>
       </div>
 
@@ -169,9 +194,15 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
       <div className="glass-panel" style={{ padding: '20px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
             <div style={{ fontSize: '13px', fontWeight: 'bold', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Zap size={14} color="var(--gold-color)" fill="var(--gold-color)" /> AMOUNT
+                <Zap size={14} color="var(--gold-color)" fill="var(--gold-color)" /> YT COINS
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--primary-color)', fontWeight: 'bold' }}>MAX: {balance}</div>
+            <button 
+                onClick={handleExchange}
+                disabled={balance < 100}
+                style={{ fontSize: '10px', background: 'rgba(168, 85, 247, 0.2)', color: 'var(--secondary-color)', border: '1px solid var(--secondary-color)', padding: '4px 10px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+            >
+                GET YT (100:1)
+            </button>
           </div>
           
           <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '4px' }}>
@@ -186,7 +217,7 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
                       fontSize: '14px', fontWeight: '900', transition: 'all 0.2s ease', height: 'auto', minWidth: '65px'
                   }}
                 >
-                    {amt}
+                    {amt} YT
                 </button>
             ))}
           </div>

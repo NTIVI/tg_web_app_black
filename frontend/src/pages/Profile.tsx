@@ -45,7 +45,7 @@ const Profile = ({ userId, tgUser, balance }: any) => {
               <div style={{ 
                 width: `${(balance % 1000) / 10}%`, 
                 height: '100%', 
-                background: 'linear-gradient(to right, var(--primary-color), var(--success-color))',
+                background: 'linear-gradient(to right, #00d2ff, #d400ff)',
                 borderRadius: '10px',
                 boxShadow: '0 0 8px var(--primary-glow)'
               }} />

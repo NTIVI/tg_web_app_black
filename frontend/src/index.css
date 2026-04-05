@@ -1,8 +1,8 @@
 :root {
-  --primary-color: #00f2fe;
-  --primary-glow: rgba(0, 242, 254, 0.3);
-  --secondary-color: #7000ff;
-  --secondary-glow: rgba(112, 0, 255, 0.3);
+  --primary-color: #00d2ff;
+  --primary-glow: rgba(0, 210, 255, 0.4);
+  --secondary-color: #d400ff;
+  --secondary-glow: rgba(212, 0, 255, 0.4);
   --background-color: #030303;
   --surface-color: rgba(18, 18, 22, 0.75);
   --surface-color-light: rgba(28, 28, 35, 0.6);
@@ -65,7 +65,7 @@ h1 {
   font-size: 28px;
   font-weight: 800;
   margin-bottom: 8px;
-  background: linear-gradient(to right, #fff, #9d50bb);
+  background: linear-gradient(to right, #00d2ff, #d400ff);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -87,7 +87,22 @@ p {
   padding: 24px;
   margin-bottom: 20px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 28px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(0, 210, 255, 0.2), rgba(212, 0, 255, 0.2));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
 .glass-panel:hover {

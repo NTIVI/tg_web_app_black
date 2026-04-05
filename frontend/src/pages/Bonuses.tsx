@@ -100,8 +100,8 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
         style={{ 
           padding: '24px', 
           marginBottom: '24px',
-          background: 'linear-gradient(135deg, rgba(157, 80, 187, 0.1) 0%, rgba(157, 80, 187, 0.05) 100%)',
-          border: '1px solid rgba(157, 80, 187, 0.2)'
+          background: 'linear-gradient(135deg, rgba(0, 210, 255, 0.1) 0%, rgba(212, 0, 255, 0.05) 100%)',
+          border: '1px solid rgba(0, 210, 255, 0.2)'
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -172,7 +172,7 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
               top: 0,
               height: '100%',
               width: `${(streak / 7) * 100}%`,
-              background: 'linear-gradient(90deg, var(--primary-color), var(--secondary-color))',
+              background: 'linear-gradient(90deg, #00d2ff, #d400ff)',
               borderRadius: '3px',
               transition: 'width 0.5s ease-out',
               zIndex: 1

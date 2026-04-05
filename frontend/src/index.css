@@ -1,8 +1,8 @@
 :root {
-  --primary-color: #0b0b0c;
-  --primary-glow: rgba(168, 85, 247, 0.15);
+  --primary-color: #1e40af;
+  --primary-glow: rgba(30, 64, 175, 0.4);
   --secondary-color: #a855f7;
-  --secondary-glow: rgba(168, 85, 247, 0.3);
+  --secondary-glow: rgba(168, 85, 247, 0.4);
   --background-color: #030303;
   --surface-color: rgba(18, 18, 22, 0.75);
   --surface-color-light: rgba(28, 28, 35, 0.6);
@@ -65,7 +65,7 @@ h1 {
   font-size: 28px;
   font-weight: 800;
   margin-bottom: 8px;
-  background: linear-gradient(to right, #ffffff, #a855f7);
+  background: linear-gradient(to right, #1e40af, #a855f7);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -97,7 +97,7 @@ p {
   inset: 0;
   border-radius: 28px;
   padding: 1px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(168, 85, 247, 0.2));
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.3), rgba(168, 85, 247, 0.3));
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
@@ -128,9 +128,9 @@ p {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #18181b, #a855f7);
+  background: linear-gradient(135deg, #1e40af, #a855f7);
   color: white;
-  border: 1px solid rgba(168, 85, 247, 0.3);
+  border: 1px solid rgba(168, 85, 247, 0.2);
   border-radius: 16px;
   padding: 14px 24px;
   font-size: 16px;
@@ -141,7 +141,7 @@ p {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 10px rgba(168, 85, 247, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 15px rgba(30, 64, 175, 0.2);
 }
 
 .btn-primary:active {

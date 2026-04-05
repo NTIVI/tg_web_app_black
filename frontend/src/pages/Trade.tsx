@@ -135,56 +135,77 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
     } catch(e) {}
   };
 
-  // Custom SVG Area Chart
+  // Custom SVG Candlestick Chart
   const renderEmulatorChart = () => {
-    if (!tradeStatus?.history || tradeStatus.history.length === 0) return null;
+    if (!tradeStatus?.history || tradeStatus.history.length < 2) return null;
     const history = tradeStatus.history;
-    const min = Math.min(...history) * 0.999;
-    const max = Math.max(...history) * 1.001;
+    const min = Math.min(...history) * 0.998;
+    const max = Math.max(...history) * 1.002;
     const range = max - min;
     const width = 1000;
     const height = 400;
 
-    const points = history.map((p: number, i: number) => {
-        const x = (i / (history.length - 1)) * width;
-        const y = height - ((p - min) / range) * height;
-        return `${x},${y}`;
-    }).join(' ');
-
-    const lastX = width;
-    const lastY = height - ((history[history.length - 1] - min) / range) * height;
-    
-    // Area path
-    const areaPoints = `0,${height} ${points} ${lastX},${height}`;
+    const candleWidth = (width / history.length) * 0.8;
+    const spacing = (width / history.length) * 0.2;
 
     return (
       <div className="glass-panel" style={{ padding: '0', overflow: 'hidden', height: '200px', position: 'relative' }}>
          <svg viewBox={`0 0 ${width} ${height}`} className="chart-svg" preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block' }}>
-            <defs>
-                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--primary-color)" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="var(--primary-color)" stopOpacity="0" />
-                </linearGradient>
-            </defs>
-            <path d={`M ${areaPoints}`} fill="url(#chartGradient)" />
-            <polyline 
-                points={points} 
-                fill="none" 
-                stroke="var(--primary-color)" 
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ filter: 'drop-shadow(0 0 8px var(--primary-glow))' }}
+            {history.map((p: number, i: number) => {
+                if (i === 0) return null;
+                const prevP = history[i - 1];
+                const x = (i / (history.length - 1)) * width;
+                
+                const open = prevP;
+                const close = p;
+                const isUp = close >= open;
+                const color = isUp ? '#4ade80' : '#f87171';
+                
+                // Simulate High/Low for visual effect
+                const diff = Math.abs(close - open) || 5;
+                const high = Math.max(open, close) + diff * 0.3;
+                const low = Math.min(open, close) - diff * 0.3;
+
+                const getX = (val: number) => (i / (history.length - 1)) * width;
+                const getY = (val: number) => height - ((val - min) / range) * height;
+
+                const yOpen = getY(open);
+                const yClose = getY(close);
+                const yHigh = getY(high);
+                const yLow = getY(low);
+
+                return (
+                    <g key={i}>
+                        {/* Shadow/Wick */}
+                        <line x1={x} y1={yHigh} x2={x} y2={yLow} stroke={color} strokeWidth="2" />
+                        {/* Body */}
+                        <rect 
+                            x={x - candleWidth / 2} 
+                            y={Math.min(yOpen, yClose)} 
+                            width={candleWidth} 
+                            height={Math.max(1, Math.abs(yOpen - yClose))} 
+                            fill={color} 
+                            rx="1"
+                        />
+                    </g>
+                );
+            })}
+            
+            {/* Current Price Line */}
+            <line 
+                x1="0" 
+                y1={height - ((history[history.length - 1] - min) / range) * height} 
+                x2={width} 
+                y2={height - ((history[history.length - 1] - min) / range) * height} 
+                stroke="var(--secondary-color)" 
+                strokeWidth="1" 
+                strokeDasharray="5,5" 
+                opacity="0.3"
             />
-            {/* Last Point Glow */}
-            <circle cx={lastX} cy={lastY} r="6" fill="var(--primary-color)">
-                <animate attributeName="r" values="6;10;6" dur="2s" repeatCount="indefinite" />
-                <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite" />
-            </circle>
          </svg>
          <div style={{ position: 'absolute', top: '10px', right: '10px', pointerEvents: 'none' }}>
             <div style={{ fontSize: '10px', color: 'var(--primary-color)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Activity size={10} className="pulse" /> LIVE EMULATOR
+                <Activity size={10} className="pulse" /> LIVE CANDLES
             </div>
          </div>
       </div>
@@ -264,14 +285,32 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
       </div>
 
       <div style={{ position: 'relative', marginBottom: '20px' }}>
-        <div className="glass-panel" style={{ padding: '15px', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-           <div>
-               <div style={{ fontSize: '12px', opacity: 0.6, marginBottom: '4px' }}>ТЕКУЩАЯ ЦЕНА BTC/LUCKY</div>
-               <div style={{ fontSize: '28px', fontWeight: '900', color: 'var(--secondary-color)', textShadow: '0 0 20px var(--secondary-glow)' }}>
-                  {tradeStatus?.currentPrice?.toLocaleString() || '7,000'}
+        <div className="glass-panel" style={{ padding: '15px', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+               <div style={{ 
+                   width: '45px', 
+                   height: '45px', 
+                   background: 'linear-gradient(135deg, #f59e0b, #d97706)', 
+                   borderRadius: '50%', 
+                   display: 'flex', 
+                   alignItems: 'center', 
+                   justifyContent: 'center',
+                   color: 'white',
+                   fontWeight: '900',
+                   fontSize: '16px',
+                   boxShadow: '0 0 15px rgba(245, 158, 11, 0.4)',
+                   border: '2px solid rgba(255, 255, 255, 0.2)'
+               }}>
+                   YT
+               </div>
+               <div>
+                   <div style={{ fontSize: '11px', opacity: 0.6, marginBottom: '2px', fontWeight: 'bold' }}>ТЕКУЩАЯ ЦЕНА YT/AMD</div>
+                   <div style={{ fontSize: '26px', fontWeight: '900', color: 'var(--secondary-color)', textShadow: '0 0 20px var(--secondary-glow)', lineHeight: 1 }}>
+                      {tradeStatus?.currentPrice?.toLocaleString() || '7,000'}
+                   </div>
                </div>
            </div>
-           <div style={{ textAlign: 'right', fontSize: '11px', opacity: 0.5 }}>
+           <div style={{ textAlign: 'right', fontSize: '11px', opacity: 0.5, fontWeight: 'bold', color: '#4ade80' }}>
                 Vol: 2.1M <br />
                 24h: +4.2%
            </div>

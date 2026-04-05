@@ -13,6 +13,7 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
   const [activeBet, setActiveBet] = useState<any>(null);
   const pollInterval = useRef<any>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartInstanceRef = useRef<any>(null);
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
 
   useEffect(() => {
@@ -35,8 +36,10 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
   };
 
   const updateChartData = (history: number[]) => {
-    if (!candleSeriesRef.current || history.length < 2) return;
+    if (!candleSeriesRef.current || !Array.isArray(history) || history.length < 1) return;
     
+    // We need at least 2 points for a real candle open/close, 
+    // but lightweight-charts can handle 1 point if necessary.
     const candleData = history.map((price, index) => {
       const prevPrice = history[index - 1] || price;
       const baseTime = Math.floor(Date.now() / 1000) - (history.length - index) * 300;
@@ -50,61 +53,79 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
       return { time: baseTime as any, open, high, low, close };
     });
     
-    candleSeriesRef.current.setData(candleData);
+    try {
+        candleSeriesRef.current.setData(candleData);
+    } catch(e) {
+        console.error("setData error:", e);
+    }
   };
 
+  // Initialize chart only once when container is ready
   useEffect(() => {
-    if (!chartContainerRef.current || candleSeriesRef.current) return;
+    if (loading || !chartContainerRef.current || chartInstanceRef.current) return;
     
     const width = chartContainerRef.current.clientWidth;
     if (width === 0) return;
 
-    const chart = createChart(chartContainerRef.current, {
-      layout: {
-        background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#94a3b8',
-      },
-      grid: {
-        vertLines: { color: 'rgba(255, 255, 255, 0.05)' },
-        horzLines: { color: 'rgba(255, 255, 255, 0.05)' },
-      },
-      width: width,
-      height: 200,
-      timeScale: {
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        timeVisible: true,
-      },
-    });
+    try {
+        const chart = createChart(chartContainerRef.current, {
+          layout: {
+            background: { type: ColorType.Solid, color: 'transparent' },
+            textColor: '#94a3b8',
+          },
+          grid: {
+            vertLines: { color: 'rgba(255, 255, 255, 0.05)' },
+            horzLines: { color: 'rgba(255, 255, 255, 0.05)' },
+          },
+          width: width,
+          height: 200,
+          timeScale: {
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            timeVisible: true,
+          },
+        });
 
-    const candleSeries = (chart as any).addCandlestickSeries({
-      upColor: '#4ade80',
-      downColor: '#f87171',
-      borderVisible: false,
-      wickUpColor: '#4ade80',
-      wickDownColor: '#f87171',
-    });
+        const candleSeries = (chart as any).addCandlestickSeries({
+          upColor: '#4ade80',
+          downColor: '#f87171',
+          borderVisible: false,
+          wickUpColor: '#4ade80',
+          wickDownColor: '#f87171',
+        });
 
-    candleSeriesRef.current = candleSeries;
-    
-    // Set initial data if available
-    if (tradeStatus?.history) {
-        updateChartData(tradeStatus.history);
+        chartInstanceRef.current = chart;
+        candleSeriesRef.current = candleSeries;
+        
+        // Initial update
+        if (tradeStatus?.history) {
+            updateChartData(tradeStatus.history);
+        }
+        
+        const handleResize = () => {
+          if (chartContainerRef.current && chart) {
+            chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+          }
+        };
+
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+          window.removeEventListener('resize', handleResize);
+          chart.remove();
+          chartInstanceRef.current = null;
+          candleSeriesRef.current = null;
+        };
+    } catch (e) {
+        console.error("Chart init error:", e);
     }
-    
-    const handleResize = () => {
-      if (chartContainerRef.current && chart) {
-        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
-      }
-    };
+  }, [loading]); // Only trigger when loading finishes
 
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      chart.remove();
-      candleSeriesRef.current = null;
-    };
-  }, [tradeStatus, loading]);
+  // Handle data updates separately
+  useEffect(() => {
+    if (candleSeriesRef.current && tradeStatus?.history) {
+      updateChartData(tradeStatus.history);
+    }
+  }, [tradeStatus]);
 
   const handlePlaceBet = async (direction: 'up' | 'down') => {
     if (!tgUser || isPlacing || balance < selectedAmount) return;

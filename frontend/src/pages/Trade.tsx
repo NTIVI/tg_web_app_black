@@ -9,25 +9,28 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
   const [selectedAmount, setSelectedAmount] = useState<number>(100);
   const [selectedDuration, setSelectedDuration] = useState<number>(30);
   const [isPlacing, setIsPlacing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [activeBet, setActiveBet] = useState<any>(null);
   const pollInterval = useRef<any>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
 
   useEffect(() => {
-    fetchTradeStatus();
-    pollInterval.current = setInterval(fetchTradeStatus, 5000);
+    fetchTradeStatus(true);
+    pollInterval.current = setInterval(() => fetchTradeStatus(false), 10000); // 10s
     return () => clearInterval(pollInterval.current);
   }, []);
 
-  const fetchTradeStatus = async () => {
+  const fetchTradeStatus = async (initial = false) => {
     try {
       const res = await fetch(`${API_URL}/trade/status`);
       const data = await res.json();
       setTradeStatus(data);
-      updateChartData(data.history || []);
+      if (data.history) updateChartData(data.history);
+      if (initial) setLoading(false);
     } catch (err) {
       console.error("Trade status error:", err);
+      if (initial) setLoading(false);
     }
   };
 
@@ -51,7 +54,7 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
   };
 
   useEffect(() => {
-    if (!chartContainerRef.current) return;
+    if (!chartContainerRef.current || chartContainerRef.current.clientWidth === 0) return;
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
@@ -62,7 +65,7 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
         vertLines: { color: 'rgba(255, 255, 255, 0.05)' },
         horzLines: { color: 'rgba(255, 255, 255, 0.05)' },
       },
-      width: chartContainerRef.current.clientWidth,
+      width: chartContainerRef.current.clientWidth || 300,
       height: 200,
       timeScale: {
         borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -176,6 +179,13 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
       { label: '3 мин', value: 180 }
   ];
 
+  if (loading && !tradeStatus) return (
+    <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px', textAlign: 'center' }}>
+      <div className="spinner"></div>
+      <h2 style={{ color: 'var(--primary-color)' }}>Загрузка рынка...</h2>
+    </div>
+  );
+
   return (
     <div className="page" style={{ paddingBottom: '100px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -198,7 +208,7 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
         </div>
         {renderChart()}
         <div style={{ marginTop: '12px', fontSize: '12px', textAlign: 'center', opacity: 0.5 }}>
-            Следующий тик через ~{Math.max(0, Math.floor((tradeStatus?.nextTickTime - Date.now()) / 1000))} сек
+            Следующий тик через ~{tradeStatus?.nextTickTime ? Math.max(0, Math.floor((tradeStatus.nextTickTime - Date.now()) / 1000)) : '...'} сек
         </div>
       </div>
 

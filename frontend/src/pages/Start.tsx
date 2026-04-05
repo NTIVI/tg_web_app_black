@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Coins, PlayCircle } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Coins, PlayCircle, X } from 'lucide-react';
 import { API_URL } from '../config';
-import { TadsWidget } from 'react-tads-widget';
+import { TadsWidget, renderTadsWidget } from 'react-tads-widget';
 
 interface StartProps {
   userId: string | null;
@@ -14,6 +14,8 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
   const [adMessage, setAdMessage] = useState('');
   const [tadsWidgetId, setTadsWidgetId] = useState('');
   const [cooldownTime, setCooldownTime] = useState(0);
+  const [showCancel, setShowCancel] = useState(false);
+  const loadTimeoutRef = useRef<any>(null);
 
   useEffect(() => {
     const lastWatch = localStorage.getItem('last_ad_watch');
@@ -75,10 +77,29 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
   }, [userId, setBalance]);
 
 
+
   const handleWatchAd = async () => {
     if (!userId) return;
+    
     setIsAdVisible(true);
+    setShowCancel(false);
     setAdMessage('Loading Advertisement...');
+
+    if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
+    loadTimeoutRef.current = setTimeout(() => setShowCancel(true), 6000);
+
+    try {
+      renderTadsWidget({
+        id: tadsWidgetId || "9609",
+        type: 'fullscreen'
+      });
+      // The callbacks are handled by the TadsWidget component rendered in the return block
+    } catch (err) {
+      if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
+      console.error("TADS Render Error:", err);
+      setAdMessage('Error launching ad.');
+      setTimeout(() => setIsAdVisible(false), 2000);
+    }
   };
 
   return (
@@ -107,27 +128,49 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
         {/* Decorative elements */}
         <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', background: 'var(--primary-glow)', filter: 'blur(40px)', zIndex: 0 }} />
         
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          {isAdVisible && (
-            <TadsWidget 
-              id={tadsWidgetId || "9609"}
-              type="fullscreen"
-              debug={false}
-              onShowReward={() => {
-                setAdMessage('Ad finished! Claiming reward...');
-                claimReward();
-              }}
-              onAdsNotFound={() => {
-                setAdMessage('Ads not available right now.');
-                setTimeout(() => setIsAdVisible(false), 2000);
-              }}
-            />
-          )}
+      <div style={{ display: 'none' }}>
+        <TadsWidget 
+          id={tadsWidgetId || "9609"}
+          type="FULLSCREEN"
+          debug={true}
+          onShowReward={() => {
+            if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
+            setAdMessage('Ad finished! Claiming reward...');
+            claimReward();
+          }}
+          onAdsNotFound={() => {
+            if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
+            setAdMessage('Ads not available right now.');
+            setTimeout(() => setIsAdVisible(false), 2000);
+          }}
+        />
+      </div>
 
+      <div style={{ position: 'relative', zIndex: 1 }}>
           {isAdVisible ? (
-            <div className="loader-container">
+             <div className="loader-container" style={{ minHeight: '200px', position: 'relative' }}>
               <div className="spinner" style={{ width: '48px', height: '48px' }}></div>
               <h3 style={{ fontSize: '18px', fontWeight: '700' }}>{adMessage || 'Preparing your reward...'}</h3>
+              
+              {showCancel && (
+                <button 
+                  onClick={() => setIsAdVisible(false)}
+                  style={{ 
+                    marginTop: '20px', 
+                    background: 'rgba(255,255,255,0.1)', 
+                    border: '1px solid rgba(255,255,255,0.2)', 
+                    color: 'white', 
+                    padding: '8px 16px', 
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px'
+                  }}
+                >
+                  <X size={16} /> Cancel Loading
+                </button>
+              )}
             </div>
           ) : (
             <div>

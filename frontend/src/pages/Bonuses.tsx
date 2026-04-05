@@ -26,7 +26,7 @@ const BONUS_LIST = [
   { id: 'youtube', title: 'Subscribe to YouTube', reward: 1000, icon: <YoutubeIcon />, url: 'https://www.youtube.com/@Devki_keksi' },
 ];
 
-const Bonuses = ({ user, setBalance, dailyStatus, handleClaimDaily, claimingDaily }: any) => {
+const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDaily }: any) => {
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
   const [claiming, setClaiming] = useState<string | null>(null);
 
@@ -34,20 +34,28 @@ const Bonuses = ({ user, setBalance, dailyStatus, handleClaimDaily, claimingDail
   const steps = [10, 20, 50, 100, 150, 200, 500];
 
   useEffect(() => {
-    if (user?.telegram_id) {
-      fetch(`${API_URL}/bonuses/${user.telegram_id}`)
+    const tid = tgUser?.telegram_id || tgUser?.id;
+    if (tid) {
+      fetch(`${API_URL}/bonuses/${tid}`)
         .then(res => res.json())
         .then(data => setClaimedIds(data.claimed || []))
         .catch(err => console.error("Error fetching claimed bonuses:", err));
     }
-  }, [user]);
+  }, [tgUser]);
 
   const handleClaim = async (bonus: any) => {
-    if (!user || claimedIds.includes(bonus.id)) return;
+    const tid = tgUser?.telegram_id || tgUser?.id;
+    if (!tid || claimedIds.includes(bonus.id)) return;
     
     const tg = (window as any).Telegram?.WebApp;
-    if (tg?.openLink) {
-        tg.openLink(bonus.url);
+    
+    // Better link opening logic
+    if (tg) {
+        if (bonus.url.includes('t.me/')) {
+            tg.openTelegramLink(bonus.url);
+        } else {
+            tg.openLink(bonus.url);
+        }
     } else {
         window.open(bonus.url, '_blank');
     }
@@ -59,7 +67,7 @@ const Bonuses = ({ user, setBalance, dailyStatus, handleClaimDaily, claimingDail
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            telegramId: user.telegram_id, 
+            telegramId: tid, 
             bonusId: bonus.id, 
             reward: bonus.reward 
           })

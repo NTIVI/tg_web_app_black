@@ -79,21 +79,28 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
 
 
   const handleWatchAd = async () => {
-    if (!userId) return;
+    if (!userId || !tadsWidgetId) {
+      setAdMessage('Ad configuration not ready.');
+      return;
+    }
     
     setIsAdVisible(true);
     setShowCancel(false);
     setAdMessage('Loading Advertisement...');
 
     if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
-    loadTimeoutRef.current = setTimeout(() => setShowCancel(true), 6000);
+    loadTimeoutRef.current = setTimeout(() => setShowCancel(true), 8000);
 
+    // The TadsWidget component is already rendered and will handle the display
+    // when we are in the isAdVisible state if we trigger it correctly.
+    // Some versions of TadsWidget auto-trigger on mount if 'type' is set, 
+    // or through a 'show' prop. Given the existing code, it seems 
+    // renderTadsWidget was intended to be the trigger.
     try {
       renderTadsWidget({
-        id: tadsWidgetId || "9609",
+        id: tadsWidgetId,
         type: 'fullscreen'
       });
-      // The callbacks are handled by the TadsWidget component rendered in the return block
     } catch (err) {
       if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
       console.error("TADS Render Error:", err);
@@ -128,17 +135,20 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
         {/* Decorative elements */}
         <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', background: 'var(--primary-glow)', filter: 'blur(40px)', zIndex: 0 }} />
         
-      <div style={{ display: 'none' }}>
+      {/* Advertisement Widget - Hidden but active for callbacks */}
+      <div style={{ width: 0, height: 0, overflow: 'hidden', position: 'absolute', pointerEvents: 'none' }}>
         <TadsWidget 
           id={tadsWidgetId || "9609"}
           type="FULLSCREEN"
           debug={true}
           onShowReward={() => {
+            console.log("TADS: Reward callback triggered");
             if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
             setAdMessage('Ad finished! Claiming reward...');
             claimReward();
           }}
           onAdsNotFound={() => {
+            console.warn("TADS: Ads not found");
             if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
             setAdMessage('Ads not available right now.');
             setTimeout(() => setIsAdVisible(false), 2000);

@@ -29,9 +29,7 @@ const Admin = () => {
   const [adsEnabled, setAdsEnabled] = useState(false);
   const [adsClientId, setAdsClientId] = useState('');
   const [adsSlotId, setAdsSlotId] = useState('');
-  const [adsgramBlockId, setAdsgramBlockId] = useState('');
   const [tadsWidgetId, setTadsWidgetId] = useState('');
-  const [rewardedAdProvider, setRewardedAdProvider] = useState<'adsgram' | 'google' | 'monetag'>('monetag');
   const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
@@ -56,9 +54,9 @@ const Admin = () => {
           setAdsEnabled(data.settings.ads_enabled === 'true');
           setAdsClientId(data.settings.ads_client_id || '');
           setAdsSlotId(data.settings.ads_slot_id || '');
-          setAdsgramBlockId(data.settings.adsgram_block_id || '');
+          // setAdsgramBlockId(data.settings.adsgram_block_id || '');
           setTadsWidgetId(data.settings.monetag_zone_id || '');
-          setRewardedAdProvider(data.settings.rewarded_ad_provider || 'monetag');
+          // setRewardedAdProvider(data.settings.rewarded_ad_provider || 'monetag');
         }
       }
     } catch (err) { console.error(err); }
@@ -87,9 +85,8 @@ const Admin = () => {
         ads_enabled: adsEnabled, 
         ads_client_id: adsClientId, 
         ads_slot_id: adsSlotId, 
-        adsgram_block_id: adsgramBlockId, 
         monetag_zone_id: tadsWidgetId,
-        rewarded_ad_provider: rewardedAdProvider 
+        rewarded_ad_provider: 'monetag' 
       })
     });
     if (res.ok) { setSaveMessage('Settings saved successfully!'); setTimeout(() => setSaveMessage(''), 3000); }
@@ -333,15 +330,12 @@ const Admin = () => {
 
             <div>
               <label style={{ display: 'block', marginBottom: '10px', fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)' }}>Ad Provider</label>
-              <select 
-                value={rewardedAdProvider} 
-                onChange={e => setRewardedAdProvider(e.target.value as 'adsgram' | 'google' | 'monetag')}
+              <div 
                 className="input-field"
-                style={{ width: '100%', appearance: 'none', background: 'var(--surface-color-light)', cursor: 'pointer', height: '52px' }}
+                style={{ width: '100%', background: 'var(--surface-color-light)', height: '52px', display: 'flex', alignItems: 'center', padding: '0 16px', opacity: 0.8 }}
               >
-                <option value="monetag">Tads.me (Official)</option>
-                <option value="google">Google H5 Ads</option>
-              </select>
+                Tads.me (Official)
+              </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

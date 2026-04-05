@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { API_URL } from '../config';
-import { TrendingUp, TrendingDown, Coins, Clock, BarChart3, Activity, ArrowRightLeft, Zap, Info, ShieldCheck, Globe } from 'lucide-react';
+import { TrendingUp, TrendingDown, Coins, Activity, Zap, ShieldCheck, Globe } from 'lucide-react';
 
 const Trade = ({ tgUser, balance, setBalance }: any) => {
   const [tradeStatus, setTradeStatus] = useState<any>(null);
@@ -9,17 +9,15 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
   const [isPlacing, setIsPlacing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeBet, setActiveBet] = useState<any>(null);
-  const [recentTrades, setRecentTrades] = useState<any[]>([]);
   const [priceOffset, setPriceOffset] = useState<number>(0);
   const [sentiment, setSentiment] = useState<number>(65); // 0-100 (Bullish %)
   const pollInterval = useRef<any>(null);
-  const emulatorInterval = useRef<any>(null);
 
   useEffect(() => {
     fetchTradeStatus(true);
     pollInterval.current = setInterval(() => fetchTradeStatus(false), 10000);
-    emulatorInterval.current = setInterval(generateEmulatorData, 1000);
     
+    // Micro-tick for live price movement
     const microTick = setInterval(() => {
         setPriceOffset((Math.random() - 0.5) * 4);
         if (Math.random() > 0.8) setSentiment(prev => Math.max(20, Math.min(80, prev + (Math.random() - 0.5) * 5)));
@@ -27,7 +25,6 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
     
     return () => {
         clearInterval(pollInterval.current);
-        clearInterval(emulatorInterval.current);
         clearInterval(microTick);
     };
   }, []);
@@ -37,37 +34,13 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
       const res = await fetch(`${API_URL}/trade/status`);
       const data = await res.json();
       setTradeStatus(data);
-      if (initial) {
-          setLoading(false);
-          const initialTrades = Array.from({ length: 10 }).map(() => ({
-              id: Math.random().toString(36).substr(2, 9),
-              price: data.currentPrice + (Math.random() - 0.5) * 50,
-              amount: (Math.random() * 5000).toFixed(0),
-              type: Math.random() > 0.5 ? 'buy' : 'sell',
-              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-          }));
-          setRecentTrades(initialTrades);
-      }
+      if (initial) setLoading(false);
     } catch (err) {
       console.error("Trade status error:", err);
       if (initial) setLoading(false);
     }
   };
 
-  const generateEmulatorData = () => {
-    if (!tradeStatus) return;
-    const price = tradeStatus.currentPrice;
-    if (Math.random() > 0.6) {
-        const newTrade = {
-            id: Math.random().toString(36).substr(2, 9),
-            price: price + (Math.random() - 0.5) * 10,
-            amount: (Math.random() * 2000).toFixed(0),
-            type: Math.random() > 0.5 ? 'buy' : 'sell',
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-        };
-        setRecentTrades(prev => [newTrade, ...prev.slice(0, 14)]);
-    }
-  };
 
   const handlePlaceBet = async (direction: 'up' | 'down') => {
     if (!tgUser || isPlacing || balance < selectedAmount) return;
@@ -109,28 +82,28 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
     const height = 500;
     const chartHeight = height * 0.75;
     const volumeHeight = height * 0.2;
-    const candleWidth = (width / history.length) * 0.7;
+    const candleWidth = (width / history.length) * 0.35;
 
     const getY = (val: number) => chartHeight - ((val - min) / range) * chartHeight;
 
     // Moving Average (7 periods)
-    const maPoints = history.map((_, i) => {
+    const maPoints = history.map((_: number, i: number) => {
         if (i < 6) return null;
         const slice = history.slice(i - 6, i + 1);
-        const avg = slice.reduce((a, b) => a + b, 0) / 7;
+        const avg = slice.reduce((a: number, b: number) => a + b, 0) / 7;
         return `${(i / (history.length - 1)) * width},${getY(avg)}`;
-    }).filter(p => p).join(' ');
+    }).filter((p: any) => p).join(' ');
 
     return (
       <div className="glass-panel" style={{ padding: '0', overflow: 'hidden', height: '280px', position: 'relative', border: '1px solid rgba(255,255,255,0.05)' }}>
          <svg viewBox={`0 0 ${width} ${height}`} className="chart-svg" preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block' }}>
             {/* Grid Lines */}
-            {[0.2, 0.4, 0.6, 0.8].map(p => (
+            {[0.2, 0.4, 0.6, 0.8].map((p: number) => (
                 <line key={p} x1="0" y1={chartHeight * p} x2={width} y2={chartHeight * p} stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
             ))}
             
             {/* Volume Bars */}
-            {history.map((p, i) => {
+            {history.map((p: number, i: number) => {
                 const isUp = i > 0 ? p >= history[i-1] : true;
                 const vHeight = (0.2 + Math.random() * 0.8) * volumeHeight; // Simulated volatility
                 const x = (i / (history.length - 1)) * width;
@@ -140,7 +113,7 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
             })}
 
             {/* Candlesticks */}
-            {history.map((p, i) => {
+            {history.map((p: number, i: number) => {
                 if (i === 0) return null;
                 const prevP = history[i - 1];
                 const x = (i / (history.length - 1)) * width;

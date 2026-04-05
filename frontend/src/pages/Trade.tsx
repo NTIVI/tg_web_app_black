@@ -360,12 +360,15 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
                 border: 'none',
                 borderRadius: '18px',
                 fontSize: '20px',
-                fontWeight: '900'
+                fontWeight: '900',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
               disabled={isPlacing || balance < selectedAmount}
               onClick={() => handlePlaceBet('up')}
             >
-              ВВЕРХ ↑
+              <TrendingUp size={24} style={{ marginRight: '8px' }} /> ВВЕРХ ↑
             </button>
             <button 
               className="btn-primary" 
@@ -377,12 +380,15 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
                 border: 'none',
                 borderRadius: '18px',
                 fontSize: '20px',
-                fontWeight: '900'
+                fontWeight: '900',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
               disabled={isPlacing || balance < selectedAmount}
               onClick={() => handlePlaceBet('down')}
             >
-              ВНИЗ ↓
+              <TrendingDown size={24} style={{ marginRight: '8px' }} /> ВНИЗ ↓
             </button>
           </div>
       )}

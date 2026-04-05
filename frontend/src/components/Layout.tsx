@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { Play, ShoppingBag, User, Trophy, Gift } from 'lucide-react';
+import { Play, ShoppingBag, User, Trophy, Gift, TrendingUp } from 'lucide-react';
 const Layout = () => {
   return (
     <div className="app-container">
@@ -15,6 +15,14 @@ const Layout = () => {
         >
           <Play size={24} />
           <span>Start</span>
+        </NavLink>
+
+        <NavLink 
+          to="/trade" 
+          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+        >
+          <TrendingUp size={24} />
+          <span>Трейд</span>
         </NavLink>
         
         <NavLink 

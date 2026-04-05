@@ -13,7 +13,8 @@ import {
   Eye, 
   EyeOff,
   Coins,
-  Calendar
+  Calendar,
+  TrendingUp
 } from 'lucide-react';
 
 const Admin = () => {
@@ -23,7 +24,7 @@ const Admin = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [purchases, setPurchases] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'users' | 'ads' | 'purchases'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'ads' | 'purchases' | 'trade'>('users');
   
   // Ads settings
   const [adsEnabled, setAdsEnabled] = useState(false);
@@ -31,6 +32,8 @@ const Admin = () => {
   const [adsSlotId, setAdsSlotId] = useState('');
   const [tadsWidgetId, setTadsWidgetId] = useState('');
   const [saveMessage, setSaveMessage] = useState('');
+  const [tradeStatus, setTradeStatus] = useState<any>(null);
+  const [manualTicks, setManualTicks] = useState('');
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -47,17 +50,19 @@ const Admin = () => {
         const res = await fetch(`${API_URL}/admin/purchases`);
         const data = await res.json();
         setPurchases(data.purchases || []);
-      } else {
+      } else if (activeTab === 'ads') {
         const res = await fetch(`${API_URL}/settings/ads`);
         const data = await res.json();
         if (data.settings) {
           setAdsEnabled(data.settings.ads_enabled === 'true');
           setAdsClientId(data.settings.ads_client_id || '');
           setAdsSlotId(data.settings.ads_slot_id || '');
-          // setAdsgramBlockId(data.settings.adsgram_block_id || '');
           setTadsWidgetId(data.settings.monetag_zone_id || '');
-          // setRewardedAdProvider(data.settings.rewarded_ad_provider || 'monetag');
         }
+      } else if (activeTab === 'trade') {
+        const res = await fetch(`${API_URL}/trade/admin/status`);
+        const data = await res.json();
+        setTradeStatus(data);
       }
     } catch (err) { console.error(err); }
   };
@@ -90,6 +95,20 @@ const Admin = () => {
       })
     });
     if (res.ok) { setSaveMessage('Settings saved successfully!'); setTimeout(() => setSaveMessage(''), 3000); }
+  };
+
+  const saveTradeOverride = async () => {
+    const res = await fetch(`${API_URL}/trade/admin/override`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticks: manualTicks })
+    });
+    if (res.ok) { 
+        setSaveMessage('Trade sequence saved!'); 
+        setTimeout(() => setSaveMessage(''), 3000); 
+        fetchData();
+        setManualTicks('');
+    }
   };
 
   const filteredUsers = users.filter(u => 
@@ -177,12 +196,12 @@ const Admin = () => {
           <span style={{ fontWeight: '700' }}>Stats</span>
         </button>
         <button 
-          className={`btn-primary ${activeTab === 'ads' ? '' : 'inactive'}`} 
-          style={{ flex: 1, padding: '12px', borderRadius: '14px', background: activeTab === 'ads' ? '' : 'transparent', color: activeTab === 'ads' ? 'white' : 'var(--text-secondary)', minWidth: '100px', boxShadow: activeTab === 'ads' ? '' : 'none', border: 'none' }}
-          onClick={() => setActiveTab('ads')}
+          className={`btn-primary ${activeTab === 'trade' ? '' : 'inactive'}`} 
+          style={{ flex: 1, padding: '12px', borderRadius: '14px', background: activeTab === 'trade' ? '' : 'transparent', color: activeTab === 'trade' ? 'white' : 'var(--text-secondary)', minWidth: '100px', boxShadow: activeTab === 'trade' ? '' : 'none', border: 'none' }}
+          onClick={() => setActiveTab('trade')}
         >
-          <Settings size={20} />
-          <span style={{ fontWeight: '700' }}>Ads</span>
+          <TrendingUp size={20} />
+          <span style={{ fontWeight: '700' }}>Trade</span>
         </button>
       </div>
 
@@ -364,6 +383,77 @@ const Admin = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'trade' && (
+        <div className="glass-panel">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
+            <div style={{ background: 'var(--primary-glow)', padding: '10px', borderRadius: '12px' }}>
+                <TrendingUp size={22} color="var(--primary-color)" />
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: '800' }}>Trade Management</h3>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '24px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                <div style={{ fontSize: '14px', opacity: 0.6, marginBottom: '8px' }}>Текущая цена</div>
+                <div style={{ fontSize: '36px', fontWeight: '900', color: 'var(--secondary-color)' }}>
+                    {tradeStatus?.currentPrice?.toLocaleString()}
+                </div>
+                <div style={{ fontSize: '12px', opacity: 0.4, marginTop: '8px' }}>
+                    Следующий тик: {Math.max(0, Math.floor((tradeStatus?.nextTickTime - Date.now()) / 1000))}с
+                </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '12px', fontSize: '16px', fontWeight: '700' }}>
+                 Очередь будущих тиков
+              </label>
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '16px', minHeight: '60px', marginBottom: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  {tradeStatus?.manualTicks && tradeStatus.manualTicks.length > 0 ? (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                          {tradeStatus.manualTicks.map((t: number, i: number) => (
+                              <div key={i} style={{ 
+                                  background: t > 0 ? 'rgba(74, 222, 128, 0.1)' : 'rgba(248, 113, 113, 0.1)',
+                                  color: t > 0 ? '#4ade80' : '#f87171',
+                                  padding: '4px 10px',
+                                  borderRadius: '8px',
+                                  fontSize: '14px',
+                                  fontWeight: '800',
+                                  border: `1px solid ${t > 0 ? 'rgba(74, 222, 128, 0.2)' : 'rgba(248, 113, 113, 0.2)'}`
+                              }}>
+                                  {t > 0 ? '+' : ''}{t}%
+                              </div>
+                          ))}
+                      </div>
+                  ) : (
+                      <div style={{ opacity: 0.3, textAlign: 'center', fontSize: '14px' }}>Очередь пуста. Работает рандом (±2-5%).</div>
+                  )}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <textarea 
+                  value={manualTicks}
+                  onChange={e => setManualTicks(e.target.value)}
+                  placeholder="Введите последовательность процентов через пробел, напр: +3 -5 +2 +4 -3" 
+                  className="input-field"
+                  style={{ width: '100%', height: '100px', padding: '16px', borderRadius: '18px', resize: 'none' }}
+                />
+                <button className="btn-primary" style={{ width: '100%', height: '56px', borderRadius: '18px' }} onClick={saveTradeOverride}>
+                    <Check size={22} />
+                    <span style={{ fontSize: '17px', fontWeight: '800' }}>Save Sequence</span>
+                </button>
+              </div>
+            </div>
+
+            {saveMessage && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--success-color)', background: 'rgba(0,242,254,0.1)', padding: '12px', borderRadius: '12px', fontSize: '14px', border: '1px solid rgba(0,242,254,0.2)' }}>
+                  <AlertCircle size={18} />
+                  {saveMessage}
+                </div>
+            )}
           </div>
         </div>
       )}

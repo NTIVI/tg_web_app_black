@@ -30,7 +30,8 @@ const Admin = () => {
   const [adsClientId, setAdsClientId] = useState('');
   const [adsSlotId, setAdsSlotId] = useState('');
   const [adsgramBlockId, setAdsgramBlockId] = useState('');
-  const [rewardedAdProvider, setRewardedAdProvider] = useState<'adsgram' | 'google'>('adsgram');
+  const [tadsWidgetId, setTadsWidgetId] = useState('');
+  const [rewardedAdProvider, setRewardedAdProvider] = useState<'adsgram' | 'google' | 'monetag'>('monetag');
   const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
@@ -56,7 +57,8 @@ const Admin = () => {
           setAdsClientId(data.settings.ads_client_id || '');
           setAdsSlotId(data.settings.ads_slot_id || '');
           setAdsgramBlockId(data.settings.adsgram_block_id || '');
-          setRewardedAdProvider(data.settings.rewarded_ad_provider || 'adsgram');
+          setTadsWidgetId(data.settings.monetag_zone_id || '');
+          setRewardedAdProvider(data.settings.rewarded_ad_provider || 'monetag');
         }
       }
     } catch (err) { console.error(err); }
@@ -86,6 +88,7 @@ const Admin = () => {
         ads_client_id: adsClientId, 
         ads_slot_id: adsSlotId, 
         adsgram_block_id: adsgramBlockId, 
+        monetag_zone_id: tadsWidgetId,
         rewarded_ad_provider: rewardedAdProvider 
       })
     });
@@ -99,38 +102,49 @@ const Admin = () => {
   );
 
   if (!isAuthenticated) return (
-    <div className="page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', gap: '24px' }}>
-      <div style={{ background: 'var(--surface-color)', padding: '40px', borderRadius: '32px', border: '1px solid var(--border-color)', width: '100%', maxWidth: '400px', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
-        <div style={{ background: 'var(--primary-glow)', width: '80px', height: '80px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px auto', border: '1px solid var(--primary-color)' }}>
-          <Lock size={40} color="var(--primary-color)" />
+    <div className="page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: '20px' }}>
+      <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', textAlign: 'center', padding: '48px 32px', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)', background: 'linear-gradient(145deg, rgba(20,20,25,0.9), rgba(10,10,15,0.95))' }}>
+        <div style={{ 
+          background: 'linear-gradient(135deg, var(--primary-glow), var(--secondary-glow))', 
+          width: '88px', 
+          height: '88px', 
+          borderRadius: '28px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          margin: '0 auto 32px auto', 
+          border: '1px solid var(--primary-color)',
+          boxShadow: '0 0 30px var(--primary-glow)'
+        }}>
+          <Lock size={44} color="var(--primary-color)" />
         </div>
-        <h2 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>Admin Login</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>Enter your administrator passcode</p>
+        <h2 style={{ fontSize: '32px', fontWeight: '900', marginBottom: '12px', letterSpacing: '-1px' }}>Admin Portal</h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '40px', fontSize: '15px' }}>Authentication Required</p>
         
-        <div style={{ position: 'relative', marginBottom: '24px' }}>
+        <div style={{ position: 'relative', marginBottom: '28px' }}>
           <input 
             type={showPassword ? "text" : "password"} 
             value={password} 
             onChange={(e) => setPassword(e.target.value)} 
-            placeholder="Passcode..." 
+            placeholder="Enter passcode..." 
             className="input-field" 
-            style={{ width: '100%', paddingRight: '50px' }} 
-            onKeyDown={(e) => e.key === 'Enter' && password.trim() === 'admin777' && setIsAuthenticated(true)}
+            style={{ width: '100%', height: '56px', fontSize: '16px', paddingRight: '54px', borderRadius: '18px' }} 
+            onKeyDown={(e) => e.key === 'Enter' && password.trim() === 'NTIVI' && setIsAuthenticated(true)}
           />
           <button 
             onClick={() => setShowPassword(!showPassword)}
-            style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+            style={{ position: 'absolute', right: '18px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
-            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
           </button>
         </div>
         
         <button 
           className="btn-primary" 
-          style={{ width: '100%' }}
-          onClick={() => { if (password.trim() === 'admin777') setIsAuthenticated(true); else alert('Access Denied'); }}
+          style={{ width: '100%', height: '56px', fontSize: '17px', fontWeight: '800', borderRadius: '18px', boxShadow: '0 10px 25px var(--primary-glow)' }}
+          onClick={() => { if (password.trim() === 'NTIVI') setIsAuthenticated(true); else alert('Access Denied'); }}
         >
-          Check Access
+          Authorize
         </button>
       </div>
     </div>
@@ -138,40 +152,40 @@ const Admin = () => {
 
   return (
     <div className="page" style={{ paddingBottom: '120px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '36px' }}>
         <div>
-          <h1 style={{ marginBottom: '4px' }}>Admin Panel</h1>
-          <p style={{ margin: 0 }}>Management System</p>
-        </div>
-        <div style={{ background: 'rgba(0,242,254,0.1)', color: 'var(--success-color)', padding: '6px 12px', borderRadius: '10px', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', border: '1px solid rgba(0,242,254,0.2)' }}>
-          Live Mode
+          <h1 style={{ marginBottom: '6px', fontSize: '32px' }}>Admin Panel</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '14px' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success-color)', boxShadow: '0 0 10px var(--success-color)' }}></div>
+            Management Console
+          </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', overflowX: 'auto', paddingBottom: '4px' }}>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '32px', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
         <button 
           className={`btn-primary ${activeTab === 'users' ? '' : 'inactive'}`} 
-          style={{ flex: 1, padding: '12px', borderRadius: '14px', background: activeTab === 'users' ? '' : 'rgba(255,255,255,0.05)', color: activeTab === 'users' ? 'white' : 'var(--text-secondary)', minWidth: '100px' }}
+          style={{ flex: 1, padding: '12px', borderRadius: '14px', background: activeTab === 'users' ? '' : 'transparent', color: activeTab === 'users' ? 'white' : 'var(--text-secondary)', minWidth: '100px', boxShadow: activeTab === 'users' ? '' : 'none', border: 'none' }}
           onClick={() => setActiveTab('users')}
         >
-          <Users size={18} />
-          <span>Users</span>
+          <Users size={20} />
+          <span style={{ fontWeight: '700' }}>Users</span>
         </button>
         <button 
           className={`btn-primary ${activeTab === 'purchases' ? '' : 'inactive'}`} 
-          style={{ flex: 1, padding: '12px', borderRadius: '14px', background: activeTab === 'purchases' ? '' : 'rgba(255,255,255,0.05)', color: activeTab === 'purchases' ? 'white' : 'var(--text-secondary)', minWidth: '110px' }}
+          style={{ flex: 1, padding: '12px', borderRadius: '14px', background: activeTab === 'purchases' ? '' : 'transparent', color: activeTab === 'purchases' ? 'white' : 'var(--text-secondary)', minWidth: '110px', boxShadow: activeTab === 'purchases' ? '' : 'none', border: 'none' }}
           onClick={() => setActiveTab('purchases')}
         >
-          <ShoppingBag size={18} />
-          <span>Purchases</span>
+          <ShoppingBag size={20} />
+          <span style={{ fontWeight: '700' }}>Stats</span>
         </button>
         <button 
           className={`btn-primary ${activeTab === 'ads' ? '' : 'inactive'}`} 
-          style={{ flex: 1, padding: '12px', borderRadius: '14px', background: activeTab === 'ads' ? '' : 'rgba(255,255,255,0.05)', color: activeTab === 'ads' ? 'white' : 'var(--text-secondary)', minWidth: '100px' }}
+          style={{ flex: 1, padding: '12px', borderRadius: '14px', background: activeTab === 'ads' ? '' : 'transparent', color: activeTab === 'ads' ? 'white' : 'var(--text-secondary)', minWidth: '100px', boxShadow: activeTab === 'ads' ? '' : 'none', border: 'none' }}
           onClick={() => setActiveTab('ads')}
         >
-          <Settings size={18} />
-          <span>Ads</span>
+          <Settings size={20} />
+          <span style={{ fontWeight: '700' }}>Ads</span>
         </button>
       </div>
 
@@ -296,9 +310,11 @@ const Admin = () => {
 
       {activeTab === 'ads' && (
         <div className="glass-panel">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
-            <Settings size={20} color="var(--primary-color)" />
-            <h3 style={{ fontSize: '18px', fontWeight: '800' }}>Ad Monetization</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
+            <div style={{ background: 'var(--primary-glow)', padding: '10px', borderRadius: '12px' }}>
+                <Settings size={22} color="var(--primary-color)" />
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: '800' }}>Monetization Settings</h3>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -316,40 +332,36 @@ const Admin = () => {
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>Rewarded Ad Provider</label>
+              <label style={{ display: 'block', marginBottom: '10px', fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)' }}>Ad Provider</label>
               <select 
                 value={rewardedAdProvider} 
-                onChange={e => setRewardedAdProvider(e.target.value as 'adsgram' | 'google')}
+                onChange={e => setRewardedAdProvider(e.target.value as 'adsgram' | 'google' | 'monetag')}
                 className="input-field"
-                style={{ width: '100%', appearance: 'none', background: 'var(--surface-color-light)', cursor: 'pointer' }}
+                style={{ width: '100%', appearance: 'none', background: 'var(--surface-color-light)', cursor: 'pointer', height: '52px' }}
               >
-                <option value="adsgram">AdsGram (Telegram Best)</option>
-                <option value="google">Google AdSense H5</option>
+                <option value="monetag">Tads.me (Official)</option>
+                <option value="google">Google H5 Ads</option>
               </select>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>AdsGram Block ID</label>
-                <input type="text" value={adsgramBlockId} onChange={e => setAdsgramBlockId(e.target.value)} placeholder="e.g. 3830" className="input-field" style={{ width: '100%' }} />
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600' }}>Tads.me Widget ID</label>
+                <input type="text" value={tadsWidgetId} onChange={e => setTadsWidgetId(e.target.value)} placeholder="e.g. 9609" className="input-field" style={{ width: '100%', height: '52px', border: '1px solid var(--primary-color)' }} />
               </div>
               
-              <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '8px 0' }}></div>
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '10px 0' }}></div>
               
               <div>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>Google Publisher ID (ca-pub-...)</label>
-                <input type="text" value={adsClientId} onChange={e => setAdsClientId(e.target.value)} placeholder="ca-pub-XXXXXXXXXXXXXXXX" className="input-field" style={{ width: '100%' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>Google Ad Slot ID</label>
-                <input type="text" value={adsSlotId} onChange={e => setAdsSlotId(e.target.value)} placeholder="XXXXXXXXXX" className="input-field" style={{ width: '100%' }} />
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600' }}>Google Publisher ID</label>
+                <input type="text" value={adsClientId} onChange={e => setAdsClientId(e.target.value)} placeholder="ca-pub-..." className="input-field" style={{ width: '100%', height: '52px' }} />
               </div>
             </div>
 
-            <div style={{ marginTop: '12px' }}>
-              <button className="btn-primary" style={{ width: '100%' }} onClick={saveAds}>
-                <Check size={20} />
-                Save Changes
+            <div style={{ marginTop: '16px' }}>
+              <button className="btn-primary" style={{ width: '100%', height: '56px', borderRadius: '18px' }} onClick={saveAds}>
+                <Check size={22} />
+                <span style={{ fontSize: '17px', fontWeight: '800' }}>Apply Configuration</span>
               </button>
               {saveMessage && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--success-color)', background: 'rgba(0,242,254,0.1)', padding: '12px', borderRadius: '12px', marginTop: '16px', fontSize: '14px', border: '1px solid rgba(0,242,254,0.2)' }}>

@@ -99,27 +99,6 @@ app.post('/api/watch-ad', async (req, res) => {
     }
 });
 
-// Adsgram Server-to-Server reward callback
-app.get('/api/adsgram-reward', async (req, res) => {
-    const { user } = req.query;
-    if (!user) return res.status(400).send('Missing user');
-    
-    try {
-        const userData = await DB.get('SELECT last_ad_watch FROM users WHERE telegram_id = ?', [user]);
-        if (userData?.last_ad_watch) {
-            const lastWatch = new Date(userData.last_ad_watch + 'Z');
-            const diff = (new Date() - lastWatch) / 1000;
-            if (diff < 110) return res.status(429).send('Cooldown'); // Slightly shorter for S2S to allow for network delay
-        }
-
-        await DB.run('UPDATE users SET balance = balance + 50, last_ad_watch = CURRENT_TIMESTAMP WHERE telegram_id = ?', [user]);
-        console.log(`Rewarded user ${user} via Adsgram s2s`);
-        res.send('OK');
-    } catch (err) {
-        console.error('Adsgram reward error:', err);
-        res.status(500).send('Error');
-    }
-});
 
 app.post('/api/buy', async (req, res) => {
     const { telegramId, itemName, price } = req.body;
@@ -249,10 +228,8 @@ app.post('/api/admin/settings/ads', async (req, res) => {
     const s = req.body;
     const items = [
         ['ads_enabled', s.ads_enabled ? 'true' : 'false'],
-        ['ads_client_id', s.ads_client_id || ''],
-        ['ads_slot_id', s.ads_slot_id || ''],
-        ['adsgram_block_id', s.adsgram_block_id || ''],
-        ['rewarded_ad_provider', s.rewarded_ad_provider || 'adsgram']
+        ['monetag_zone_id', s.monetag_zone_id || '9609'],
+        ['rewarded_ad_provider', s.rewarded_ad_provider || 'monetag']
     ];
     for (const [k, v] of items) await DB.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?,?)', [k, v]);
     res.json({ success: true });

@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
-import { Gift, ExternalLink, CheckCircle2, Coins, PlayCircle } from 'lucide-react';
-import { useAdsgram } from '../hooks/useAdsgram';
+import { Gift, ExternalLink, CheckCircle2, Coins } from 'lucide-react';
 
 const TelegramIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -30,8 +29,6 @@ const BONUS_LIST = [
 const Bonuses = ({ user, setBalance, dailyStatus, handleClaimDaily, claimingDaily }: any) => {
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
   const [claiming, setClaiming] = useState<string | null>(null);
-  const [adCooldown, setAdCooldown] = useState<number>(0);
-  const [adsgramBlockId, setAdsgramBlockId] = useState('');
 
   const streak = dailyStatus?.currentStreak || 0;
   const steps = [10, 20, 50, 100, 150, 200, 500];
@@ -44,49 +41,6 @@ const Bonuses = ({ user, setBalance, dailyStatus, handleClaimDaily, claimingDail
         .catch(err => console.error("Error fetching claimed bonuses:", err));
     }
   }, [user]);
-
-  // Fetch ad settings
-  useEffect(() => {
-    fetch(`${API_URL}/settings/ads`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.settings) {
-          setAdsgramBlockId(data.settings.adsgram_block_id || '');
-        }
-      })
-      .catch(err => console.error("Could not load ads config", err));
-  }, []);
-
-  // Cooldown timer
-  useEffect(() => {
-    if (adCooldown > 0) {
-      const timer = setInterval(() => setAdCooldown(prev => prev - 1), 1000);
-      return () => clearInterval(timer);
-    }
-  }, [adCooldown]);
-
-  const onAdReward = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_URL}/watch-ad`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegramId: user.telegram_id })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setBalance(data.newBalance);
-        setAdCooldown(120); // 2 min cooldown
-      }
-    } catch (e) {
-      console.error('Ad reward error:', e);
-    }
-  }, [user, setBalance]);
-
-  const { showAd, isLoading: isAdLoading } = useAdsgram({
-    blockId: adsgramBlockId,
-    onReward: onAdReward,
-    onError: (err) => console.error('Ad error:', err)
-  });
 
   const handleClaim = async (bonus: any) => {
     if (!user || claimedIds.includes(bonus.id)) return;
@@ -242,36 +196,6 @@ const Bonuses = ({ user, setBalance, dailyStatus, handleClaimDaily, claimingDail
         </div>
       </div>
 
-      <h3 style={{ marginBottom: '16px', opacity: 0.8 }}>Рекламный бонус</h3>
-      <div className="glass-panel" style={{ padding: '20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <div style={{ 
-          width: '48px', 
-          height: '48px', 
-          borderRadius: '14px', 
-          background: 'rgba(255,255,255,0.05)', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          color: 'var(--primary-color)'
-        }}>
-          <PlayCircle size={28} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: '700', fontSize: '15px' }}>Смотреть рекламу</div>
-          <div style={{ color: 'var(--gold-color)', fontWeight: '800', fontSize: '14px' }}>
-            +50 coins
-          </div>
-        </div>
-        <button 
-          className="btn-primary"
-          style={{ padding: '8px 16px', fontSize: '13px', borderRadius: '12px', minWidth: '100px' }}
-          onClick={showAd}
-          disabled={isAdLoading || adCooldown > 0}
-        >
-          {isAdLoading ? <div className="spinner" style={{ width: '16px', height: '16px', borderTopColor: 'white' }}></div> : 
-           adCooldown > 0 ? `${Math.floor(adCooldown / 60)}:${(adCooldown % 60).toString().padStart(2, '0')}` : 'Смотреть'}
-        </button>
-      </div>
 
       <h3 style={{ marginBottom: '16px', opacity: 0.8 }}>Задания</h3>
 

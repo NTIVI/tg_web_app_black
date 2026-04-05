@@ -1,15 +1,17 @@
 :root {
-  --primary-color: #9d50bb;
-  --primary-glow: rgba(157, 80, 187, 0.4);
-  --secondary-color: #6e48aa;
-  --background-color: #050505;
-  --surface-color: rgba(20, 20, 20, 0.7);
-  --surface-color-light: rgba(40, 40, 40, 0.5);
+  --primary-color: #00f2fe;
+  --primary-glow: rgba(0, 242, 254, 0.3);
+  --secondary-color: #7000ff;
+  --secondary-glow: rgba(112, 0, 255, 0.3);
+  --background-color: #030303;
+  --surface-color: rgba(18, 18, 22, 0.75);
+  --surface-color-light: rgba(28, 28, 35, 0.6);
   --text-primary: #ffffff;
-  --text-secondary: #a0a0a0;
-  --border-color: rgba(157, 80, 187, 0.2);
-  --success-color: #00f2fe;
-  --gold-color: #ffd700;
+  --text-secondary: #94a3b8;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --success-color: #10b981;
+  --danger-color: #ef4444;
+  --gold-color: #f59e0b;
   --tg-theme-bg-color: var(--background-color);
   --tg-theme-text-color: var(--text-primary);
 }
@@ -78,13 +80,36 @@ p {
 
 .glass-panel {
   background: var(--surface-color);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-color);
-  border-radius: 24px;
+  border-radius: 28px;
   padding: 24px;
   margin-bottom: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.glass-panel:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.input-field {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px 18px;
+  border-radius: 16px;
+  color: white;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 15px var(--primary-glow);
 }
 
 .btn-primary {

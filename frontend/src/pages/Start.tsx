@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Coins, PlayCircle } from 'lucide-react';
 import { API_URL } from '../config';
-import { useAdsgram } from '../hooks/useAdsgram';
+import { TadsWidget } from 'react-tads-widget';
 
 interface StartProps {
   userId: string | null;
@@ -10,11 +10,9 @@ interface StartProps {
 }
 
 const Start = ({ userId, balance, setBalance }: StartProps) => {
-  const [isWatching, setIsWatching] = useState(false);
+  const [isAdVisible, setIsAdVisible] = useState(false);
   const [adMessage, setAdMessage] = useState('');
-  const [adsgramBlockId, setAdsgramBlockId] = useState('');
-  const [adsClientId, setAdsClientId] = useState('');
-  const [rewardedAdProvider, setRewardedAdProvider] = useState('adsgram');
+  const [tadsWidgetId, setTadsWidgetId] = useState('');
   const [cooldownTime, setCooldownTime] = useState(0);
 
   useEffect(() => {
@@ -45,9 +43,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
       .then(res => res.json())
       .then(data => {
         if (data.settings) {
-          setAdsgramBlockId(data.settings.adsgram_block_id || '');
-          setAdsClientId(data.settings.ads_client_id || '');
-          setRewardedAdProvider(data.settings.rewarded_ad_provider || 'adsgram');
+          setTadsWidgetId(data.settings.monetag_zone_id || '');
         }
       })
       .catch(err => console.error("Could not load ads config", err));
@@ -65,74 +61,24 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
       if (data.success) {
         setBalance(data.newBalance);
         setAdMessage('Reward claimed! +50 Coins');
+        const now = Date.now();
+        localStorage.setItem('last_ad_watch', now.toString());
+        setCooldownTime(120);
       } else {
         setAdMessage('Failed to claim reward.');
       }
     } catch (err) {
       setAdMessage('Network error.');
     } finally {
-      setIsWatching(false);
+      setIsAdVisible(false);
     }
   }, [userId, setBalance]);
 
-  const { showAd: showAdsgram } = useAdsgram({
-    blockId: adsgramBlockId,
-    onReward: () => {
-        setAdMessage('Ad finished! Claiming reward...');
-        claimReward();
-    },
-    onError: (result) => {
-        console.error('Adsgram error:', result);
-        setAdMessage('Ad skipped or unavailable.');
-        setIsWatching(false);
-    }
-  });
 
   const handleWatchAd = async () => {
     if (!userId) return;
-    
-    setIsWatching(true);
+    setIsAdVisible(true);
     setAdMessage('Loading Advertisement...');
-    
-    if (rewardedAdProvider === 'adsgram' && adsgramBlockId) {
-      showAdsgram();
-    } else if (rewardedAdProvider === 'google' && adsClientId) {
-      try {
-        // Google AdSense H5 adBreak
-        const adBreak = (window as any).adBreak;
-        if (adBreak) {
-          adBreak({
-            type: 'reward',
-            name: 'get_coins',
-            beforeAd: () => setAdMessage('Ad starting...'),
-            afterAd: () => setAdMessage('Ad finished!'),
-            beforeReward: (showAdFn: any) => {
-              showAdFn();
-            },
-            adDismissed: () => {
-              setAdMessage('Ad skipped.');
-              setIsWatching(false);
-            },
-            adViewed: () => {
-              setAdMessage('Ad viewed! Claiming reward...');
-              claimReward();
-            },
-            adBreakDone: () => {
-              setIsWatching(false);
-            }
-          });
-        } else {
-          throw new Error("Google AdSense H5 not ready");
-        }
-      } catch (err) {
-        console.error("Google Ad error", err);
-        setAdMessage('Google Ad unavailable.');
-        setTimeout(() => setIsWatching(false), 2000);
-      }
-    } else {
-      setAdMessage('Ad provider not configured.');
-      setTimeout(() => setIsWatching(false), 2000);
-    }
   };
 
   return (
@@ -162,7 +108,23 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
         <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', background: 'var(--primary-glow)', filter: 'blur(40px)', zIndex: 0 }} />
         
         <div style={{ position: 'relative', zIndex: 1 }}>
-          {isWatching ? (
+          {isAdVisible && (
+            <TadsWidget 
+              id={tadsWidgetId || "9609"}
+              type="fullscreen"
+              debug={false}
+              onShowReward={() => {
+                setAdMessage('Ad finished! Claiming reward...');
+                claimReward();
+              }}
+              onAdsNotFound={() => {
+                setAdMessage('Ads not available right now.');
+                setTimeout(() => setIsAdVisible(false), 2000);
+              }}
+            />
+          )}
+
+          {isAdVisible ? (
             <div className="loader-container">
               <div className="spinner" style={{ width: '48px', height: '48px' }}></div>
               <h3 style={{ fontSize: '18px', fontWeight: '700' }}>{adMessage || 'Preparing your reward...'}</h3>

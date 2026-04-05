@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { API_URL } from '../config';
 import { TrendingUp, TrendingDown, Coins, Clock, BarChart3 } from 'lucide-react';
+import { createChart, ColorType } from 'lightweight-charts';
+import type { ISeriesApi } from 'lightweight-charts';
 
 const Trade = ({ tgUser, balance, setBalance }: any) => {
   const [tradeStatus, setTradeStatus] = useState<any>(null);
@@ -9,6 +11,8 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
   const [isPlacing, setIsPlacing] = useState(false);
   const [activeBet, setActiveBet] = useState<any>(null);
   const pollInterval = useRef<any>(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
 
   useEffect(() => {
     fetchTradeStatus();
@@ -21,10 +25,74 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
       const res = await fetch(`${API_URL}/trade/status`);
       const data = await res.json();
       setTradeStatus(data);
+      updateChartData(data.history || []);
     } catch (err) {
       console.error("Trade status error:", err);
     }
   };
+
+  const updateChartData = (history: number[]) => {
+    if (!candleSeriesRef.current || history.length < 2) return;
+    
+    const candleData = history.map((price, index) => {
+      const prevPrice = history[index - 1] || price;
+      const baseTime = Math.floor(Date.now() / 1000) - (history.length - index) * 300;
+      
+      const open = prevPrice;
+      const close = price;
+      const diff = Math.abs(close - open) || 10;
+      const high = Math.max(open, close) + (diff * 0.2);
+      const low = Math.min(open, close) - (diff * 0.2);
+      
+      return { time: baseTime as any, open, high, low, close };
+    });
+    
+    candleSeriesRef.current.setData(candleData);
+  };
+
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+
+    const chart = createChart(chartContainerRef.current, {
+      layout: {
+        background: { type: ColorType.Solid, color: 'transparent' },
+        textColor: '#94a3b8',
+      },
+      grid: {
+        vertLines: { color: 'rgba(255, 255, 255, 0.05)' },
+        horzLines: { color: 'rgba(255, 255, 255, 0.05)' },
+      },
+      width: chartContainerRef.current.clientWidth,
+      height: 200,
+      timeScale: {
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        timeVisible: true,
+      },
+    });
+
+    const candleSeries = (chart as any).addCandlestickSeries({
+      upColor: '#4ade80',
+      downColor: '#f87171',
+      borderVisible: false,
+      wickUpColor: '#4ade80',
+      wickDownColor: '#f87171',
+    });
+
+    candleSeriesRef.current = candleSeries;
+    
+    const handleResize = () => {
+      if (chartContainerRef.current) {
+        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      chart.remove();
+    };
+  }, []);
 
   const handlePlaceBet = async (direction: 'up' | 'down') => {
     if (!tgUser || isPlacing || balance < selectedAmount) return;
@@ -86,42 +154,18 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
   };
 
   const renderChart = () => {
-    if (!tradeStatus?.history) return null;
-    const history = tradeStatus.history;
-    
     return (
-      <div style={{ 
-        fontFamily: 'monospace', 
-        background: 'rgba(0,0,0,0.3)', 
-        padding: '16px', 
-        borderRadius: '16px',
-        fontSize: '14px',
-        lineHeight: '1.6',
-        maxHeight: '200px',
-        overflowY: 'auto',
-        display: 'flex',
-        flexDirection: 'column-reverse'
-      }}>
-        {history.map((price: number, i: number) => {
-          const prevPrice = history[i - 1] || price;
-          const isUp = price > prevPrice;
-          const isSame = price === prevPrice;
-          const emoji = isUp ? '🟩' : (isSame ? '⬜' : '🟥');
-          const color = isUp ? '#4ade80' : (isSame ? '#94a3b8' : '#f87171');
-          
-          return (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', color }}>
-              <span>{emoji}</span>
-              <span style={{ fontWeight: 'bold' }}>{price.toLocaleString()}</span>
-              {i > 0 && (
-                  <span style={{ fontSize: '10px', opacity: 0.8 }}>
-                    {isUp ? '↑' : (isSame ? '→' : '↓')} {Math.abs(((price - prevPrice) / prevPrice) * 100).toFixed(1)}%
-                  </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      <div 
+        ref={chartContainerRef} 
+        style={{ 
+            width: '100%', 
+            height: '200px', 
+            background: 'rgba(0,0,0,0.2)', 
+            borderRadius: '16px',
+            overflow: 'hidden',
+            border: '1px solid rgba(255,255,255,0.05)'
+        }} 
+      />
     );
   };
 

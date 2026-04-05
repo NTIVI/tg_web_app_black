@@ -54,7 +54,10 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
   };
 
   useEffect(() => {
-    if (!chartContainerRef.current || chartContainerRef.current.clientWidth === 0) return;
+    if (!chartContainerRef.current || candleSeriesRef.current) return;
+    
+    const width = chartContainerRef.current.clientWidth;
+    if (width === 0) return;
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
@@ -65,7 +68,7 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
         vertLines: { color: 'rgba(255, 255, 255, 0.05)' },
         horzLines: { color: 'rgba(255, 255, 255, 0.05)' },
       },
-      width: chartContainerRef.current.clientWidth || 300,
+      width: width,
       height: 200,
       timeScale: {
         borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -83,8 +86,13 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
 
     candleSeriesRef.current = candleSeries;
     
+    // Set initial data if available
+    if (tradeStatus?.history) {
+        updateChartData(tradeStatus.history);
+    }
+    
     const handleResize = () => {
-      if (chartContainerRef.current) {
+      if (chartContainerRef.current && chart) {
         chart.applyOptions({ width: chartContainerRef.current.clientWidth });
       }
     };
@@ -94,8 +102,9 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
     return () => {
       window.removeEventListener('resize', handleResize);
       chart.remove();
+      candleSeriesRef.current = null;
     };
-  }, []);
+  }, [tradeStatus, loading]);
 
   const handlePlaceBet = async (direction: 'up' | 'down') => {
     if (!tgUser || isPlacing || balance < selectedAmount) return;

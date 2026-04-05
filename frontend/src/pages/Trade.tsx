@@ -62,14 +62,16 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
     } catch (err) { console.error("Bet error:", err); } finally { setIsPlacing(false); }
   };
 
-  const handleExchange = async () => {
-    if (!tgUser || balance < 100) return;
+  const handleExchange = async (amount: number | 'all') => {
+    if (!tgUser) return;
+    const exchangeAmt = amount === 'all' ? Math.floor(balance / 100) * 100 : amount;
+    if (exchangeAmt < 100 || balance < exchangeAmt) return;
     const tid = tgUser.telegram_id || tgUser.id;
     try {
         const res = await fetch(`${API_URL}/trade/exchange`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ telegramId: tid, amount: 100 })
+            body: JSON.stringify({ telegramId: tid, amount: exchangeAmt })
         });
         if (res.ok) {
             initUser();
@@ -92,29 +94,53 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
 
 ;
 
-  const renderMarketInsights = () => (
-    <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-        {/* Sentiment Bar */}
-        <div className="glass-panel" style={{ flex: 1.5, padding: '15px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: 'bold', marginBottom: '8px', opacity: 0.7 }}>
-                <span>BULLISH</span>
-                <span>BEARISH</span>
+  const renderMarketInsights = () => {
+    const change = tradeStatus?.adminChangePercent || 0;
+    const isPositive = change >= 0;
+    return (
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+            <div className="glass-panel" style={{ flex: 1.5, padding: '15px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: 'bold', marginBottom: '8px', opacity: 0.7 }}>
+                    <span>BULLISH</span>
+                    <span>BEARISH</span>
+                </div>
+                <div style={{ height: '8px', background: '#f87171', borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
+                    <div style={{ width: `${sentiment}%`, background: '#4ade80', height: '100%', transition: 'width 1s ease', boxShadow: '0 0 10px #4ade8044' }}></div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '900', marginTop: '6px' }}>
+                    <span style={{ color: '#4ade80' }}>{sentiment}%</span>
+                    <span style={{ color: '#f87171' }}>{100 - sentiment}%</span>
+                </div>
             </div>
-            <div style={{ height: '8px', background: '#f87171', borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
-                <div style={{ width: `${sentiment}%`, background: '#4ade80', height: '100%', transition: 'width 1s ease', boxShadow: '0 0 10px #4ade8044' }}></div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '900', marginTop: '6px' }}>
-                <span style={{ color: '#4ade80' }}>{sentiment}%</span>
-                <span style={{ color: '#f87171' }}>{100 - sentiment}%</span>
+            <div className="glass-panel" style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontSize: '10px', opacity: 0.5, marginBottom: '2px' }}>24H CHANGE</div>
+                <div style={{ fontSize: '16px', fontWeight: 'bold', color: isPositive ? '#4ade80' : '#f87171' }}>
+                    {isPositive ? '+' : ''}{change.toFixed(2)}%
+                </div>
+                <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '6px 0' }}></div>
+                <div style={{ fontSize: '10px', opacity: 0.5, marginBottom: '2px' }}>INDEX</div>
+                <div style={{ fontSize: '12px', fontWeight: 'bold' }}>{isPositive ? 'GREED' : 'FEAR'}</div>
             </div>
         </div>
-        {/* Quick Stats */}
-        <div className="glass-panel" style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <div style={{ fontSize: '10px', opacity: 0.5, marginBottom: '2px' }}>24H CHANGE</div>
-            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#4ade80' }}>+4.28%</div>
-            <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '6px 0' }}></div>
-            <div style={{ fontSize: '10px', opacity: 0.5, marginBottom: '2px' }}>INDEX</div>
-            <div style={{ fontSize: '12px', fontWeight: 'bold' }}>EXTREME GREED</div>
+    );
+  };
+
+  const renderExchangeSection = () => (
+    <div className="glass-panel" style={{ padding: '20px', marginBottom: '20px', background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.4) 100%)', border: '1px solid rgba(255,184,0,0.1)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div>
+                <div style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-color)', letterSpacing: '1px' }}>КОНВЕРТИРОВАТЬ МОНЕТЫ</div>
+                <div style={{ fontSize: '10px', opacity: 0.5 }}>КУРС: 100 МОНЕТ = 1 YT COIN</div>
+            </div>
+            <div style={{ width: '40px', height: '40px', background: 'var(--gold-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px rgba(255,184,0,0.3)' }}>
+                <ArrowRightLeft size={20} color="black" />
+            </div>
+        </div>
+        
+        <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={() => handleExchange(100)} disabled={balance < 100} style={{ flex: 1, padding: '12px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', fontSize: '12px', fontWeight: 'bold' }}>100 → 1 YT</button>
+            <button onClick={() => handleExchange(500)} disabled={balance < 500} style={{ flex: 1, padding: '12px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', fontSize: '12px', fontWeight: 'bold' }}>500 → 5 YT</button>
+            <button onClick={() => handleExchange('all')} disabled={balance < 100} style={{ flex: 1.5, padding: '12px', borderRadius: '14px', border: '1px solid var(--gold-color)', background: 'rgba(255,184,0,0.1)', color: 'var(--gold-color)', fontSize: '12px', fontWeight: '900' }}>ОБМЕНЯТЬ ВСЁ</button>
         </div>
     </div>
   );
@@ -185,10 +211,11 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
       </div>
 
 
+      {/* Conversion Section */}
+      {renderExchangeSection()}
+
       {/* Sentiment & Insights */}
-      <div style={{ marginTop: '20px' }}>
-          {renderMarketInsights()}
-      </div>
+      {renderMarketInsights()}
 
       {/* Control Panel */}
       <div className="glass-panel" style={{ padding: '20px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -196,13 +223,6 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
             <div style={{ fontSize: '13px', fontWeight: 'bold', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Zap size={14} color="var(--gold-color)" fill="var(--gold-color)" /> YT COINS
             </div>
-            <button 
-                onClick={handleExchange}
-                disabled={balance < 100}
-                style={{ fontSize: '10px', background: 'rgba(168, 85, 247, 0.2)', color: 'var(--secondary-color)', border: '1px solid var(--secondary-color)', padding: '4px 10px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
-            >
-                GET YT (100:1)
-            </button>
           </div>
           
           <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '4px' }}>

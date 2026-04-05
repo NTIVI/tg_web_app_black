@@ -262,7 +262,8 @@ app.post('/api/admin/settings/ads', async (req, res) => {
 
 // New Trade Routes
 app.get('/api/trade/status', (req, res) => {
-    res.json(tradeState);
+    const adminChange = tradeState.manualTicks.reduce((a, b) => a + b, 0);
+    res.json({ ...tradeState, adminChangePercent: adminChange });
 });
 
 app.post('/api/trade/exchange', async (req, res) => {

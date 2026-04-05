@@ -12,31 +12,6 @@ const token = process.env.BOT_TOKEN;
 
 app.use(cors());
 app.use(express.json());
-let tradeState = {
-    currentPrice: 7000,
-    history: [7000],
-    manualTicks: [],
-    nextTickTime: Date.now() + 300000
-};
-
-const tickTrade = () => {
-    let changePercent;
-    if (tradeState.manualTicks.length > 0) {
-        changePercent = tradeState.manualTicks.shift();
-    } else {
-        const isUp = Math.random() > 0.5;
-        changePercent = (Math.random() * 3 + 2) * (isUp ? 1 : -1);
-    }
-    
-    tradeState.currentPrice = Math.round(tradeState.currentPrice * (1 + changePercent / 100));
-    tradeState.history.push(tradeState.currentPrice);
-    if (tradeState.history.length > 20) tradeState.history.shift();
-    
-    const nextIn = Math.floor(Math.random() * (300000 - 180000) + 180000); // 3-5 mins
-    tradeState.nextTickTime = Date.now() + nextIn;
-    setTimeout(tickTrade, nextIn);
-};
-setTimeout(tickTrade, 300000);
 
 let memoizedSecretKey = null;
 const verifyInitData = (initData) => {
@@ -258,75 +233,6 @@ app.post('/api/admin/settings/ads', async (req, res) => {
     ];
     for (const [k, v] of items) await DB.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?,?)', [k, v]);
     res.json({ success: true });
-});
-
-// New Trade Routes
-app.get('/api/trade/status', (req, res) => {
-    const adminChange = tradeState.manualTicks.reduce((a, b) => a + b, 0);
-    res.json({ ...tradeState, adminChangePercent: adminChange });
-});
-
-app.post('/api/trade/exchange', async (req, res) => {
-    const { telegramId, amount } = req.body;
-    const monetkiToExchange = parseInt(amount);
-    if (isNaN(monetkiToExchange) || monetkiToExchange < 100) return res.status(400).json({ error: 'Min exchange 100' });
-    
-    try {
-        const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-        if (!user || user.balance < monetkiToExchange) return res.status(400).json({ error: 'Insufficient monetki' });
-        
-        const ytGained = Math.floor(monetkiToExchange / 100);
-        const actualMonetkiDeducted = ytGained * 100;
-        
-        await DB.run('UPDATE users SET balance = balance - ?, yt_balance = yt_balance + ? WHERE telegram_id = ?', [actualMonetkiDeducted, ytGained, telegramId]);
-        const updated = await DB.get('SELECT balance, yt_balance FROM users WHERE telegram_id = ?', [telegramId]);
-        res.json({ success: true, balance: updated.balance, yt_balance: updated.yt_balance });
-    } catch (err) { res.status(500).json({ error: 'Exchange error' }); }
-});
-
-app.post('/api/trade/bet', async (req, res) => {
-    const { telegramId, amount, direction, duration } = req.body;
-    const startPrice = tradeState.currentPrice;
-    
-    try {
-        const user = await DB.get('SELECT yt_balance FROM users WHERE telegram_id = ?', [telegramId]);
-        if (!user || user.yt_balance < amount) return res.status(400).json({ error: 'No YT funds' });
-
-        await DB.run('UPDATE users SET yt_balance = yt_balance - ? WHERE telegram_id = ?', [amount, telegramId]);
-        
-        setTimeout(async () => {
-            const endPrice = tradeState.currentPrice;
-            const won = (direction === 'up' && endPrice > startPrice) || (direction === 'down' && endPrice < startPrice);
-            let resultMessage = won ? 'WIN' : (endPrice === startPrice ? 'DRAW' : 'LOSS');
-            let payout = 0;
-
-            if (won) {
-                const multiplier = Math.random() * (2.3 - 1.9) + 1.9;
-                payout = Math.round(amount * multiplier);
-                await DB.run('UPDATE users SET yt_balance = yt_balance + ? WHERE telegram_id = ?', [payout, telegramId]);
-            } else if (endPrice === startPrice) {
-                payout = amount;
-                await DB.run('UPDATE users SET yt_balance = yt_balance + ? WHERE telegram_id = ?', [payout, telegramId]);
-            }
-            
-            // Bot notification removed per user request for privacy
-        }, duration * 1000);
-
-        res.json({ success: true, startPrice });
-    } catch (err) { res.status(500).json({ error: 'Bet error' }); }
-});
-
-app.get('/api/trade/admin/status', (req, res) => {
-    res.json(tradeState);
-});
-
-app.post('/api/trade/admin/override', (req, res) => {
-    const { ticks } = req.body; // e.g. "+3 -2 +5"
-    if (typeof ticks === 'string') {
-        const parsed = ticks.split(/\s+/).map(v => parseFloat(v)).filter(v => !isNaN(v));
-        tradeState.manualTicks = parsed;
-    }
-    res.json({ success: true, manualTicks: tradeState.manualTicks });
 });
 
 app.listen(port, () => console.log(`SQLite Server on ${port}`));

@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Layout from './components/Layout';
 import Start from './pages/Start';
@@ -7,7 +7,7 @@ import Profile from './pages/Profile';
 import Top from './pages/Top';
 import Bonuses from './pages/Bonuses';
 import Admin from './pages/Admin';
-import Trade from './pages/Trade';
+import NFC from './pages/NFC';
 import DailyBonusModal from './components/DailyBonusModal';
 import { API_URL } from './config';
 
@@ -48,6 +48,12 @@ function App() {
     // Initial load: Auth once on mount
     init(true);
   }, []);
+
+  const location = useLocation();
+  useEffect(() => {
+    // Refresh data on every navigation transition
+    init(false);
+  }, [location.pathname]);
 
   const init = async (showLoading = true) => {
     const tg = (window as any).Telegram?.WebApp;
@@ -164,7 +170,7 @@ function App() {
           <Route path="top" element={<Top />} />
           <Route path="bonuses" element={<Bonuses {...props} />} />
           <Route path="profile" element={<Profile {...props} />} />
-          <Route path="trade" element={<Trade {...props} />} />
+          <Route path="nfc" element={<NFC />} />
           <Route path="admin" element={<Admin />} />
         </Route>
       </Routes>

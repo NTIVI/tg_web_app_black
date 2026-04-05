@@ -1,10 +1,11 @@
-import { Outlet, NavLink } from 'react-router-dom';
-import { Play, ShoppingBag, User, Trophy, Gift, TrendingUp } from 'lucide-react';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Play, ShoppingBag, User, Trophy, Gift, Smartphone } from 'lucide-react';
 const Layout = () => {
+  const location = useLocation();
   return (
     <div className="app-container">
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        <Outlet />
+        <Outlet key={location.pathname} />
       </div>
       
       <nav className="bottom-nav">
@@ -18,11 +19,11 @@ const Layout = () => {
         </NavLink>
 
         <NavLink 
-          to="/trade" 
+          to="/nfc" 
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
-          <TrendingUp size={24} />
-          <span>Трейд</span>
+          <Smartphone size={24} />
+          <span>NFC</span>
         </NavLink>
         
         <NavLink 

@@ -146,7 +146,6 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
     const height = 400;
 
     const candleWidth = (width / history.length) * 0.8;
-    const spacing = (width / history.length) * 0.2;
 
     return (
       <div className="glass-panel" style={{ padding: '0', overflow: 'hidden', height: '200px', position: 'relative' }}>
@@ -166,7 +165,6 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
                 const high = Math.max(open, close) + diff * 0.3;
                 const low = Math.min(open, close) - diff * 0.3;
 
-                const getX = (val: number) => (i / (history.length - 1)) * width;
                 const getY = (val: number) => height - ((val - min) / range) * height;
 
                 const yOpen = getY(open);
@@ -290,7 +288,7 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
                <div style={{ 
                    width: '45px', 
                    height: '45px', 
-                   background: 'linear-gradient(135deg, #f59e0b, #d97706)', 
+                   background: 'linear-gradient(135deg, var(--secondary-color), var(--primary-color))', 
                    borderRadius: '50%', 
                    display: 'flex', 
                    alignItems: 'center', 
@@ -298,8 +296,9 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
                    color: 'white',
                    fontWeight: '900',
                    fontSize: '16px',
-                   boxShadow: '0 0 15px rgba(245, 158, 11, 0.4)',
-                   border: '2px solid rgba(255, 255, 255, 0.2)'
+                   boxShadow: '0 0 20px var(--secondary-glow)',
+                   border: '2px solid rgba(255, 255, 255, 0.3)',
+                   textShadow: '0 2px 4px rgba(0,0,0,0.3)'
                }}>
                    YT
                </div>

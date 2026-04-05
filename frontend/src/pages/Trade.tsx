@@ -71,84 +71,7 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
     } catch(e) {}
   };
 
-  // Professional SVG Chart with Indicators & Volume
-  const renderProfessionalChart = () => {
-    if (!tradeStatus?.history) return null;
-    const history = tradeStatus.history.length > 1 ? tradeStatus.history : [tradeStatus.history[0] || 7000, tradeStatus.history[0] || 7000];
-    const min = Math.min(...history) * 0.998;
-    const max = Math.max(...history) * 1.002;
-    const range = (max - min) || 1;
-    const width = 1000;
-    const height = 500;
-    const chartHeight = height * 0.75;
-    const volumeHeight = height * 0.2;
-    const candleWidth = (width / history.length) * 0.35;
-
-    const getY = (val: number) => chartHeight - ((val - min) / range) * chartHeight;
-
-    // Moving Average (7 periods)
-    const maPoints = history.map((_: number, i: number) => {
-        if (i < 6) return null;
-        const slice = history.slice(i - 6, i + 1);
-        const avg = slice.reduce((a: number, b: number) => a + b, 0) / 7;
-        return `${(i / (history.length - 1)) * width},${getY(avg)}`;
-    }).filter((p: any) => p).join(' ');
-
-    return (
-      <div className="glass-panel" style={{ padding: '0', overflow: 'hidden', height: '280px', position: 'relative', border: '1px solid rgba(255,255,255,0.05)' }}>
-         <svg viewBox={`0 0 ${width} ${height}`} className="chart-svg" preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block' }}>
-            {/* Grid Lines */}
-            {[0.2, 0.4, 0.6, 0.8].map((p: number) => (
-                <line key={p} x1="0" y1={chartHeight * p} x2={width} y2={chartHeight * p} stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-            ))}
-            
-            {/* Volume Bars */}
-            {history.map((p: number, i: number) => {
-                const isUp = i > 0 ? p >= history[i-1] : true;
-                const vHeight = (0.2 + Math.random() * 0.8) * volumeHeight; // Simulated volatility
-                const x = (i / (history.length - 1)) * width;
-                return (
-                    <rect key={`v-${i}`} x={x - candleWidth/2} y={height - vHeight} width={candleWidth} height={vHeight} fill={isUp ? '#4ade8022' : '#f8717122'} rx="1" />
-                );
-            })}
-
-            {/* Candlesticks */}
-            {history.map((p: number, i: number) => {
-                if (i === 0) return null;
-                const prevP = history[i - 1];
-                const x = (i / (history.length - 1)) * width;
-                const open = prevP, close = p, isUp = close >= open, color = isUp ? '#4ade80' : '#f87171';
-                const diff = Math.abs(close - open) || 5;
-                const high = Math.max(open, close) + diff * 0.3, low = Math.min(open, close) - diff * 0.3;
-                const yOpen = getY(open), yClose = getY(close), yHigh = getY(high), yLow = getY(low);
-                return (
-                    <g key={i}>
-                        <line x1={x} y1={yHigh} x2={x} y2={yLow} stroke={color} strokeWidth="2" style={{ filter: `drop-shadow(0 0 2px ${color})` }} />
-                        <rect x={x - candleWidth / 2} y={Math.min(yOpen, yClose)} width={candleWidth} height={Math.max(2, Math.abs(yOpen - yClose))} fill={color} rx="1" style={{ filter: `drop-shadow(0 0 6px ${color}44)` }} />
-                    </g>
-                );
-            })}
-            
-            {/* Moving Average Line */}
-            <polyline points={maPoints} fill="none" stroke="var(--gold-color)" strokeWidth="2" strokeDasharray="4,2" opacity="0.6" style={{ filter: 'drop-shadow(0 0 4px var(--gold-color))' }} />
-
-            {/* Current Price Tracker */}
-            <g transform={`translate(0, ${getY(history[history.length - 1])})`}>
-                <line x1="0" y1="0" x2={width} y2="0" stroke="var(--secondary-color)" strokeWidth="1" strokeDasharray="6,4" opacity="0.4" />
-                <rect x={width - 60} y="-10" width="60" height="20" fill="var(--secondary-color)" rx="4" />
-                <text x={width - 30} y="4" fill="white" fontSize="11" textAnchor="middle" fontWeight="bold">{(history[history.length-1] + priceOffset).toFixed(1)}</text>
-            </g>
-         </svg>
-         
-         <div style={{ position: 'absolute', top: '12px', left: '12px', pointerEvents: 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div className="pulse" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4ade80' }}></div>
-                <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '1px' }}>Market Live • YT/AMD</div>
-            </div>
-         </div>
-      </div>
-    );
-  };
+;
 
   const renderMarketInsights = () => (
     <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
@@ -236,8 +159,6 @@ const Trade = ({ tgUser, balance, setBalance }: any) => {
           </div>
       </div>
 
-      {/* Trading Chart */}
-      {renderProfessionalChart()}
 
       {/* Sentiment & Insights */}
       <div style={{ marginTop: '20px' }}>

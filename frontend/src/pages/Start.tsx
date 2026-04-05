@@ -127,8 +127,8 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
       <div className="glass-panel" style={{ 
         textAlign: 'center', 
         padding: '32px 24px',
-        background: 'linear-gradient(180deg, rgba(0, 210, 255, 0.1) 0%, rgba(212, 0, 255, 0.05) 100%)',
-        border: '1px solid rgba(0, 210, 255, 0.3)',
+        background: 'linear-gradient(180deg, rgba(168, 85, 247, 0.1) 0%, rgba(24, 24, 27, 0.05) 100%)',
+        border: '1px solid rgba(168, 85, 247, 0.3)',
         position: 'relative',
         overflow: 'hidden'
       }}>
@@ -188,7 +188,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
                 width: '72px', 
                 height: '72px', 
                 borderRadius: '24px', 
-                background: 'linear-gradient(135deg, #00d2ff, #d400ff)',
+                background: 'linear-gradient(135deg, #18181b, #a855f7)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

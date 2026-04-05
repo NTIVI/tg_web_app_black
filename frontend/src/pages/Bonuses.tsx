@@ -100,8 +100,8 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
         style={{ 
           padding: '24px', 
           marginBottom: '24px',
-          background: 'linear-gradient(135deg, rgba(0, 210, 255, 0.1) 0%, rgba(212, 0, 255, 0.05) 100%)',
-          border: '1px solid rgba(0, 210, 255, 0.2)'
+          background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%)',
+          border: '1px solid rgba(168, 85, 247, 0.2)'
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -172,7 +172,7 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
               top: 0,
               height: '100%',
               width: `${(streak / 7) * 100}%`,
-              background: 'linear-gradient(90deg, #00d2ff, #d400ff)',
+              background: 'linear-gradient(90deg, #18181b, #a855f7)',
               borderRadius: '3px',
               transition: 'width 0.5s ease-out',
               zIndex: 1
@@ -217,7 +217,7 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
               display: 'flex', 
               alignItems: 'center', 
               gap: '16px',
-              border: claimedIds.includes(bonus.id) ? '1px solid rgba(0, 242, 254, 0.2)' : '1px solid var(--border-color)',
+              border: claimedIds.includes(bonus.id) ? '1px solid rgba(168, 85, 247, 0.2)' : '1px solid var(--border-color)',
               opacity: claimedIds.includes(bonus.id) ? 0.7 : 1
             }}
           >
@@ -247,9 +247,9 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
                 padding: '8px 16px', 
                 fontSize: '13px', 
                 borderRadius: '12px',
-                background: claimedIds.includes(bonus.id) ? 'rgba(0, 242, 254, 0.1)' : '',
+                background: claimedIds.includes(bonus.id) ? 'rgba(168, 85, 247, 0.1)' : '',
                 color: claimedIds.includes(bonus.id) ? 'var(--success-color)' : '',
-                border: claimedIds.includes(bonus.id) ? '1px solid rgba(0, 242, 254, 0.3)' : 'none',
+                border: claimedIds.includes(bonus.id) ? '1px solid rgba(168, 85, 247, 0.3)' : 'none',
                 minWidth: '90px'
               }}
               disabled={claimedIds.includes(bonus.id) || claiming === bonus.id}

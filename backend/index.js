@@ -290,11 +290,7 @@ app.post('/api/trade/bet', async (req, res) => {
                 await DB.run('UPDATE users SET balance = balance + ? WHERE telegram_id = ?', [payout, telegramId]);
             }
             
-            // Sending bot message if possible
-            if (bot) {
-                const text = `🎯 Trade Result: ${resultMessage}!\nStart: ${startPrice} | End: ${endPrice}\n${won ? `Reward: +${payout} coins! 💰` : (endPrice === startPrice ? 'Bet returned.' : 'Better luck next time!')}`;
-                bot.sendMessage(telegramId, text).catch(() => {});
-            }
+            // Bot notification removed per user request for privacy
         }, duration * 1000);
 
         res.json({ success: true, startPrice });

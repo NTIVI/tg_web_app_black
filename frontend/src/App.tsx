@@ -170,7 +170,7 @@ function App() {
           <Route path="top" element={<Top />} />
           <Route path="bonuses" element={<Bonuses {...props} />} />
           <Route path="profile" element={<Profile {...props} />} />
-          <Route path="nfc" element={<NFC />} />
+          <Route path="nfc" element={<NFC {...props} />} />
           <Route path="admin" element={<Admin />} />
         </Route>
       </Routes>

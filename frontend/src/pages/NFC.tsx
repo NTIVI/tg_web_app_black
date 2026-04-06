@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { API_URL } from '../config';
 import { 
   TrendingUp, 
@@ -21,10 +21,21 @@ const NFT_LIST = [
   { id: 'nft6', name: 'Holo Entity', price: 12400, image: '/nfts/nft6.png' },
 ];
 
-const NFTCard = ({ nft, changeVal, isPositive, onBuy, buying, userId, balance }: any) => {
+const NFTCard = ({ nft, changeVal, isPositive, onBuy, buying, userId, balance, tick }: any) => {
   const currentPrice = Math.round(nft.price * (1 + changeVal / 100));
   const displayCurrentPrice = (currentPrice / 100).toFixed(2);
   const canAfford = balance >= currentPrice;
+  const [flash, setFlash] = useState(false);
+  const prevTickRef = useRef(tick);
+
+  useEffect(() => {
+    if (prevTickRef.current !== tick) {
+      prevTickRef.current = tick;
+      setFlash(true);
+      const t = setTimeout(() => setFlash(false), 600);
+      return () => clearTimeout(t);
+    }
+  }, [tick]);
 
   return (
     <div className="glass-panel" style={{ 
@@ -89,10 +100,23 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, buying, userId, balance }:
         </div>
 
         <div style={{ textAlign: 'center', marginBottom: '10px' }}>
-          <div style={{ fontSize: '20px', fontWeight: '900', color: 'white', marginBottom: '2px', textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>
+          <div 
+            className={flash ? 'price-flash' : ''}
+            style={{ 
+              fontSize: '20px', 
+              fontWeight: '900', 
+              color: 'white', 
+              marginBottom: '2px', 
+              textShadow: '0 0 10px rgba(255,255,255,0.2)',
+              transition: 'color 0.3s'
+            }}
+          >
             ${displayCurrentPrice}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+          <div 
+            className={flash ? (isPositive ? 'pct-flash-green' : 'pct-flash-red') : ''}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+          >
             {isPositive ? <TrendingUp size={12} color="var(--success-color)" /> : <TrendingDown size={12} color="var(--danger-color)" />}
             <span style={{ fontSize: '12px', fontWeight: '700', color: isPositive ? 'var(--success-color)' : 'var(--danger-color)' }}>
               {isPositive ? '+' : ''}{changeVal.toFixed(1)}%
@@ -150,6 +174,7 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, buying, userId, balance }:
 const NFC = ({ userId, balance, setBalance }: any) => {
   const [rates, setRates] = useState<Record<string, number>>({});
   const [variance, setVariance] = useState<Record<string, number>>({});
+  const [tick, setTick] = useState(0);
   const [buying, setBuying] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
@@ -182,15 +207,18 @@ const NFC = ({ userId, balance, setBalance }: any) => {
         const next: Record<string, number> = {};
         NFT_LIST.forEach(nft => {
           const oldVar = prev[nft.id] || 0;
-          let delta = (Math.random() - 0.5) * 1.5; // Up to 0.75% change per tick
+          let delta = (Math.random() - 0.5) * 1.5;
           let newVal = oldVar + delta;
-          if (newVal > 2.5) newVal = 2.5; // Max 2.5% deviation from base
+          if (newVal > 2.5) newVal = 2.5;
           if (newVal < -2.5) newVal = -2.5;
           next[nft.id] = newVal;
         });
         return next;
       });
-    }, 3000);
+
+      // Increment tick to trigger flash animation in cards
+      setTick(t => t + 1);
+    }, 2000);
     return () => clearInterval(interval);
   }, []);
 
@@ -271,6 +299,12 @@ const NFC = ({ userId, balance, setBalance }: any) => {
         }}>
           <Zap size={18} color="var(--primary-color)" />
           <span style={{ fontWeight: '900', fontSize: '14px' }}>LIVE</span>
+          <div style={{ 
+            width: '8px', height: '8px', borderRadius: '50%', 
+            background: 'var(--success-color)',
+            boxShadow: '0 0 8px var(--success-color)',
+            animation: 'livePulse 1.2s ease-in-out infinite'
+          }} />
         </div>
       </div>
 
@@ -302,6 +336,7 @@ const NFC = ({ userId, balance, setBalance }: any) => {
               buying={buying}
               userId={userId}
               balance={balance}
+              tick={tick}
             />
           );
         })}
@@ -311,6 +346,34 @@ const NFC = ({ userId, balance, setBalance }: any) => {
         @keyframes slideDown {
           from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
           to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        @keyframes livePulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.4; transform: scale(0.8); }
+        }
+        .price-flash {
+          animation: priceFlash 0.6s ease;
+        }
+        .pct-flash-green {
+          animation: pctFlashGreen 0.6s ease;
+        }
+        .pct-flash-red {
+          animation: pctFlashRed 0.6s ease;
+        }
+        @keyframes priceFlash {
+          0% { color: white; }
+          30% { color: #facc15; text-shadow: 0 0 14px #facc15; }
+          100% { color: white; }
+        }
+        @keyframes pctFlashGreen {
+          0% { opacity: 1; }
+          30% { opacity: 0.4; transform: scale(1.15); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes pctFlashRed {
+          0% { opacity: 1; }
+          30% { opacity: 0.4; transform: scale(1.15); }
+          100% { opacity: 1; transform: scale(1); }
         }
       `}</style>
     </div>

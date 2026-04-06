@@ -79,16 +79,29 @@ const initDB = () => {
             value TEXT
         )`);
 
-        // Default Ads Settings
+        // User NFTs Table
+        db.run(`CREATE TABLE IF NOT EXISTS user_nfts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            telegram_id TEXT,
+            nft_id TEXT,
+            quantity INTEGER DEFAULT 1,
+            purchase_price INTEGER,
+            purchased_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+
+        // Default Ads & NFT Settings
         const defaults = [
             ['ads_enabled', 'true'],
             ['ads_client_id', 'ca-pub-5854666775312114'],
             ['ads_slot_id', '9448831633'],
             ['monetag_zone_id', '9609'],
-            ['rewarded_ad_provider', 'monetag']
+            ['rewarded_ad_provider', 'monetag'],
+            ['nft_manipulation_target', '0'],
+            ['nft_manipulation_duration', '0'],
+            ['nft_manipulation_start', '0']
         ];
         defaults.forEach(([k, v]) => {
-            db.run(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`, [k, v]);
+            db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, [k, v]);
         });
     });
 };

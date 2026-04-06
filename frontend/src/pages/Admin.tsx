@@ -491,27 +491,27 @@ const Admin = () => {
           }}>
             <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0.05, pointerEvents: 'none', background: 'linear-gradient(45deg, var(--primary-color) 25%, transparent 25%, transparent 50%, var(--primary-color) 50%, var(--primary-color) 75%, transparent 75%, transparent)', backgroundSize: '40px 40px' }}></div>
             
-            <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px', textAlign: 'center' }}>NFT Control Hub</h3>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px', textAlign: 'center' }}>NFT</h3>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative', zIndex: 1 }}>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', opacity: 0.6, marginBottom: '8px' }}>Target Change (%)</label>
+                <label style={{ display: 'block', fontSize: '13px', opacity: 0.6, marginBottom: '8px' }}>Целевое изменение</label>
                 <input type="text" placeholder="+5%" className="input-field" style={{ textAlign: 'center', fontSize: '18px', fontWeight: '800' }} />
               </div>
               
               <div>
-                <label style={{ display: 'block', fontSize: '13px', opacity: 0.6, marginBottom: '8px' }}>Growth Time (seconds)</label>
-                <input type="text" placeholder="30" className="input-field" style={{ textAlign: 'center', fontSize: '18px', fontWeight: '800' }} />
+                <label style={{ display: 'block', fontSize: '13px', opacity: 0.6, marginBottom: '8px' }}>Время роста</label>
+                <input type="text" placeholder="30 секунд" className="input-field" style={{ textAlign: 'center', fontSize: '18px', fontWeight: '800' }} />
               </div>
               
               <button className="btn-primary" style={{ height: '56px', borderRadius: '18px', marginTop: '10px' }}>
                 <Zap size={20} />
-                Launch Manipulation
+                Запустить
               </button>
               
               <div style={{ marginTop: '10px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
-                  <span style={{ color: 'var(--success-color)', fontWeight: '700' }}>Price Growing</span>
+                  <span style={{ color: 'var(--success-color)', fontWeight: '700' }}>Рост цены</span>
                   <span>+3.2% / +5%</span>
                 </div>
                 <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
@@ -547,26 +547,26 @@ const Admin = () => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
               <ShoppingCart size={20} color="var(--primary-color)" />
-              <h3 style={{ fontSize: '18px', fontWeight: '800' }}>Purchase Statistics</h3>
+              <h3 style={{ fontSize: '18px', fontWeight: '800' }}>Общая статистика покупок</h3>
             </div>
             
             <div style={{ flex: 1, overflow: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
                   <tr style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                    <th style={{ padding: '12px 8px', opacity: 0.6 }}>User</th>
+                    <th style={{ padding: '12px 8px', opacity: 0.6 }}>Пользователь</th>
                     <th style={{ padding: '12px 8px', opacity: 0.6 }}>NFT</th>
-                    <th style={{ padding: '12px 8px', opacity: 0.6 }}>Qty</th>
-                    <th style={{ padding: '12px 8px', opacity: 0.6, textAlign: 'right' }}>Date</th>
+                    <th style={{ padding: '12px 8px', opacity: 0.6 }}>Количество куплено</th>
+                    <th style={{ padding: '12px 8px', opacity: 0.6, textAlign: 'right' }}>Последняя покупка</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[
-                    { u: 'user123', n: 'NFT #1', q: '5 pcs', d: '06.04.2026' },
-                    { u: 'cyber_punk', n: 'NFT #3', q: '2 pcs', d: '06.04.2026' },
-                    { u: 'neon_rider', n: 'NFT #2', q: '1 pc', d: '05.04.2026' },
-                    { u: 'meta_guru', n: 'NFT #1', q: '10 pcs', d: '05.04.2026' },
-                    { u: 'bit_lord', n: 'NFT #3', q: '3 pcs', d: '04.04.2026' },
+                    { u: 'user123', n: 'NFT #1', q: '5 шт', d: '06.04.2026' },
+                    { u: 'cyber_punk', n: 'NFT #3', q: '2 шт', d: '06.04.2026' },
+                    { u: 'neon_rider', n: 'NFT #2', q: '1 шт', d: '05.04.2026' },
+                    { u: 'meta_guru', n: 'NFT #1', q: '10 шт', d: '05.04.2026' },
+                    { u: 'bit_lord', n: 'NFT #3', q: '3 шт', d: '04.04.2026' },
                   ].map((row, i) => (
                     <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                       <td style={{ padding: '12px 8px', fontWeight: '700' }}>{row.u}</td>

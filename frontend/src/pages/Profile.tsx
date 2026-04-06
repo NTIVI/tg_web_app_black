@@ -78,7 +78,7 @@ const Profile = ({ userId, tgUser, balance }: any) => {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
         <Layers size={20} color="var(--primary-color)" />
-        <h3 style={{ fontSize: '18px', fontWeight: '700' }}>My NFT</h3>
+        <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Мои NFT</h3>
       </div>
 
       <div className="glass-panel" style={{ 
@@ -88,7 +88,8 @@ const Profile = ({ userId, tgUser, balance }: any) => {
         border: '1px solid rgba(255, 255, 255, 0.05)',
         display: 'flex',
         flexDirection: 'column',
-        gap: '12px'
+        gap: '12px',
+        aspectRatio: '3/1'
       }}>
         <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
           {[
@@ -118,7 +119,7 @@ const Profile = ({ userId, tgUser, balance }: any) => {
           alignItems: 'center'
         }}>
           <span style={{ fontSize: '12px', opacity: 0.5, fontWeight: '600' }}>Collection Status</span>
-          <span style={{ fontSize: '13px', fontWeight: '900', color: 'var(--primary-color)' }}>Total: 7 pcs</span>
+          <span style={{ fontSize: '13px', fontWeight: '900', color: 'var(--primary-color)' }}>Всего: 7 шт</span>
         </div>
       </div>
 

@@ -235,4 +235,52 @@ app.post('/api/admin/settings/ads', async (req, res) => {
     res.json({ success: true });
 });
 
+// NFT & Admin Manipulation
+app.post('/api/admin/nft/manipulate', async (req, res) => {
+    const { target, duration } = req.body;
+    try {
+        await DB.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?,?)', ['nft_manipulation_target', target]);
+        await DB.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?,?)', ['nft_manipulation_duration', duration]);
+        await DB.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?,?)', ['nft_manipulation_start', Date.now().toString()]);
+        res.json({ success: true });
+    } catch { res.status(500).json({ error: 'Manipulation error' }); }
+});
+
+app.get('/api/admin/nft/status', async (req, res) => {
+    try {
+        const rows = await DB.all('SELECT * FROM settings WHERE key LIKE "nft_manipulation_%"');
+        const s = Object.fromEntries(rows.map(r => [r.key, r.value]));
+        const start = parseInt(s.nft_manipulation_start || '0');
+        const duration = parseInt(s.nft_manipulation_duration || '0') * 1000;
+        const target = parseFloat(s.nft_manipulation_target || '0');
+        
+        let currentGrowth = 0;
+        if (start > 0 && duration > 0) {
+            const passed = Date.now() - start;
+            currentGrowth = Math.min(target, (passed / duration) * target);
+        }
+        res.json({ growth: currentGrowth, target, duration: duration / 1000 });
+    } catch { res.status(500).json({ error: 'Status error' }); }
+});
+
+app.post('/api/nft/buy', async (req, res) => {
+    const { telegramId, nftId, name, price } = req.body;
+    try {
+        const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+        if (!user || user.balance < price) return res.status(400).json({ error: 'Insufficient funds' });
+        
+        await DB.run('UPDATE users SET balance = balance - ? WHERE telegram_id = ?', [price, telegramId]);
+        await DB.run('INSERT INTO purchases (telegram_id, item_name, price) VALUES (?,?,?)', [telegramId, name, price]);
+        await DB.run('INSERT INTO user_nfts (telegram_id, nft_id, purchase_price) VALUES (?,?,?)', [telegramId, nftId, price]);
+        res.json({ success: true, newBalance: user.balance - price });
+    } catch { res.status(500).json({ error: 'Purchase error' }); }
+});
+
+app.get('/api/nft/my/:telegramId', async (req, res) => {
+    try {
+        const nfts = await DB.all('SELECT * FROM user_nfts WHERE telegram_id = ?', [req.params.telegramId]);
+        res.json({ nfts });
+    } catch { res.status(500).json({ error: 'My NFTs error' }); }
+});
+
 app.listen(port, () => console.log(`SQLite Server on ${port}`));

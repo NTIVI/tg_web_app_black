@@ -71,7 +71,7 @@ const Profile = ({ userId, tgUser, balance }: any) => {
                 <Wallet size={12} />
                 <span>Balance</span>
               </div>
-              <div style={{ color: 'var(--gold-color)', fontSize: '18px', fontWeight: '800' }}>{balance}</div>
+              <div style={{ color: 'var(--gold-color)', fontSize: '18px', fontWeight: '800' }}>${((balance || 0) / 100).toFixed(2)}</div>
             </div>
             
             <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', padding: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -150,7 +150,7 @@ const Profile = ({ userId, tgUser, balance }: any) => {
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                <div style={{ color: 'var(--gold-color)', fontWeight: '800', fontSize: '14px' }}>-{p.price}</div>
+                <div style={{ color: 'var(--gold-color)', fontWeight: '800', fontSize: '14px' }}>-${((p.price || 0) / 100).toFixed(2)}</div>
                 <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Completed</div>
               </div>
             </div>

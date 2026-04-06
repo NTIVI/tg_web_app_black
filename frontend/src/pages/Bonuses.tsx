@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
-import { Gift, ExternalLink, CheckCircle2, Coins } from 'lucide-react';
+import { Gift, ExternalLink, CheckCircle2, DollarSign } from 'lucide-react';
 
 const TelegramIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -107,7 +107,7 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div>
             <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '4px' }}>Ежедневный вход</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Заходите каждый день и получайте монеты!</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Заходите каждый день и получайте баланс!</p>
           </div>
           {dailyStatus?.canClaim && (
             <button 
@@ -135,7 +135,7 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
                 position: 'relative',
                 border: i === streak && dailyStatus?.canClaim ? '2px solid var(--primary-color)' : '1px solid rgba(255,255,255,0.05)'
               }}>
-                <Coins size={14} color={i < streak ? 'white' : 'var(--gold-color)'} />
+                <DollarSign size={14} color={i < streak ? 'white' : 'var(--gold-color)'} />
                 <div style={{ 
                   fontSize: '9px', 
                   fontWeight: '800', 
@@ -143,7 +143,7 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
                   position: 'absolute',
                   top: '22px'
                 }}>
-                  +{reward}
+                  +${(reward / 100).toFixed(2)}
                 </div>
               </div>
               <span style={{ 
@@ -237,7 +237,7 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: '700', fontSize: '15px' }}>{bonus.title}</div>
               <div style={{ color: 'var(--gold-color)', fontWeight: '800', fontSize: '14px' }}>
-                +{bonus.reward.toLocaleString()} coins
+                +${(bonus.reward / 100).toFixed(2)}
               </div>
             </div>
 

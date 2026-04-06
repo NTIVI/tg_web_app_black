@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Coins, PlayCircle, X } from 'lucide-react';
+import { DollarSign, PlayCircle, X } from 'lucide-react';
 import { API_URL } from '../config';
 import { TadsWidget, renderTadsWidget } from 'react-tads-widget';
 
@@ -62,7 +62,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
       const data = await res.json();
       if (data.success) {
         setBalance(data.newBalance);
-        setAdMessage('Reward claimed! +50 Coins');
+        setAdMessage('Reward claimed! +$0.50');
         const now = Date.now();
         localStorage.setItem('last_ad_watch', now.toString());
         setCooldownTime(120);
@@ -116,11 +116,11 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
       <div className="balance-card">
         <div>
           <h2 style={{ fontSize: '18px', opacity: 0.9 }}>Your Balance</h2>
-          <p style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>Total coins earned</p>
+          <p style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>Total balance earned</p>
         </div>
         <div className="balance-amount">
-          <Coins size={28} />
-          <span>{balance.toLocaleString()}</span>
+          <DollarSign size={28} />
+          <span>{((balance || 0) / 100).toFixed(2)}</span>
         </div>
       </div>
       
@@ -201,7 +201,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
               <h2 style={{ marginBottom: '8px', fontSize: '22px', fontWeight: '800' }}>Watch ADS</h2>
 
               <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '14px' }}>
-                Watch a quick spotlight video to claim <span style={{ color: 'var(--gold-color)', fontWeight: '700' }}>50 coins</span> instantly.
+                Watch a quick spotlight video to claim <span style={{ color: 'var(--gold-color)', fontWeight: '700' }}>$0.50</span> instantly.
               </p>
 
               {adMessage && (
@@ -255,7 +255,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
            </div>
            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
               <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary-color)' }} />
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Use coins in the Shop to buy premium access.</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Use balance in the Shop to buy premium access.</div>
            </div>
         </div>
       </div>

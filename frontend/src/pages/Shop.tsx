@@ -23,7 +23,7 @@ const Shop = ({ userId, balance, setBalance }: ShopProps) => {
   const handleBuy = async (item: typeof items[0]) => {
     if (!userId) return setMessage('Please wait for init.');
     if (balance < item.price) {
-      setMessage(`Not enough coins for ${item.name}!`);
+      setMessage(`Not enough funds for ${item.name}!`);
       setTimeout(() => setMessage(''), 3000);
       return;
     }
@@ -51,7 +51,7 @@ const Shop = ({ userId, balance, setBalance }: ShopProps) => {
   return (
     <div className="page">
       <h1>Premium Shop</h1>
-      <p>Spend your game coins on amazing prizes.</p>
+      <p>Spend your available balance on amazing prizes.</p>
 
       {message && (
         <div style={{ backgroundColor: 'var(--surface-color-light)', padding: '12px', borderRadius: '8px', margin: '16px 0', border: '1px solid var(--primary-color)' }}>
@@ -64,7 +64,7 @@ const Shop = ({ userId, balance, setBalance }: ShopProps) => {
           <div key={item.id} className="shop-item">
             <img src={item.img} alt={item.name} className="shop-item-image" />
             <div className="shop-item-title">{item.name}</div>
-            <div className="shop-item-price">{item.price} Coins</div>
+            <div className="shop-item-price">${(item.price / 100).toFixed(2)}</div>
             <button 
               className="btn-primary" 
               style={{ width: '100%', padding: '10px' }}

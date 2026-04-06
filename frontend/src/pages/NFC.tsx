@@ -5,7 +5,7 @@ import {
   TrendingDown, 
   ShoppingCart, 
   Tag, 
-  Coins, 
+  DollarSign, 
   Layers,
   Zap,
   Check,
@@ -13,12 +13,12 @@ import {
 } from 'lucide-react';
 
 const NFT_LIST = [
-  { id: 'nft1', name: 'NFT #1', price: 4750, image: '/nfts/nft1.png' },
-  { id: 'nft2', name: 'NFT #2', price: 3210, image: '/nfts/nft2.png' },
-  { id: 'nft3', name: 'NFT #3', price: 8900, image: '/nfts/nft3.png' },
-  { id: 'nft4', name: 'NFT #4', price: 1500, image: '/nfts/nft1.png' },
-  { id: 'nft5', name: 'NFT #5', price: 5500, image: '/nfts/nft2.png' },
-  { id: 'nft6', name: 'NFT #6', price: 12400, image: '/nfts/nft3.png' },
+  { id: 'nft1', name: 'Neon Genesis', price: 4750, image: '/nfts/nft1.png' },
+  { id: 'nft2', name: 'Cyber Core', price: 3210, image: '/nfts/nft2.png' },
+  { id: 'nft3', name: 'Aether Matrix', price: 8900, image: '/nfts/nft3.png' },
+  { id: 'nft4', name: 'Zenith Fragment', price: 1500, image: '/nfts/nft4.png' },
+  { id: 'nft5', name: 'Quantum Singularity', price: 5500, image: '/nfts/nft5.png' },
+  { id: 'nft6', name: 'Holo Entity', price: 12400, image: '/nfts/nft6.png' },
 ];
 
 const NFTCard = ({ nft, changeVal, isPositive, onBuy, buying, userId, balance }: any) => {
@@ -186,7 +186,7 @@ const NFC = ({ userId, balance, setBalance }: any) => {
       const data = await res.json();
       if (res.ok && data.success) {
         setBalance(data.newBalance);
-        showToast('success', `${nft.name} purchased! -${nft.price.toLocaleString()} coins`);
+        showToast('success', `${nft.name} purchased! -$${(nft.price / 100).toFixed(2)}`);
       } else {
         showToast('error', data.error || 'Purchase failed');
       }
@@ -266,9 +266,9 @@ const NFC = ({ userId, balance, setBalance }: any) => {
 
       {/* Balance info */}
       {userId && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '16px', fontSize: '13px', opacity: 0.7 }}>
-          <Coins size={14} color="var(--gold-color)" />
-          <span>Your balance: <strong style={{ color: 'var(--gold-color)' }}>{(balance || 0).toLocaleString()}</strong> coins</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '15px', fontWeight: '800' }}>
+          <DollarSign size={14} color="var(--gold-color)" />
+          <span>Your balance: <strong style={{ color: 'var(--gold-color)' }}>${((balance || 0) / 100).toFixed(2)}</strong></span>
         </div>
       )}
 

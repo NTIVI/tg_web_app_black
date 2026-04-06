@@ -1,5 +1,5 @@
 import React from 'react';
-import { Gift, Coins } from 'lucide-react';
+import { Gift, DollarSign } from 'lucide-react';
 
 interface DailyBonusModalProps {
   isOpen: boolean;
@@ -90,8 +90,8 @@ const DailyBonusModal: React.FC<DailyBonusModalProps> = ({
             border: '1px solid rgba(255, 255, 255, 0.05)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px' }}>
-              <Coins size={32} color="var(--gold-color)" />
-              <span style={{ fontSize: '36px', fontWeight: '900', color: 'white' }}>+{reward}</span>
+              <DollarSign size={32} color="var(--gold-color)" />
+              <span style={{ fontSize: '36px', fontWeight: '900', color: 'white' }}>+${(reward / 100).toFixed(2)}</span>
             </div>
             
             {/* Streak Progress */}

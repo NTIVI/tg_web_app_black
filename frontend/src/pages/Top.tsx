@@ -94,10 +94,10 @@ const Top = () => {
 
               <div style={{ textAlign: 'right' }}>
                 <div style={{ color: 'var(--gold-color)', fontWeight: '800', fontSize: '16px' }}>
-                  {user.balance.toLocaleString()}
+                  ${((user.balance || 0) / 100).toFixed(2)}
                 </div>
                 <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Coins
+                  $
                 </div>
               </div>
             </div>

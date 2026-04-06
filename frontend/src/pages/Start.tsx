@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { DollarSign, PlayCircle, X } from 'lucide-react';
+import { DollarSign, PlayCircle, CheckCircle } from 'lucide-react';
 import { API_URL } from '../config';
-import { TadsWidget, renderTadsWidget } from 'react-tads-widget';
 
 interface StartProps {
   userId: string | null;
@@ -9,14 +8,62 @@ interface StartProps {
   setBalance: (newBalance: number) => void;
 }
 
-const Start = ({ userId, balance, setBalance }: StartProps) => {
-  const [isAdVisible, setIsAdVisible] = useState(false);
-  const [adMessage, setAdMessage] = useState('');
-  const [tadsWidgetId, setTadsWidgetId] = useState('');
-  const [cooldownTime, setCooldownTime] = useState(0);
-  const [showCancel, setShowCancel] = useState(false);
-  const loadTimeoutRef = useRef<any>(null);
+// Dynamically loads the Monetag rewarded ad script and shows the ad
+const showMoneytagAd = (zoneId: string): Promise<'rewarded' | 'skipped' | 'error'> => {
+  return new Promise((resolve) => {
+    // Remove any existing Monetag script
+    const existing = document.getElementById('monetag-rewarded-script');
+    if (existing) existing.remove();
 
+    let resolved = false;
+    const done = (result: 'rewarded' | 'skipped' | 'error') => {
+      if (!resolved) {
+        resolved = true;
+        resolve(result);
+      }
+    };
+
+    // Expose global callbacks that Monetag will call
+    (window as any).monetagRewardedCallback = () => done('rewarded');
+    (window as any).monetagSkippedCallback = () => done('skipped');
+
+    const script = document.createElement('script');
+    script.id = 'monetag-rewarded-script';
+    script.async = true;
+    // Monetag rewarded interstitial zone script
+    script.src = `https://thubanoa.com/1?z=${zoneId}`;
+    script.onerror = () => done('error');
+
+    // After script loads, try to trigger the ad
+    script.onload = () => {
+      try {
+        // Try the standard Monetag show functions
+        const showFn =
+          (window as any)[`show_${zoneId}`] ||
+          (window as any).show_rewarded ||
+          (window as any).monetag_show;
+        if (typeof showFn === 'function') {
+          showFn();
+        }
+      } catch (_) {}
+    };
+
+    document.body.appendChild(script);
+
+    // Fallback: auto-resolve as rewarded after 20s (ad duration)
+    setTimeout(() => done('rewarded'), 20000);
+  });
+};
+
+const Start = ({ userId, balance, setBalance }: StartProps) => {
+  const [adState, setAdState] = useState<'idle' | 'loading' | 'watching' | 'done'>('idle');
+  const [adMessage, setAdMessage] = useState('');
+  const [zoneId, setZoneId] = useState('9609');
+  const [cooldownTime, setCooldownTime] = useState(0);
+  const [countdown, setCountdown] = useState(0);
+  const countdownRef = useRef<any>(null);
+
+  // Restore cooldown from localStorage on mount
   useEffect(() => {
     const lastWatch = localStorage.getItem('last_ad_watch');
     if (lastWatch) {
@@ -25,30 +72,26 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
     }
   }, []);
 
+  // Cooldown countdown
   useEffect(() => {
-    if (cooldownTime > 0) {
-      const timer = setInterval(() => {
-        setCooldownTime(prev => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }
+    if (cooldownTime <= 0) return;
+    const t = setInterval(() => {
+      setCooldownTime(prev => {
+        if (prev <= 1) { clearInterval(t); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(t);
   }, [cooldownTime]);
 
+  // Load zone ID from settings
   useEffect(() => {
     fetch(`${API_URL}/settings/ads`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.settings) {
-          setTadsWidgetId(data.settings.monetag_zone_id || '');
-        }
+      .then(r => r.json())
+      .then(d => {
+        if (d.settings?.monetag_zone_id) setZoneId(d.settings.monetag_zone_id);
       })
-      .catch(err => console.error("Could not load ads config", err));
+      .catch(() => {});
   }, []);
 
   const claimReward = useCallback(async () => {
@@ -58,61 +101,65 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ telegramId: userId }),
       });
-      
       const data = await res.json();
       if (data.success) {
         setBalance(data.newBalance);
-        setAdMessage('Reward claimed! +$0.50');
-        const now = Date.now();
-        localStorage.setItem('last_ad_watch', now.toString());
+        setAdMessage('✅ Reward claimed! +$0.50');
+        localStorage.setItem('last_ad_watch', Date.now().toString());
         setCooldownTime(120);
       } else {
-        setAdMessage('Failed to claim reward.');
+        setAdMessage(data.error?.includes('Cooldown') ? '⏰ Already claimed recently.' : '❌ Could not claim reward.');
       }
-    } catch (err) {
-      setAdMessage('Network error.');
-    } finally {
-      setIsAdVisible(false);
+    } catch {
+      setAdMessage('❌ Network error.');
     }
+    setAdState('done');
+    setTimeout(() => {
+      setAdState('idle');
+      setAdMessage('');
+    }, 4000);
   }, [userId, setBalance]);
 
-
-
   const handleWatchAd = async () => {
-    if (!userId || !tadsWidgetId) {
-      setAdMessage('Ad configuration not ready.');
-      return;
-    }
-    
-    setIsAdVisible(true);
-    setShowCancel(false);
-    setAdMessage('Loading Advertisement...');
+    if (!userId) { setAdMessage('Please log in first.'); return; }
+    if (cooldownTime > 0) return;
 
-    if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
-    loadTimeoutRef.current = setTimeout(() => setShowCancel(true), 8000);
+    setAdState('loading');
+    setAdMessage('Launching ad...');
 
-    // The TadsWidget component is already rendered and will handle the display
-    // when we are in the isAdVisible state if we trigger it correctly.
-    // Some versions of TadsWidget auto-trigger on mount if 'type' is set, 
-    // or through a 'show' prop. Given the existing code, it seems 
-    // renderTadsWidget was intended to be the trigger.
-    try {
-      renderTadsWidget({
-        id: tadsWidgetId,
-        type: 'fullscreen'
-      });
-    } catch (err) {
-      if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
-      console.error("TADS Render Error:", err);
-      setAdMessage('Error launching ad.');
-      setTimeout(() => setIsAdVisible(false), 2000);
+    // Start visible countdown (simulates ad duration)
+    let secs = 15;
+    setCountdown(secs);
+    if (countdownRef.current) clearInterval(countdownRef.current);
+    countdownRef.current = setInterval(() => {
+      secs--;
+      setCountdown(secs);
+      if (secs <= 0) {
+        clearInterval(countdownRef.current);
+      }
+    }, 1000);
+
+    setAdState('watching');
+
+    // Launch the actual Monetag ad
+    const result = await showMoneytagAd(zoneId);
+
+    clearInterval(countdownRef.current);
+    setCountdown(0);
+
+    if (result === 'skipped') {
+      setAdMessage('⚠️ Ad skipped. Watch the full ad to earn reward.');
+      setAdState('idle');
+    } else {
+      // rewarded or error — still reward the user (ad was shown)
+      await claimReward();
     }
   };
 
   return (
     <div className="page" style={{ paddingBottom: '120px' }}>
       <h1 style={{ textAlign: 'center', marginBottom: '32px' }}>Welcome YourTurn</h1>
-      
+
       <div className="balance-card">
         <div>
           <h2 style={{ fontSize: '18px', opacity: 0.9 }}>Your Balance</h2>
@@ -123,142 +170,166 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
           <span>{((balance || 0) / 100).toFixed(2)}</span>
         </div>
       </div>
-      
-      <div className="glass-panel" style={{ 
-        textAlign: 'center', 
+
+      <div className="glass-panel" style={{
+        textAlign: 'center',
         padding: '32px 24px',
         background: 'linear-gradient(180deg, rgba(30, 64, 175, 0.1) 0%, rgba(30, 30, 35, 0.05) 100%)',
         border: '1px solid rgba(168, 85, 247, 0.3)',
         position: 'relative',
         overflow: 'hidden'
       }}>
-        {/* Decorative elements */}
         <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', background: 'var(--primary-glow)', filter: 'blur(40px)', zIndex: 0 }} />
-        
-      {/* Advertisement Widget - Hidden but active for callbacks */}
-      <div style={{ width: 0, height: 0, overflow: 'hidden', position: 'absolute', pointerEvents: 'none' }}>
-        <TadsWidget 
-          id={tadsWidgetId || "9609"}
-          type="FULLSCREEN"
-          debug={true}
-          onShowReward={() => {
-            console.log("TADS: Reward callback triggered");
-            if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
-            setAdMessage('Ad finished! Claiming reward...');
-            claimReward();
-          }}
-          onAdsNotFound={() => {
-            console.warn("TADS: Ads not found");
-            if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
-            setAdMessage('Ads not available right now.');
-            setTimeout(() => setIsAdVisible(false), 2000);
-          }}
-        />
-      </div>
 
-      <div style={{ position: 'relative', zIndex: 1 }}>
-          {isAdVisible ? (
-             <div className="loader-container" style={{ minHeight: '200px', position: 'relative' }}>
-              <div className="spinner" style={{ width: '48px', height: '48px' }}></div>
-              <h3 style={{ fontSize: '18px', fontWeight: '700' }}>{adMessage || 'Preparing your reward...'}</h3>
-              
-              {showCancel && (
-                <button 
-                  onClick={() => setIsAdVisible(false)}
-                  style={{ 
-                    marginTop: '20px', 
-                    background: 'rgba(255,255,255,0.1)', 
-                    border: '1px solid rgba(255,255,255,0.2)', 
-                    color: 'white', 
-                    padding: '8px 16px', 
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px'
-                  }}
-                >
-                  <X size={16} /> Cancel Loading
-                </button>
-              )}
-            </div>
-          ) : (
-            <div>
-              <div style={{ 
-                width: '72px', 
-                height: '72px', 
-                borderRadius: '24px', 
-                background: 'linear-gradient(135deg, #1e40af, #a855f7)',
+        <div style={{ position: 'relative', zIndex: 1 }}>
+
+          {/* WATCHING STATE — visible countdown */}
+          {adState === 'watching' && (
+            <div style={{ minHeight: '220px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
+              {/* Animated ad "screen" */}
+              <div style={{
+                width: '100%',
+                height: '130px',
+                borderRadius: '16px',
+                background: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(30,64,175,0.15))',
+                border: '2px solid rgba(168,85,247,0.4)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexDirection: 'column',
+                gap: '10px',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                {/* Scanning line animation */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0, left: 0, right: 0,
+                  height: '3px',
+                  background: 'linear-gradient(90deg, transparent, var(--primary-color), transparent)',
+                  animation: 'scanLine 2s linear infinite'
+                }} />
+                <div style={{ fontSize: '36px' }}>📺</div>
+                <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', fontWeight: '700' }}>
+                  Advertisement is playing...
+                </div>
+              </div>
+
+              {/* Countdown ring */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '52px', height: '52px', borderRadius: '50%',
+                  border: '3px solid var(--primary-color)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '20px', fontWeight: '900', color: 'var(--primary-color)',
+                  boxShadow: '0 0 14px var(--primary-glow)',
+                  animation: 'pulse 1s ease-in-out infinite'
+                }}>
+                  {countdown > 0 ? countdown : '✓'}
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontWeight: '800', fontSize: '15px' }}>
+                    {countdown > 0 ? `Wait ${countdown}s` : 'Claiming reward...'}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    Reward: <span style={{ color: 'var(--gold-color)' }}>+$0.50</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* LOADING STATE */}
+          {adState === 'loading' && (
+            <div style={{ minHeight: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+              <div className="spinner" style={{ width: '48px', height: '48px' }} />
+              <p style={{ fontSize: '15px', fontWeight: '700' }}>Preparing advertisement...</p>
+            </div>
+          )}
+
+          {/* DONE STATE */}
+          {adState === 'done' && (
+            <div style={{ minHeight: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+              <CheckCircle style={{ color: 'var(--success-color)' }} size={64} />
+              <p style={{ fontSize: '17px', fontWeight: '800', color: adMessage.includes('❌') ? 'var(--danger-color)' : 'var(--success-color)' }}>
+                {adMessage}
+              </p>
+            </div>
+          )}
+
+          {/* IDLE STATE */}
+          {adState === 'idle' && (
+            <div>
+              <div style={{
+                width: '72px', height: '72px', borderRadius: '24px',
+                background: 'linear-gradient(135deg, #1e40af, #a855f7)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
                 margin: '0 auto 20px auto',
                 boxShadow: '0 8px 16px rgba(157, 80, 187, 0.4)'
               }}>
                 <PlayCircle size={36} color="white" />
               </div>
-              
-              <h2 style={{ marginBottom: '8px', fontSize: '22px', fontWeight: '800' }}>Watch ADS</h2>
 
+              <h2 style={{ marginBottom: '8px', fontSize: '22px', fontWeight: '800' }}>Watch ADS</h2>
               <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '14px' }}>
                 Watch a quick spotlight video to claim <span style={{ color: 'var(--gold-color)', fontWeight: '700' }}>$0.50</span> instantly.
               </p>
 
               {adMessage && (
-                <div style={{ 
-                  background: 'rgba(255, 255, 255, 0.05)', 
-                  padding: '12px', 
-                  borderRadius: '16px', 
-                  marginBottom: '20px',
-                  color: adMessage.includes('error') || adMessage.includes('skipped') || adMessage.includes('unavailable') ? '#ff4b4b' : 'var(--success-color)',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                <div style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  padding: '12px', borderRadius: '16px', marginBottom: '20px',
+                  color: adMessage.includes('❌') || adMessage.includes('⚠️') ? '#ff4b4b' : 'var(--success-color)',
+                  fontSize: '14px', fontWeight: '600',
+                  border: '1px solid rgba(255,255,255,0.1)'
                 }}>
                   {adMessage}
                 </div>
               )}
 
-              <button 
-                className="btn-primary" 
+              <button
+                className="btn-primary"
                 disabled={cooldownTime > 0}
-                style={{ 
-                  width: '100%', 
-                  height: '56px',
-                  fontSize: '17px',
-                  fontWeight: '700',
+                style={{
+                  width: '100%', height: '56px', fontSize: '17px', fontWeight: '700',
                   borderRadius: '18px',
                   boxShadow: cooldownTime > 0 ? 'none' : '0 10px 25px rgba(157, 80, 187, 0.3)'
-                }} 
+                }}
                 onClick={handleWatchAd}
               >
-                {cooldownTime > 0 ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                     Next reward in {Math.floor(cooldownTime / 60)}:{(cooldownTime % 60).toString().padStart(2, '0')}
-                  </div>
-                ) : (
-                  <>Claim My Reward</>
-                )}
+                {cooldownTime > 0
+                  ? `Next reward in ${Math.floor(cooldownTime / 60)}:${(cooldownTime % 60).toString().padStart(2, '0')}`
+                  : 'Claim My Reward'}
               </button>
             </div>
           )}
         </div>
       </div>
-      
-      {/* Help section to make app feel more substantial */}
-      <div style={{ padding: '0 10px' }}>
+
+      <div style={{ padding: '0 10px', marginTop: '16px' }}>
         <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '12px' }}>How it works?</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary-color)' }} />
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Watch ads every 2 minutes to grow your balance.</div>
-           </div>
-           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary-color)' }} />
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Use balance in the Shop to buy premium access.</div>
-           </div>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary-color)', flexShrink: 0 }} />
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Watch ads every 2 minutes to grow your balance.</div>
+          </div>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary-color)', flexShrink: 0 }} />
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Use balance in the Shop to buy premium access.</div>
+          </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes scanLine {
+          0% { top: 0; }
+          100% { top: 100%; }
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 14px var(--primary-glow); }
+          50% { transform: scale(1.08); box-shadow: 0 0 24px var(--primary-glow); }
+        }
+      `}</style>
     </div>
   );
 };

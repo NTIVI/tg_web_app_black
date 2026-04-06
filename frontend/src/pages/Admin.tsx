@@ -36,9 +36,8 @@ const Admin = () => {
   const [saveMessage, setSaveMessage] = useState('');
 
   // NFT Admin
-  const [nftTarget, setNftTarget] = useState('+5%');
-  const [nftDuration, setNftDuration] = useState('30 секунд');
   const [nftStats, setNftStats] = useState<any[]>([]);
+  const [nftRates, setNftRates] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -64,6 +63,10 @@ const Admin = () => {
           setAdsSlotId(data.settings.ads_slot_id || '');
           setTadsWidgetId(data.settings.monetag_zone_id || '');
         }
+      } else if (activeTab === 'nft') {
+        const res = await fetch(`${API_URL}/admin/nft/status`);
+        const data = await res.json();
+        if (data.rates) setNftRates(data.rates);
       } else if (activeTab === 'nft_stats') {
         const res = await fetch(`${API_URL}/admin/nft/stats`);
         const data = await res.json();
@@ -102,21 +105,20 @@ const Admin = () => {
     if (res.ok) { setSaveMessage('Settings saved successfully!'); setTimeout(() => setSaveMessage(''), 3000); }
   };
 
-  const launchNftManipulation = async () => {
-    const targetVal = parseFloat(nftTarget.replace('%', '').replace('+', ''));
-    if (isNaN(targetVal)) return alert('Неверный формат цели (ожидается число)');
-    const durVal = parseInt(nftDuration.replace(/\\D/g, ''));
-    if (isNaN(durVal) || durVal <= 0) return alert('Неверный формат времени (ожидается число)');
-
-    const res = await fetch(`${API_URL}/admin/nft/manipulate`, {
+  const saveNftRates = async () => {
+    const res = await fetch(`${API_URL}/admin/nft/rates`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ target: targetVal, duration: durVal })
+      body: JSON.stringify({ rates: nftRates })
     });
     if (res.ok) {
-      setSaveMessage('Запущено!');
+      setSaveMessage('Проценты сохранены!');
       setTimeout(() => setSaveMessage(''), 3000);
     }
+  };
+
+  const handleRateChange = (id: string, val: string) => {
+    setNftRates(prev => ({ ...prev, [id]: parseFloat(val) || 0 }));
   };
 
   const filteredUsers = users.filter(u => 
@@ -405,62 +407,39 @@ const Admin = () => {
 
       {activeTab === 'nft' && (
         <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <div className="glass-panel" style={{ 
-            width: '100%', 
-            maxWidth: '400px', 
-            aspectRatio: '1/1', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            justifyContent: 'center',
-            padding: '32px',
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0.05, pointerEvents: 'none', background: 'linear-gradient(45deg, var(--primary-color) 25%, transparent 25%, transparent 50%, var(--primary-color) 50%, var(--primary-color) 75%, transparent 75%, transparent)', backgroundSize: '40px 40px' }}></div>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', padding: '32px' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px', textAlign: 'center' }}>Индивидуальное Управление NFT (%)</h3>
             
-            <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px', textAlign: 'center' }}>NFT</h3>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative', zIndex: 1 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', opacity: 0.6, marginBottom: '8px' }}>Целевое изменение</label>
-                <input type="text" value={nftTarget} onChange={e => setNftTarget(e.target.value)} placeholder="+5%" className="input-field" style={{ textAlign: 'center', fontSize: '18px', fontWeight: '800' }} />
-              </div>
-              
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', opacity: 0.6, marginBottom: '8px' }}>Время роста</label>
-                <input type="text" value={nftDuration} onChange={e => setNftDuration(e.target.value)} placeholder="30 секунд" className="input-field" style={{ textAlign: 'center', fontSize: '18px', fontWeight: '800' }} />
-              </div>
-              
-              <button onClick={launchNftManipulation} className="btn-primary" style={{ height: '56px', borderRadius: '18px', marginTop: '10px' }}>
-                <Zap size={20} />
-                Запустить
-              </button>
-              
-              {saveMessage && (
-                <div style={{ textAlign: 'center', color: 'var(--success-color)', fontSize: '14px', fontWeight: 'bold' }}>{saveMessage}</div>
-              )}
-              
-              <div style={{ marginTop: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
-                  <span style={{ color: 'var(--success-color)', fontWeight: '700' }}>Рост цены</span>
-                  <span>{nftTarget} (за {nftDuration})</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              {[
+                  { id: 'nft1', name: 'Neon Genesis' },
+                  { id: 'nft2', name: 'Cyber Core' },
+                  { id: 'nft3', name: 'Aether Matrix' },
+                  { id: 'nft4', name: 'Zenith Fragment' },
+                  { id: 'nft5', name: 'Quantum Singularity' },
+                  { id: 'nft6', name: 'Holo Entity' },
+              ].map(nft => (
+                <div key={nft.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '800', marginBottom: '8px', color: 'var(--primary-color)', textAlign: 'center' }}>{nft.name}</div>
+                  <input 
+                    className="input-field" 
+                    value={nftRates[nft.id] !== undefined ? nftRates[nft.id] : ''} 
+                    onChange={(e) => handleRateChange(nft.id, e.target.value)} 
+                    placeholder="Напр. 5.5 или -2.1"
+                    style={{ textAlign: 'center', width: '100%' }}
+                  />
                 </div>
-                <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
-                  <div style={{ width: '64%', height: '100%', background: 'linear-gradient(to right, var(--success-color), #4ade80)', boxShadow: '0 0 10px var(--success-color)', animation: 'pulse 2s infinite' }}></div>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '8px' }}>
-                  <TrendingUp size={16} color="var(--success-color)" />
-                </div>
-              </div>
+              ))}
             </div>
-            
-            <style>{`
-              @keyframes pulse {
-                0% { opacity: 0.6; }
-                50% { opacity: 1; }
-                100% { opacity: 0.6; }
-              }
-            `}</style>
+
+            <button onClick={saveNftRates} className="btn-primary" style={{ width: '100%', height: '56px', borderRadius: '18px', marginTop: '24px' }}>
+              <Zap size={20} />
+              Сохранить проценты
+            </button>
+
+            {saveMessage && (
+              <div style={{ textAlign: 'center', color: 'var(--success-color)', fontSize: '14px', fontWeight: 'bold', marginTop: '16px' }}>{saveMessage}</div>
+            )}
           </div>
         </div>
       )}

@@ -148,8 +148,7 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, buying, userId, balance }:
 };
 
 const NFC = ({ userId, balance, setBalance }: any) => {
-  const [growth, setGrowth] = useState(0);
-  const [target, setTarget] = useState(0);
+  const [rates, setRates] = useState<Record<string, number>>({});
   const [buying, setBuying] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
@@ -159,8 +158,7 @@ const NFC = ({ userId, balance, setBalance }: any) => {
       try {
         const res = await fetch(`${API_URL}/admin/nft/status`);
         const data = await res.json();
-        setGrowth(data.growth || 0);
-        setTarget(data.target || 0);
+        setRates(data.rates || {});
       } catch { /* silent */ }
     };
     fetchStatus();
@@ -199,10 +197,13 @@ const NFC = ({ userId, balance, setBalance }: any) => {
 
   // Generate dynamic changes based on live manipulation
   const getChange = (index: number) => {
+    const nftId = `nft${index + 1}`;
+    if (rates && rates[nftId] !== undefined && rates[nftId] !== null) {
+      const val = typeof rates[nftId] === 'string' ? parseFloat(rates[nftId] as any) : rates[nftId];
+      return { val, isPositive: val > 0 };
+    }
     const base = [5.3, -2.1, 0.8, -1.5, 4.2, -0.5][index % 6];
-    if (target === 0) return { val: base, isPositive: base > 0 };
-    const boosted = base + (growth * (index % 2 === 0 ? 1 : 0.5));
-    return { val: boosted, isPositive: boosted > 0 };
+    return { val: base, isPositive: base > 0 };
   };
 
   return (
@@ -241,28 +242,7 @@ const NFC = ({ userId, balance, setBalance }: any) => {
         </div>
       </div>
 
-      {/* Market growth indicator */}
-      {target > 0 && (
-        <div style={{
-          background: 'rgba(16, 185, 129, 0.1)',
-          border: '1px solid var(--success-color)',
-          borderRadius: '14px',
-          padding: '12px 16px',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
-        }}>
-          <TrendingUp size={18} color="var(--success-color)" />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '4px' }}>Market Manipulation Active</div>
-            <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-              <div style={{ width: `${Math.min(100, (growth / Math.max(target, 1)) * 100)}%`, height: '100%', background: 'var(--success-color)', transition: 'width 1s ease' }} />
-            </div>
-          </div>
-          <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--success-color)' }}>+{growth.toFixed(1)}%</span>
-        </div>
-      )}
+
 
       {/* Balance info */}
       {userId && (

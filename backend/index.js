@@ -235,31 +235,22 @@ app.post('/api/admin/settings/ads', async (req, res) => {
     res.json({ success: true });
 });
 
-// NFT & Admin Manipulation
-app.post('/api/admin/nft/manipulate', async (req, res) => {
-    const { target, duration } = req.body;
+app.post('/api/admin/nft/rates', async (req, res) => {
+    const { rates } = req.body;
     try {
-        await DB.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?,?)', ['nft_manipulation_target', target]);
-        await DB.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?,?)', ['nft_manipulation_duration', duration]);
-        await DB.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?,?)', ['nft_manipulation_start', Date.now().toString()]);
+        await DB.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?,?)', ['nft_rates', JSON.stringify(rates)]);
         res.json({ success: true });
-    } catch { res.status(500).json({ error: 'Manipulation error' }); }
+    } catch { res.status(500).json({ error: 'Rates error' }); }
 });
 
 app.get('/api/admin/nft/status', async (req, res) => {
     try {
-        const rows = await DB.all('SELECT * FROM settings WHERE key LIKE "nft_manipulation_%"');
-        const s = Object.fromEntries(rows.map(r => [r.key, r.value]));
-        const start = parseInt(s.nft_manipulation_start || '0');
-        const duration = parseInt(s.nft_manipulation_duration || '0') * 1000;
-        const target = parseFloat(s.nft_manipulation_target || '0');
-        
-        let currentGrowth = 0;
-        if (start > 0 && duration > 0) {
-            const passed = Date.now() - start;
-            currentGrowth = Math.min(target, (passed / duration) * target);
+        const row = await DB.get('SELECT value FROM settings WHERE key = ?', ['nft_rates']);
+        let rates = {};
+        if (row && row.value) {
+            try { rates = JSON.parse(row.value); } catch(e){}
         }
-        res.json({ growth: currentGrowth, target, duration: duration / 1000 });
+        res.json({ rates });
     } catch { res.status(500).json({ error: 'Status error' }); }
 });
 

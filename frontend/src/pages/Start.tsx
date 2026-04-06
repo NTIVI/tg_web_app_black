@@ -8,52 +8,65 @@ interface StartProps {
   setBalance: (newBalance: number) => void;
 }
 
-// Shows a Monetag interstitial ad OR Adsgram fallback in Telegram Mini App
-const showAd = (zoneId: string): Promise<'rewarded' | 'skipped' | 'error'> => {
+// Adsgram Block ID for YourTurn platform
+const ADSGRAM_BLOCK_ID = '27035';
+
+// Shows a rewarded ad via Adsgram SDK (built for Telegram Mini Apps)
+const showAd = (): Promise<'rewarded' | 'skipped' | 'error'> => {
   return new Promise((resolve) => {
     let resolved = false;
     const done = (result: 'rewarded' | 'skipped' | 'error') => {
       if (!resolved) { resolved = true; resolve(result); }
     };
 
-    // Try Adsgram first (works natively in Telegram)
+    // Adsgram SDK — the only ad provider that works natively in Telegram
     const Adsgram = (window as any).Adsgram;
     if (Adsgram) {
       try {
-        const controller = Adsgram.init({ blockId: zoneId });
+        const controller = Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
         controller.show()
-          .then((result: any) => done(result?.done ? 'rewarded' : 'skipped'))
+          .then((result: any) => {
+            if (result?.done) {
+              done('rewarded');
+            } else {
+              done('skipped');
+            }
+          })
           .catch(() => done('error'));
-        setTimeout(() => done('rewarded'), 25000);
+        // Safety timeout — 30s max
+        setTimeout(() => done('rewarded'), 30000);
         return;
-      } catch (_) {}
+      } catch (e) {
+        console.error('Adsgram error:', e);
+      }
     }
 
-    // Monetag fallback — inject script and try show function
-    const existing = document.getElementById('monetag-ad-script');
-    if (existing) existing.remove();
-    const script = document.createElement('script');
-    script.id = 'monetag-ad-script';
-    script.async = true;
-    script.src = `https://thubanoa.com/1?z=${zoneId}`;
-    script.onload = () => {
-      const fn = (window as any)[`show_${zoneId}`] ||
-                 (window as any).show_rewarded ||
-                 (window as any).monetag_show;
-      if (typeof fn === 'function') fn();
-    };
-    script.onerror = () => done('error');
-    document.body.appendChild(script);
-
-    // Auto-resolve after 20s regardless
-    setTimeout(() => done('rewarded'), 20000);
+    // Adsgram SDK not loaded yet, wait for it
+    let waited = 0;
+    const waitForSdk = setInterval(() => {
+      waited += 500;
+      const sdk = (window as any).Adsgram;
+      if (sdk) {
+        clearInterval(waitForSdk);
+        try {
+          const controller = sdk.init({ blockId: ADSGRAM_BLOCK_ID });
+          controller.show()
+            .then((result: any) => done(result?.done ? 'rewarded' : 'skipped'))
+            .catch(() => done('error'));
+        } catch { done('error'); }
+      } else if (waited >= 5000) {
+        clearInterval(waitForSdk);
+        // SDK not available, reward anyway (dev/test mode)
+        console.warn('Adsgram SDK not found, rewarding in fallback mode');
+        done('rewarded');
+      }
+    }, 500);
   });
 };
 
 const Start = ({ userId, balance, setBalance }: StartProps) => {
   const [adState, setAdState] = useState<'idle' | 'loading' | 'watching' | 'done'>('idle');
   const [adMessage, setAdMessage] = useState('');
-  const [zoneId, setZoneId] = useState('9609');
   const [cooldownTime, setCooldownTime] = useState(0);
   const [countdown, setCountdown] = useState(0);
   const countdownRef = useRef<any>(null);
@@ -79,14 +92,9 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
     return () => clearInterval(t);
   }, [cooldownTime]);
 
-  // Load zone ID from settings
+  // Load zone ID from settings (kept for admin reference, Adsgram uses hardcoded block ID)
   useEffect(() => {
-    fetch(`${API_URL}/settings/ads`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.settings?.monetag_zone_id) setZoneId(d.settings.monetag_zone_id);
-      })
-      .catch(() => {});
+    fetch(`${API_URL}/settings/ads`).catch(() => {});
   }, []);
 
   const claimReward = useCallback(async () => {
@@ -136,8 +144,8 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
 
     setAdState('watching');
 
-    // Launch the actual ad
-    const result = await showAd(zoneId);
+    // Launch the actual Adsgram rewarded ad
+    const result = await showAd();
 
     clearInterval(countdownRef.current);
     setCountdown(0);

@@ -13,24 +13,30 @@ import {
 } from 'lucide-react';
 
 const NFT_LIST = [
-  { id: 'nft1', name: 'NFT #1', price: 4750, displayPrice: '47.50', image: '/nfts/nft1.png' },
-  { id: 'nft2', name: 'NFT #2', price: 3210, displayPrice: '32.10', image: '/nfts/nft2.png' },
-  { id: 'nft3', name: 'NFT #3', price: 8900, displayPrice: '89.00', image: '/nfts/nft3.png' },
+  { id: 'nft1', name: 'NFT #1', price: 4750, image: '/nfts/nft1.png' },
+  { id: 'nft2', name: 'NFT #2', price: 3210, image: '/nfts/nft2.png' },
+  { id: 'nft3', name: 'NFT #3', price: 8900, image: '/nfts/nft3.png' },
+  { id: 'nft4', name: 'NFT #4', price: 1500, image: '/nfts/nft1.png' },
+  { id: 'nft5', name: 'NFT #5', price: 5500, image: '/nfts/nft2.png' },
+  { id: 'nft6', name: 'NFT #6', price: 12400, image: '/nfts/nft3.png' },
 ];
 
-const NFTCard = ({ nft, change, isPositive, onBuy, buying, userId, balance }: any) => {
-  const canAfford = balance >= nft.price;
+const NFTCard = ({ nft, changeVal, isPositive, onBuy, buying, userId, balance }: any) => {
+  const currentPrice = Math.round(nft.price * (1 + changeVal / 100));
+  const displayCurrentPrice = (currentPrice / 100).toFixed(2);
+  const canAfford = balance >= currentPrice;
 
   return (
     <div className="glass-panel" style={{ 
-      padding: '16px', 
-      aspectRatio: '1/1', 
+      padding: '12px', 
+      aspectRatio: '1/1.15', 
       display: 'flex', 
       flexDirection: 'column', 
       justifyContent: 'space-between',
       position: 'relative',
       overflow: 'hidden',
-      border: `1px solid ${isPositive ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+      borderRadius: '20px',
+      border: `1px solid ${isPositive ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
       background: 'linear-gradient(145deg, rgba(20, 20, 25, 0.9), rgba(10, 10, 15, 0.95))'
     }}>
       {/* Background Geometric Lines */}
@@ -44,7 +50,7 @@ const NFTCard = ({ nft, change, isPositive, onBuy, buying, userId, balance }: an
         opacity: 0.1,
         pointerEvents: 'none',
         background: 'linear-gradient(45deg, transparent 48%, var(--primary-color) 50%, transparent 52%), linear-gradient(-45deg, transparent 48%, var(--primary-color) 50%, transparent 52%)',
-        backgroundSize: '30px 30px'
+        backgroundSize: '20px 20px'
       }}></div>
 
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -58,7 +64,7 @@ const NFTCard = ({ nft, change, isPositive, onBuy, buying, userId, balance }: an
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center', 
-          margin: '10px 0',
+          margin: '4px 0',
           position: 'relative'
         }}>
           <div style={{ 
@@ -66,7 +72,7 @@ const NFTCard = ({ nft, change, isPositive, onBuy, buying, userId, balance }: an
             width: '80%', 
             height: '80%', 
             background: 'var(--primary-glow)', 
-            filter: 'blur(30px)', 
+            filter: 'blur(20px)', 
             borderRadius: '50%',
             opacity: 0.3
           }}></div>
@@ -75,71 +81,66 @@ const NFTCard = ({ nft, change, isPositive, onBuy, buying, userId, balance }: an
             alt={nft.name} 
             style={{ 
               width: '100%', 
-              height: '100%', 
+              maxHeight: '70px', 
               objectFit: 'contain', 
-              borderRadius: '12px',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
+              borderRadius: '8px',
+              zIndex: 1
             }} 
           />
         </div>
 
-        <div style={{ textAlign: 'center', marginBottom: '12px' }}>
-          <div style={{ fontSize: '22px', fontWeight: '900', color: 'white', marginBottom: '2px' }}>
-            ${nft.displayPrice}
+        <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+          <div style={{ fontSize: '20px', fontWeight: '900', color: 'white', marginBottom: '2px', textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>
+            ${displayCurrentPrice}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-            {isPositive ? <TrendingUp size={14} color="var(--success-color)" /> : <TrendingDown size={14} color="var(--danger-color)" />}
-            <span style={{ fontSize: '13px', fontWeight: '700', color: isPositive ? 'var(--success-color)' : 'var(--danger-color)' }}>
-              {change}%
+            {isPositive ? <TrendingUp size={12} color="var(--success-color)" /> : <TrendingDown size={12} color="var(--danger-color)" />}
+            <span style={{ fontSize: '12px', fontWeight: '700', color: isPositive ? 'var(--success-color)' : 'var(--danger-color)' }}>
+              {isPositive ? '+' : ''}{changeVal.toFixed(1)}%
             </span>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '6px' }}>
           <button 
             id={`buy-${nft.id}`}
-            onClick={() => onBuy(nft)}
+            onClick={() => onBuy({ ...nft, price: currentPrice })}
             disabled={buying === nft.id || !userId || !canAfford}
             style={{ 
               flex: 1, 
-              height: '36px', 
-              borderRadius: '10px', 
-              background: canAfford ? 'rgba(16, 185, 129, 0.15)' : 'rgba(100,100,100,0.1)', 
+              height: '32px', 
+              borderRadius: '8px', 
+              background: canAfford ? 'rgba(16, 185, 129, 0.2)' : 'rgba(100,100,100,0.1)', 
               border: `1px solid ${canAfford ? 'var(--success-color)' : 'rgba(100,100,100,0.3)'}`, 
               color: canAfford ? 'var(--success-color)' : 'rgba(255,255,255,0.2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '4px',
-              fontSize: '12px',
+              fontSize: '11px',
               fontWeight: '800',
               cursor: canAfford ? 'pointer' : 'not-allowed',
               transition: 'all 0.2s'
             }}
           >
-            {buying === nft.id ? (
-              <><div className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }} />ПОКУПКА...</>
-            ) : (
-              <><ShoppingCart size={14} />Купить</>
-            )}
+            {buying === nft.id ? '...' : <><ShoppingCart size={12} />КУПИТЬ</>}
           </button>
           <button style={{ 
             flex: 1, 
-            height: '36px', 
-            borderRadius: '10px', 
-            background: 'rgba(239, 68, 68, 0.15)', 
+            height: '32px', 
+            borderRadius: '8px', 
+            background: 'rgba(239, 68, 68, 0.2)', 
             border: '1px solid var(--danger-color)', 
             color: 'var(--danger-color)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '4px',
-            fontSize: '12px',
+            fontSize: '11px',
             fontWeight: '800',
             cursor: 'pointer'
           }}>
-            <Tag size={14} />
-            Продать
+            <Tag size={12} />ПРОДАТЬ
           </button>
         </div>
       </div>
@@ -199,10 +200,10 @@ const NFC = ({ userId, balance, setBalance }: any) => {
 
   // Generate dynamic changes based on live manipulation
   const getChange = (index: number) => {
-    const base = [5.3, -2.1, 0.8][index];
-    if (target === 0) return { val: base.toFixed(1), isPositive: base > 0 };
+    const base = [5.3, -2.1, 0.8, -1.5, 4.2, -0.5][index % 6];
+    if (target === 0) return { val: base, isPositive: base > 0 };
     const boosted = base + (growth * (index % 2 === 0 ? 1 : 0.5));
-    return { val: (boosted > 0 ? '+' : '') + boosted.toFixed(1), isPositive: boosted > 0 };
+    return { val: boosted, isPositive: boosted > 0 };
   };
 
   return (
@@ -274,8 +275,8 @@ const NFC = ({ userId, balance, setBalance }: any) => {
 
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: '1fr', 
-        gap: '20px',
+        gridTemplateColumns: 'repeat(2, 1fr)', 
+        gap: '12px',
         paddingBottom: '40px'
       }}>
         {NFT_LIST.map((nft, i) => {
@@ -284,7 +285,7 @@ const NFC = ({ userId, balance, setBalance }: any) => {
             <NFTCard 
               key={nft.id} 
               nft={nft}
-              change={ch.val}
+              changeVal={ch.val}
               isPositive={ch.isPositive}
               onBuy={handleBuy}
               buying={buying}

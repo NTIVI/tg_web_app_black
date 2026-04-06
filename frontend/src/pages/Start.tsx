@@ -8,49 +8,44 @@ interface StartProps {
   setBalance: (newBalance: number) => void;
 }
 
-// Dynamically loads the Monetag rewarded ad script and shows the ad
-const showMoneytagAd = (zoneId: string): Promise<'rewarded' | 'skipped' | 'error'> => {
+// Shows a Monetag interstitial ad OR Adsgram fallback in Telegram Mini App
+const showAd = (zoneId: string): Promise<'rewarded' | 'skipped' | 'error'> => {
   return new Promise((resolve) => {
-    // Remove any existing Monetag script
-    const existing = document.getElementById('monetag-rewarded-script');
-    if (existing) existing.remove();
-
     let resolved = false;
     const done = (result: 'rewarded' | 'skipped' | 'error') => {
-      if (!resolved) {
-        resolved = true;
-        resolve(result);
-      }
+      if (!resolved) { resolved = true; resolve(result); }
     };
 
-    // Expose global callbacks that Monetag will call
-    (window as any).monetagRewardedCallback = () => done('rewarded');
-    (window as any).monetagSkippedCallback = () => done('skipped');
-
-    const script = document.createElement('script');
-    script.id = 'monetag-rewarded-script';
-    script.async = true;
-    // Monetag rewarded interstitial zone script
-    script.src = `https://thubanoa.com/1?z=${zoneId}`;
-    script.onerror = () => done('error');
-
-    // After script loads, try to trigger the ad
-    script.onload = () => {
+    // Try Adsgram first (works natively in Telegram)
+    const Adsgram = (window as any).Adsgram;
+    if (Adsgram) {
       try {
-        // Try the standard Monetag show functions
-        const showFn =
-          (window as any)[`show_${zoneId}`] ||
-          (window as any).show_rewarded ||
-          (window as any).monetag_show;
-        if (typeof showFn === 'function') {
-          showFn();
-        }
+        const controller = Adsgram.init({ blockId: zoneId });
+        controller.show()
+          .then((result: any) => done(result?.done ? 'rewarded' : 'skipped'))
+          .catch(() => done('error'));
+        setTimeout(() => done('rewarded'), 25000);
+        return;
       } catch (_) {}
-    };
+    }
 
+    // Monetag fallback — inject script and try show function
+    const existing = document.getElementById('monetag-ad-script');
+    if (existing) existing.remove();
+    const script = document.createElement('script');
+    script.id = 'monetag-ad-script';
+    script.async = true;
+    script.src = `https://thubanoa.com/1?z=${zoneId}`;
+    script.onload = () => {
+      const fn = (window as any)[`show_${zoneId}`] ||
+                 (window as any).show_rewarded ||
+                 (window as any).monetag_show;
+      if (typeof fn === 'function') fn();
+    };
+    script.onerror = () => done('error');
     document.body.appendChild(script);
 
-    // Fallback: auto-resolve as rewarded after 20s (ad duration)
+    // Auto-resolve after 20s regardless
     setTimeout(() => done('rewarded'), 20000);
   });
 };
@@ -67,7 +62,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
   useEffect(() => {
     const lastWatch = localStorage.getItem('last_ad_watch');
     if (lastWatch) {
-      const diff = 120 - Math.floor((Date.now() - parseInt(lastWatch)) / 1000);
+      const diff = 30 - Math.floor((Date.now() - parseInt(lastWatch)) / 1000);
       if (diff > 0) setCooldownTime(diff);
     }
   }, []);
@@ -106,7 +101,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
         setBalance(data.newBalance);
         setAdMessage('✅ Reward claimed! +$0.50');
         localStorage.setItem('last_ad_watch', Date.now().toString());
-        setCooldownTime(120);
+        setCooldownTime(30);
       } else {
         setAdMessage(data.error?.includes('Cooldown') ? '⏰ Already claimed recently.' : '❌ Could not claim reward.');
       }
@@ -141,8 +136,8 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
 
     setAdState('watching');
 
-    // Launch the actual Monetag ad
-    const result = await showMoneytagAd(zoneId);
+    // Launch the actual ad
+    const result = await showAd(zoneId);
 
     clearInterval(countdownRef.current);
     setCountdown(0);

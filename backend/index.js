@@ -87,7 +87,7 @@ app.post('/api/watch-ad', async (req, res) => {
         if (user?.last_ad_watch) {
             const lastWatch = new Date(user.last_ad_watch + 'Z');
             const diff = (new Date() - lastWatch) / 1000;
-            if (diff < 120) return res.status(429).json({ error: 'Cooldown active', timeLeft: 120 - diff });
+            if (diff < 30) return res.status(429).json({ error: 'Cooldown active', timeLeft: 30 - diff });
         }
 
         await DB.run('UPDATE users SET balance = balance + 50, last_ad_watch = CURRENT_TIMESTAMP WHERE telegram_id = ?', [telegramId]);

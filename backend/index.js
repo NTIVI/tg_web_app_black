@@ -283,4 +283,21 @@ app.get('/api/nft/my/:telegramId', async (req, res) => {
     } catch { res.status(500).json({ error: 'My NFTs error' }); }
 });
 
+app.get('/api/admin/nft/stats', async (req, res) => {
+    try {
+        const stats = await DB.all(`
+            SELECT 
+                u.username, u.first_name,
+                n.nft_id,
+                SUM(n.quantity) as total_qty,
+                MAX(n.purchased_at) as last_purchase
+            FROM user_nfts n
+            LEFT JOIN users u ON n.telegram_id = u.telegram_id
+            GROUP BY n.telegram_id, n.nft_id
+            ORDER BY last_purchase DESC
+        `);
+        res.json({ stats });
+    } catch { res.status(500).json({ error: 'Stats error' }); }
+});
+
 app.listen(port, () => console.log(`SQLite Server on ${port}`));

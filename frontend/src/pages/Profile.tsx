@@ -4,11 +4,20 @@ import { Wallet, Trophy, Package, Calendar, ShieldCheck, Layers } from 'lucide-r
 
 const Profile = ({ userId, tgUser, balance }: any) => {
   const [purchases, setPurchases] = useState<any[]>([]);
+  const [myNfts, setMyNfts] = useState<any[]>([]);
 
   useEffect(() => {
     if (!userId) return;
     fetch(`${API_URL}/admin/purchases`).then(r => r.json()).then(data => {
       setPurchases(data.purchases?.filter((p: any) => p.telegram_id === userId) || []);
+    });
+    fetch(`${API_URL}/nft/my/${userId}`).then(r => r.json()).then(data => {
+      const aggregated: Record<string, any> = {};
+      (data.nfts || []).forEach((n: any) => {
+        if (!aggregated[n.nft_id]) aggregated[n.nft_id] = { id: n.nft_id, qty: 0, price: n.purchase_price, img: `/nfts/${n.nft_id}.png` };
+        aggregated[n.nft_id].qty += n.quantity;
+      });
+      setMyNfts(Object.values(aggregated));
     });
   }, [userId]);
 
@@ -92,11 +101,7 @@ const Profile = ({ userId, tgUser, balance }: any) => {
         aspectRatio: '3/1'
       }}>
         <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
-          {[
-            { img: '/nfts/nft1.png', price: '47.50', qty: 3 },
-            { img: '/nfts/nft2.png', price: '32.10', qty: 1 },
-            { img: '/nfts/nft3.png', price: '89.00', qty: 3 },
-          ].map((nft, i) => (
+          {myNfts.length > 0 ? myNfts.map((nft, i) => (
             <div key={i} style={{ 
               minWidth: '100px', 
               background: 'rgba(0,0,0,0.3)', 
@@ -106,10 +111,12 @@ const Profile = ({ userId, tgUser, balance }: any) => {
               textAlign: 'center'
             }}>
               <img src={nft.img} style={{ width: '40px', height: '40px', borderRadius: '8px', marginBottom: '4px' }} alt="NFT" />
-              <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--gold-color)' }}>${nft.price}</div>
+              <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--gold-color)' }}>${(nft.price / 100).toFixed(2)}</div>
               <div style={{ fontSize: '9px', opacity: 0.5 }}>x{nft.qty}</div>
             </div>
-          ))}
+          )) : (
+            <div style={{ fontSize: '13px', opacity: 0.5, padding: '10px' }}>У вас пока нет NFT</div>
+          )}
         </div>
         <div style={{ 
           borderTop: '1px solid rgba(255,255,255,0.05)', 
@@ -119,7 +126,7 @@ const Profile = ({ userId, tgUser, balance }: any) => {
           alignItems: 'center'
         }}>
           <span style={{ fontSize: '12px', opacity: 0.5, fontWeight: '600' }}>Collection Status</span>
-          <span style={{ fontSize: '13px', fontWeight: '900', color: 'var(--primary-color)' }}>Всего: 7 шт</span>
+          <span style={{ fontSize: '13px', fontWeight: '900', color: 'var(--primary-color)' }}>Всего: {myNfts.reduce((acc, n) => acc + n.qty, 0)} шт</span>
         </div>
       </div>
 

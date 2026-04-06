@@ -149,10 +149,21 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, buying, userId, balance }:
 
 const NFC = ({ userId, balance, setBalance }: any) => {
   const [rates, setRates] = useState<Record<string, number>>({});
+  const [variance, setVariance] = useState<Record<string, number>>({});
   const [buying, setBuying] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
   useEffect(() => {
+    // Initial random variance
+    setVariance({
+        nft1: (Math.random() - 0.5) * 2,
+        nft2: (Math.random() - 0.5) * 2,
+        nft3: (Math.random() - 0.5) * 2,
+        nft4: (Math.random() - 0.5) * 2,
+        nft5: (Math.random() - 0.5) * 2,
+        nft6: (Math.random() - 0.5) * 2,
+    });
+
     // Poll NFT manipulation status every 3s
     const fetchStatus = async () => {
       try {
@@ -162,7 +173,24 @@ const NFC = ({ userId, balance, setBalance }: any) => {
       } catch { /* silent */ }
     };
     fetchStatus();
-    const interval = setInterval(fetchStatus, 3000);
+    
+    const interval = setInterval(() => {
+      fetchStatus();
+      
+      // Update variance for active trading feeling
+      setVariance(prev => {
+        const next: Record<string, number> = {};
+        NFT_LIST.forEach(nft => {
+          const oldVar = prev[nft.id] || 0;
+          let delta = (Math.random() - 0.5) * 1.5; // Up to 0.75% change per tick
+          let newVal = oldVar + delta;
+          if (newVal > 2.5) newVal = 2.5; // Max 2.5% deviation from base
+          if (newVal < -2.5) newVal = -2.5;
+          next[nft.id] = newVal;
+        });
+        return next;
+      });
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -195,15 +223,19 @@ const NFC = ({ userId, balance, setBalance }: any) => {
     }
   };
 
-  // Generate dynamic changes based on live manipulation
+  // Generate dynamic changes based on live manipulation and random variance
   const getChange = (index: number) => {
     const nftId = `nft${index + 1}`;
+    let base = [5.3, -2.1, 0.8, -1.5, 4.2, -0.5][index % 6];
+    
     if (rates && rates[nftId] !== undefined && rates[nftId] !== null) {
-      const val = typeof rates[nftId] === 'string' ? parseFloat(rates[nftId] as any) : rates[nftId];
-      return { val, isPositive: val > 0 };
+      base = typeof rates[nftId] === 'string' ? parseFloat(rates[nftId] as any) : rates[nftId];
+      if (isNaN(base)) base = 0;
     }
-    const base = [5.3, -2.1, 0.8, -1.5, 4.2, -0.5][index % 6];
-    return { val: base, isPositive: base > 0 };
+    
+    const varValue = variance[nftId] || 0;
+    const val = base + varValue;
+    return { val, isPositive: val > 0 };
   };
 
   return (

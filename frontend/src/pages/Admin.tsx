@@ -14,7 +14,6 @@ import {
   EyeOff,
   DollarSign,
   Calendar,
-  TrendingUp,
   Zap,
   ShoppingCart
 } from 'lucide-react';
@@ -106,10 +105,15 @@ const Admin = () => {
   };
 
   const saveNftRates = async () => {
+    const parsedRates: Record<string, number> = {};
+    Object.keys(nftRates).forEach(k => {
+      parsedRates[k] = parseFloat(String(nftRates[k])) || 0;
+    });
+
     const res = await fetch(`${API_URL}/admin/nft/rates`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rates: nftRates })
+      body: JSON.stringify({ rates: parsedRates })
     });
     if (res.ok) {
       setSaveMessage('Проценты сохранены!');
@@ -118,7 +122,7 @@ const Admin = () => {
   };
 
   const handleRateChange = (id: string, val: string) => {
-    setNftRates(prev => ({ ...prev, [id]: parseFloat(val) || 0 }));
+    setNftRates(prev => ({ ...prev, [id]: val as any }));
   };
 
   const filteredUsers = users.filter(u => 

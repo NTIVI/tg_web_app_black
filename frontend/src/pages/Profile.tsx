@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
-import { Wallet, Trophy, Package, Calendar, ShieldCheck } from 'lucide-react';
+import { Wallet, Trophy, Package, Calendar, ShieldCheck, Layers } from 'lucide-react';
 
 const Profile = ({ userId, tgUser, balance }: any) => {
   const [purchases, setPurchases] = useState<any[]>([]);
@@ -73,6 +73,52 @@ const Profile = ({ userId, tgUser, balance }: any) => {
               <div style={{ color: 'var(--primary-color)', fontSize: '18px', fontWeight: '800' }}>Active</div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+        <Layers size={20} color="var(--primary-color)" />
+        <h3 style={{ fontSize: '18px', fontWeight: '700' }}>My NFT</h3>
+      </div>
+
+      <div className="glass-panel" style={{ 
+        padding: '16px', 
+        marginBottom: '24px', 
+        background: 'linear-gradient(90deg, rgba(30, 64, 175, 0.1), rgba(168, 85, 247, 0.1))',
+        border: '1px solid rgba(255, 255, 255, 0.05)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px'
+      }}>
+        <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
+          {[
+            { img: '/nfts/nft1.png', price: '47.50', qty: 3 },
+            { img: '/nfts/nft2.png', price: '32.10', qty: 1 },
+            { img: '/nfts/nft3.png', price: '89.00', qty: 3 },
+          ].map((nft, i) => (
+            <div key={i} style={{ 
+              minWidth: '100px', 
+              background: 'rgba(0,0,0,0.3)', 
+              padding: '8px', 
+              borderRadius: '16px', 
+              border: '1px solid rgba(255,255,255,0.05)',
+              textAlign: 'center'
+            }}>
+              <img src={nft.img} style={{ width: '40px', height: '40px', borderRadius: '8px', marginBottom: '4px' }} alt="NFT" />
+              <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--gold-color)' }}>${nft.price}</div>
+              <div style={{ fontSize: '9px', opacity: 0.5 }}>x{nft.qty}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ 
+          borderTop: '1px solid rgba(255,255,255,0.05)', 
+          paddingTop: '8px', 
+          display: 'flex', 
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <span style={{ fontSize: '12px', opacity: 0.5, fontWeight: '600' }}>Collection Status</span>
+          <span style={{ fontSize: '13px', fontWeight: '900', color: 'var(--primary-color)' }}>Total: 7 pcs</span>
         </div>
       </div>
 

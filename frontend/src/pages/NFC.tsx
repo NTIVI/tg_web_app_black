@@ -9,7 +9,6 @@ import {
   Layers,
   Zap,
   Check,
-  AlertCircle,
   X
 } from 'lucide-react';
 

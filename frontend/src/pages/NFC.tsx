@@ -29,7 +29,6 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, buying, userId, balance }:
   return (
     <div className="glass-panel" style={{ 
       padding: '12px', 
-      aspectRatio: '1/1.15', 
       display: 'flex', 
       flexDirection: 'column', 
       justifyContent: 'space-between',

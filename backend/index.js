@@ -275,6 +275,30 @@ app.get('/api/admin/nft/status', async (req, res) => {
     } catch { res.status(500).json({ error: 'Status error' }); }
 });
 
+app.get('/api/social-stats', async (req, res) => {
+    try {
+        const row = await DB.get('SELECT value FROM settings WHERE key = ?', ['social_stats']);
+        let stats = {
+            tiktok: { current: 8450, target: 10000 },
+            instagram: { current: 4200, target: 5000 },
+            telegram: { current: 2310, target: 3000 },
+            facebook: { current: 1540, target: 2000 }
+        };
+        if (row && row.value) {
+            try { stats = { ...stats, ...JSON.parse(row.value) }; } catch(e){}
+        }
+        res.json({ stats });
+    } catch { res.status(500).json({ error: 'Stats error' }); }
+});
+
+app.post('/api/admin/social-stats', async (req, res) => {
+    const { stats } = req.body;
+    try {
+        await DB.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?,?)', ['social_stats', JSON.stringify(stats)]);
+        res.json({ success: true });
+    } catch { res.status(500).json({ error: 'Stats update error' }); }
+});
+
 app.post('/api/nft/buy', async (req, res) => {
     const { telegramId, nftId, name, price } = req.body;
     try {

@@ -25,7 +25,7 @@ const Admin = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [purchases, setPurchases] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'users' | 'ads' | 'purchases' | 'nft' | 'nft_stats'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'ads' | 'purchases' | 'nft' | 'nft_stats' | 'social'>('users');
   
   // Ads settings
   const [adsEnabled, setAdsEnabled] = useState(false);
@@ -37,6 +37,14 @@ const Admin = () => {
   // NFT Admin
   const [nftStats, setNftStats] = useState<any[]>([]);
   const [nftRates, setNftRates] = useState<Record<string, number>>({});
+
+  // Social Stats Admin
+  const [socialStats, setSocialStats] = useState<any>({
+    tiktok: { current: 8450, target: 10000 },
+    instagram: { current: 4200, target: 5000 },
+    telegram: { current: 2310, target: 3000 },
+    facebook: { current: 1540, target: 2000 }
+  });
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -70,6 +78,10 @@ const Admin = () => {
         const res = await fetch(`${API_URL}/admin/nft/stats`);
         const data = await res.json();
         setNftStats(data.stats || []);
+      } else if (activeTab === 'social') {
+        const res = await fetch(`${API_URL}/social-stats`);
+        const data = await res.json();
+        if (data.stats) setSocialStats(data.stats);
       }
     } catch (err) { console.error(err); }
   };
@@ -117,6 +129,18 @@ const Admin = () => {
     });
     if (res.ok) {
       setSaveMessage('Проценты сохранены!');
+      setTimeout(() => setSaveMessage(''), 3000);
+    }
+  };
+
+  const saveSocialStats = async () => {
+    const res = await fetch(`${API_URL}/admin/social-stats`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stats: socialStats })
+    });
+    if (res.ok) {
+      setSaveMessage('Social stats saved!');
       setTimeout(() => setSaveMessage(''), 3000);
     }
   };
@@ -224,6 +248,14 @@ const Admin = () => {
         >
           <Plus size={20} />
           <span style={{ fontWeight: '700' }}>Stats</span>
+        </button>
+        <button 
+          className={`btn-primary ${activeTab === 'social' ? '' : 'inactive'}`} 
+          style={{ flex: 1, padding: '12px', borderRadius: '14px', background: activeTab === 'social' ? '' : 'transparent', color: activeTab === 'social' ? 'white' : 'var(--text-secondary)', minWidth: '100px', boxShadow: activeTab === 'social' ? '' : 'none', border: 'none' }}
+          onClick={() => setActiveTab('social')}
+        >
+          <Users size={20} />
+          <span style={{ fontWeight: '700' }}>Social</span>
         </button>
       </div>
 
@@ -488,6 +520,53 @@ const Admin = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'social' && (
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', padding: '32px' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px', textAlign: 'center' }}>Управление Соцсетями</h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {Object.keys(socialStats).map(network => (
+                <div key={network} style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ fontSize: '15px', fontWeight: '800', marginBottom: '12px', color: 'var(--primary-color)', textTransform: 'capitalize' }}>{network}</div>
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: '12px', opacity: 0.7, marginBottom: '6px', display: 'block' }}>Сейчас</label>
+                      <input 
+                        type="number"
+                        className="input-field" 
+                        value={socialStats[network]?.current || ''} 
+                        onChange={(e) => setSocialStats((prev: any) => ({ ...prev, [network]: { ...prev[network], current: parseInt(e.target.value) || 0 } }))} 
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: '12px', opacity: 0.7, marginBottom: '6px', display: 'block' }}>Цель</label>
+                      <input 
+                        type="number"
+                        className="input-field" 
+                        value={socialStats[network]?.target || ''} 
+                        onChange={(e) => setSocialStats((prev: any) => ({ ...prev, [network]: { ...prev[network], target: parseInt(e.target.value) || 0 } }))} 
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={saveSocialStats} className="btn-primary" style={{ width: '100%', height: '56px', borderRadius: '18px', marginTop: '24px' }}>
+              <Check size={20} />
+              Сохранить значения
+            </button>
+
+            {saveMessage && (
+              <div style={{ textAlign: 'center', color: 'var(--success-color)', fontSize: '14px', fontWeight: 'bold', marginTop: '16px' }}>{saveMessage}</div>
+            )}
           </div>
         </div>
       )}

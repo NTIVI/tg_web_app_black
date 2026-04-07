@@ -20,6 +20,27 @@ const TikTokIcon = () => (
   </svg>
 );
 
+const InstagramIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+  </svg>
+);
+
+const FacebookIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+     <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/>
+  </svg>
+);
+
+const SOCIAL_CONFIG: any = {
+  tiktok: { title: 'TikTok', icon: <TikTokIcon />, bg: 'linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(206, 32, 41, 0.05) 100%)', border: '1px solid rgba(236, 72, 153, 0.2)', iconColor: '#ff0050', barBg: 'linear-gradient(90deg, #ff0050 0%, #00f2fe 100%)', textColor: '#00f2fe' },
+  instagram: { title: 'Instagram', icon: <InstagramIcon />, bg: 'linear-gradient(135deg, rgba(225, 48, 108, 0.1) 0%, rgba(253, 29, 29, 0.05) 100%)', border: '1px solid rgba(225, 48, 108, 0.2)', iconColor: '#E1306C', barBg: 'linear-gradient(90deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', textColor: '#E1306C' },
+  facebook: { title: 'Facebook', icon: <FacebookIcon />, bg: 'linear-gradient(135deg, rgba(24, 119, 242, 0.1) 0%, rgba(24, 119, 242, 0.05) 100%)', border: '1px solid rgba(24, 119, 242, 0.2)', iconColor: '#1877F2', barBg: 'linear-gradient(90deg, #1877F2 0%, #3b5998 100%)', textColor: '#1877F2' },
+  telegram: { title: 'Telegram', icon: <TelegramIcon />, bg: 'linear-gradient(135deg, rgba(0, 136, 204, 0.1) 0%, rgba(0, 136, 204, 0.05) 100%)', border: '1px solid rgba(0, 136, 204, 0.2)', iconColor: '#0088cc', barBg: 'linear-gradient(90deg, #0088cc 0%, #00aaff 100%)', textColor: '#00aaff' }
+};
+
 const BONUS_LIST = [
   { id: 'tg_channel', title: 'Вступить в Telegram канал', reward: 1000, icon: <TelegramIcon />, url: 'https://t.me/+CVRfTOr2cCdhYTU6', subs: '24.5k Подписчиков' },
   { id: 'tiktok', title: 'Подписаться на TikTok', reward: 500, icon: <TikTokIcon />, url: 'https://www.tiktok.com/@just___000', subs: '12k Подписчиков' },
@@ -29,6 +50,12 @@ const BONUS_LIST = [
 const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDaily }: any) => {
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
   const [claiming, setClaiming] = useState<string | null>(null);
+  const [socialStats, setSocialStats] = useState<any>({
+    tiktok: { current: 8450, target: 10000 },
+    instagram: { current: 4200, target: 5000 },
+    telegram: { current: 2310, target: 3000 },
+    facebook: { current: 1540, target: 2000 }
+  });
 
   const streak = dailyStatus?.currentStreak || 0;
   const steps = [5000, 10, 30, 50, 70, 100, 150];
@@ -42,6 +69,19 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
         .catch(err => console.error("Error fetching claimed bonuses:", err));
     }
   }, [tgUser]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(`${API_URL}/social-stats`);
+        const data = await res.json();
+        if (data.stats) setSocialStats(data.stats);
+      } catch (e) {}
+    };
+    fetchStats();
+    const interval = setInterval(fetchStats, 120000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleClaim = async (bonus: any) => {
     const tid = tgUser?.telegram_id || tgUser?.id;
@@ -202,6 +242,53 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Community Goal Section */}
+      <h3 style={{ marginBottom: '16px', opacity: 0.8 }}>Наши цели</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '24px' }}>
+      {Object.keys(socialStats).map(key => {
+        const stat = socialStats[key] || { current: 0, target: 100 };
+        const conf = SOCIAL_CONFIG[key] || SOCIAL_CONFIG.tiktok;
+        const pct = stat.target > 0 ? Math.min(100, (stat.current / stat.target) * 100) : 0;
+        const left = Math.max(0, stat.target - stat.current);
+
+        return (
+          <div 
+            key={key}
+            className="glass-panel" 
+            style={{ 
+              padding: '24px', 
+              marginBottom: '0',
+              background: conf.bg,
+              border: conf.border
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ color: conf.iconColor, width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {conf.icon}
+              </div>
+              <div>
+                <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '2px' }}>Цель {conf.title}</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Помогите собрать {stat.target.toLocaleString()}!</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px', fontWeight: '700' }}>
+              <span>{stat.current.toLocaleString()} <span style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 'normal' }}>сейчас</span></span>
+              <span>{stat.target.toLocaleString()} <span style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 'normal' }}>цель</span></span>
+            </div>
+
+            <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', marginBottom: '12px', overflow: 'hidden' }}>
+              <div style={{ width: `${pct}%`, height: '100%', background: conf.barBg, borderRadius: '4px', transition: 'width 1s ease' }}></div>
+            </div>
+
+            <div style={{ textAlign: 'center', fontSize: '13px', color: 'rgba(255,255,255,0.6)', fontWeight: '500' }}>
+              Осталось набрать <span style={{ color: conf.textColor, fontWeight: '700' }}>{left.toLocaleString()}</span> чел!
+            </div>
+          </div>
+        );
+      })}
       </div>
 
 

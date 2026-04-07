@@ -135,45 +135,6 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
 
         <div style={{ position: 'relative', zIndex: 1 }}>
 
-          {/* WATCHING STATE — Fullscreen Iframe Ad with Floating Timer */}
-          {adState === 'watching' && (
-            <div style={{
-              position: 'fixed',
-              top: 0, left: 0, width: '100vw', height: '100vh',
-              backgroundColor: '#000',
-              zIndex: 9999,
-              display: 'flex', flexDirection: 'column'
-            }}>
-              {/* Top Bar with Timer */}
-              <div style={{
-                position: 'absolute', top: '16px', right: '16px',
-                background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
-                padding: '8px 16px', borderRadius: '20px',
-                display: 'flex', alignItems: 'center', gap: '8px', zIndex: 10000,
-                border: '1px solid rgba(255,255,255,0.1)'
-              }}>
-                <div style={{
-                  width: '24px', height: '24px', borderRadius: '50%',
-                  border: '2px solid var(--primary-color)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '12px', fontWeight: '900', color: 'var(--primary-color)'
-                }}>
-                  {surfCountdown > 0 ? surfCountdown : '✓'}
-                </div>
-                <span style={{ fontWeight: '700', fontSize: '14px', color: 'white' }}>
-                  {surfCountdown > 0 ? 'Ждите...' : 'Награда получена!'}
-                </span>
-              </div>
-              
-              {/* Embedded Ad */}
-              <iframe 
-                src="https://11745.xml.4armn.com/direct-link?pubid=1007629&siteid=[SITE_ID]"
-                style={{ width: '100%', height: '100%', border: 'none' }}
-                sandbox="allow-scripts allow-popups allow-forms allow-same-origin"
-              />
-            </div>
-          )}
-
           {/* LOADING STATE */}
           {adState === 'loading' && (
             <div style={{ minHeight: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
@@ -290,6 +251,45 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
           50% { transform: scale(1.08); box-shadow: 0 0 24px var(--primary-glow); }
         }
       `}</style>
+      
+      {/* WATCHING STATE — Fullscreen Iframe Ad with Floating Timer */}
+      {adState === 'watching' && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, width: '100vw', height: '100vh',
+          backgroundColor: '#000',
+          zIndex: 99999,
+          display: 'flex', flexDirection: 'column'
+        }}>
+          {/* Top Bar with Timer */}
+          <div style={{
+            position: 'absolute', top: '16px', right: '16px',
+            background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
+            padding: '8px 16px', borderRadius: '20px',
+            display: 'flex', alignItems: 'center', gap: '8px', zIndex: 100000,
+            border: '1px solid rgba(255,255,255,0.1)'
+          }}>
+            <div style={{
+              width: '24px', height: '24px', borderRadius: '50%',
+              border: '2px solid var(--primary-color)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '12px', fontWeight: '900', color: 'var(--primary-color)'
+            }}>
+              {surfCountdown > 0 ? surfCountdown : '✓'}
+            </div>
+            <span style={{ fontWeight: '700', fontSize: '14px', color: 'white' }}>
+              {surfCountdown > 0 ? 'Ждите...' : 'Награда получена!'}
+            </span>
+          </div>
+          
+          {/* Embedded Ad */}
+          <iframe 
+            src="https://11745.xml.4armn.com/direct-link?pubid=1007629&siteid=[SITE_ID]"
+            style={{ width: '100%', height: '100%', border: 'none' }}
+            sandbox="allow-scripts allow-popups allow-forms allow-same-origin"
+          />
+        </div>
+      )}      
     </div>
   );
 };

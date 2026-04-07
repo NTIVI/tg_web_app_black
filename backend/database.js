@@ -50,6 +50,11 @@ const initDB = () => {
                 console.error("Migration error (last_ad_watch):", err.message);
             }
         });
+        db.run(`ALTER TABLE users ADD COLUMN last_surf_watch DATETIME`, (err) => {
+            if (err && !err.message.includes("duplicate column name")) {
+                console.error("Migration error (last_surf_watch):", err.message);
+            }
+        });
         db.run(`ALTER TABLE users ADD COLUMN yt_balance INTEGER DEFAULT 0`, (err) => {
             if (err && !err.message.includes("duplicate column name")) {
                 console.error("Migration error (yt_balance):", err.message);

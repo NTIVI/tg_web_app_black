@@ -99,6 +99,27 @@ app.post('/api/watch-ad', async (req, res) => {
     }
 });
 
+app.post('/api/surf-ad', async (req, res) => {
+    const { telegramId } = req.body;
+    if (!telegramId) return res.status(400).json({ error: 'Missing telegramId' });
+    try {
+        // Cooldown mechanism for surf ad (e.g., 10 seconds, or customize as needed)
+        const user = await DB.get('SELECT last_surf_watch FROM users WHERE telegram_id = ?', [telegramId]);
+        if (user?.last_surf_watch) {
+            const lastWatch = new Date(user.last_surf_watch + 'Z');
+            const diff = (new Date() - lastWatch) / 1000;
+            if (diff < 10) return res.status(429).json({ error: 'Cooldown active', timeLeft: 10 - diff });
+        }
+
+        await DB.run('UPDATE users SET balance = balance + 10, last_surf_watch = CURRENT_TIMESTAMP WHERE telegram_id = ?', [telegramId]);
+        const updatedUser = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+        res.json({ success: !!updatedUser, newBalance: updatedUser?.balance });
+    } catch (err) { 
+        console.error('Surf ad error:', err);
+        res.status(500).json({ error: 'Error' }); 
+    }
+});
+
 
 app.post('/api/buy', async (req, res) => {
     const { telegramId, itemName, price } = req.body;

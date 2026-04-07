@@ -12,6 +12,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
   const [adState, setAdState] = useState<'idle' | 'loading' | 'watching' | 'done'>('idle');
   const [adMessage, setAdMessage] = useState('');
   const [cooldownTime, setCooldownTime] = useState(0);
+  const [surfCooldownTime, setSurfCooldownTime] = useState(0);
   const [countdown, setCountdown] = useState(0);
   const countdownRef = useRef<any>(null);
 
@@ -21,6 +22,11 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
     if (lastWatch) {
       const diff = 30 - Math.floor((Date.now() - parseInt(lastWatch)) / 1000);
       if (diff > 0) setCooldownTime(diff);
+    }
+    const lastSurf = localStorage.getItem('last_surf_watch');
+    if (lastSurf) {
+      const diff = 10 - Math.floor((Date.now() - parseInt(lastSurf)) / 1000);
+      if (diff > 0) setSurfCooldownTime(diff);
     }
   }, []);
 
@@ -35,6 +41,17 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
     }, 1000);
     return () => clearInterval(t);
   }, [cooldownTime]);
+
+  useEffect(() => {
+    if (surfCooldownTime <= 0) return;
+    const t = setInterval(() => {
+      setSurfCooldownTime(prev => {
+        if (prev <= 1) { clearInterval(t); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, [surfCooldownTime]);
 
   // Load zone ID from settings (kept for admin reference, Adsgram uses hardcoded block ID)
   useEffect(() => {
@@ -93,6 +110,37 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
         await claimReward();
       }
     }, 1000);
+  };
+
+  const handleSurfAd = async () => {
+    if (!userId) { setAdMessage('Please log in first.'); return; }
+    if (surfCooldownTime > 0) return;
+
+    // Open link
+    if (window.Telegram?.WebApp && window.Telegram.WebApp.openLink) {
+        window.Telegram.WebApp.openLink('https://publishers.richads.com/secure/direct-link', { try_instant_view: false });
+    } else {
+        window.open('https://publishers.richads.com/secure/direct-link', '_blank');
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/surf-ad`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegramId: userId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBalance(data.newBalance);
+        setAdMessage('✅ Сёрфинг пройден! +$0.10');
+        localStorage.setItem('last_surf_watch', Date.now().toString());
+        setSurfCooldownTime(10);
+      } else {
+        setAdMessage(data.error?.includes('Cooldown') ? '⏰ Подождите перед следующим сёрфингом.' : '❌ Ошибка начисления.');
+      }
+    } catch {
+      setAdMessage('❌ Network error.');
+    }
   };
 
   return (
@@ -211,17 +259,31 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
 
               <button
                 className="btn-primary"
-                disabled={cooldownTime > 0}
                 style={{
                   width: '100%', height: '56px', fontSize: '17px', fontWeight: '700',
                   borderRadius: '18px',
-                  boxShadow: cooldownTime > 0 ? 'none' : '0 10px 25px rgba(157, 80, 187, 0.3)'
+                  boxShadow: '0 10px 25px rgba(157, 80, 187, 0.3)',
+                  marginBottom: '16px'
                 }}
-                onClick={handleWatchAd}
+                onClick={() => {}}
               >
-                {cooldownTime > 0
-                  ? `Next reward in ${Math.floor(cooldownTime / 60)}:${(cooldownTime % 60).toString().padStart(2, '0')}`
-                  : 'Claim My Reward'}
+                Claim My Reward
+              </button>
+
+              <button
+                className="btn-primary"
+                disabled={surfCooldownTime > 0}
+                style={{
+                  width: '100%', height: '56px', fontSize: '17px', fontWeight: '700',
+                  borderRadius: '18px',
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  boxShadow: surfCooldownTime > 0 ? 'none' : '0 10px 25px rgba(16, 185, 129, 0.3)'
+                }}
+                onClick={handleSurfAd}
+              >
+                {surfCooldownTime > 0
+                  ? `Сёрфинг ${Math.floor(surfCooldownTime / 60)}:${(surfCooldownTime % 60).toString().padStart(2, '0')}`
+                  : 'Сёрфинг ($0.10)'}
               </button>
             </div>
           )}

@@ -23,7 +23,7 @@ const Layout = () => {
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
           <Smartphone size={24} />
-          <span>NFC</span>
+          <span>Акции</span>
         </NavLink>
         
         <NavLink 

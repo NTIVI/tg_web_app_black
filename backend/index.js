@@ -267,6 +267,20 @@ app.post('/api/nft/buy', async (req, res) => {
     } catch { res.status(500).json({ error: 'Purchase error' }); }
 });
 
+app.post('/api/nft/sell', async (req, res) => {
+    const { telegramId, nftId, price } = req.body;
+    try {
+        const nft = await DB.get('SELECT id FROM user_nfts WHERE telegram_id = ? AND nft_id = ? ORDER BY purchased_at ASC LIMIT 1', [telegramId, nftId]);
+        if (!nft) return res.status(400).json({ error: 'You do not own this share' });
+        
+        await DB.run('DELETE FROM user_nfts WHERE id = ?', [nft.id]);
+        await DB.run('UPDATE users SET balance = balance + ? WHERE telegram_id = ?', [price, telegramId]);
+        
+        const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+        res.json({ success: true, newBalance: user.balance });
+    } catch { res.status(500).json({ error: 'Sell error' }); }
+});
+
 app.get('/api/nft/my/:telegramId', async (req, res) => {
     try {
         const nfts = await DB.all('SELECT * FROM user_nfts WHERE telegram_id = ?', [req.params.telegramId]);

@@ -12,16 +12,16 @@ import {
   X
 } from 'lucide-react';
 
-const NFT_LIST = [
-  { id: 'nft1', name: 'Neon Genesis', price: 4750, image: '/nfts/nft1.png' },
-  { id: 'nft2', name: 'Cyber Core', price: 3210, image: '/nfts/nft2.png' },
-  { id: 'nft3', name: 'Aether Matrix', price: 8900, image: '/nfts/nft3.png' },
-  { id: 'nft4', name: 'Zenith Fragment', price: 1500, image: '/nfts/nft4.png' },
-  { id: 'nft5', name: 'Quantum Singularity', price: 5500, image: '/nfts/nft5.png' },
-  { id: 'nft6', name: 'Holo Entity', price: 12400, image: '/nfts/nft6.png' },
+const BRAND_LIST = [
+  { id: 'brand1', name: 'Apple iPhone 15 Pro', price: 99900, image: '/brands/apple.png' },
+  { id: 'brand2', name: 'GeForce NOW Ultimate', price: 1999, image: '/brands/geforce.png' },
+  { id: 'brand3', name: 'PlayStation 5', price: 49900, image: '/brands/playstation.png' },
+  { id: 'brand4', name: 'Xbox Series X', price: 49900, image: '/brands/xbox.png' },
+  { id: 'brand5', name: 'Steam Gift Card', price: 5000, image: '/brands/steam.png' },
+  { id: 'brand6', name: 'Netflix Premium', price: 1500, image: '/brands/netflix.png' },
 ];
 
-const NFTCard = ({ nft, changeVal, isPositive, onBuy, buying, userId, balance, tick }: any) => {
+const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, userId, balance, tick }: any) => {
   const currentPrice = Math.round(nft.price * (1 + changeVal / 100));
   const displayCurrentPrice = (currentPrice / 100).toFixed(2);
   const canAfford = balance >= currentPrice;
@@ -161,9 +161,10 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, buying, userId, balance, t
             gap: '4px',
             fontSize: '11px',
             fontWeight: '800',
-            cursor: 'pointer'
-          }}>
-            <Tag size={12} />ПРОДАТЬ
+            cursor: selling === nft.id ? 'not-allowed' : 'pointer',
+            opacity: selling === nft.id ? 0.7 : 1
+          }} onClick={() => onSell({ ...nft, price: currentPrice })} disabled={selling === nft.id}>
+            {selling === nft.id ? '...' : <><Tag size={12} />ПРОДАТЬ</>}
           </button>
         </div>
       </div>
@@ -176,6 +177,7 @@ const NFC = ({ userId, balance, setBalance }: any) => {
   const [variance, setVariance] = useState<Record<string, number>>({});
   const [tick, setTick] = useState(0);
   const [buying, setBuying] = useState<string | null>(null);
+  const [selling, setSelling] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
   useEffect(() => {
@@ -205,7 +207,7 @@ const NFC = ({ userId, balance, setBalance }: any) => {
       // Update variance for active trading feeling
       setVariance(prev => {
         const next: Record<string, number> = {};
-        NFT_LIST.forEach(nft => {
+        BRAND_LIST.forEach(nft => {
           const oldVar = prev[nft.id] || 0;
           let delta = (Math.random() - 0.5) * 1.5;
           let newVal = oldVar + delta;
@@ -251,6 +253,29 @@ const NFC = ({ userId, balance, setBalance }: any) => {
     }
   };
 
+  const handleSell = async (nft: any) => {
+    if (!userId) return showToast('error', 'Not logged in');
+    setSelling(nft.id);
+    try {
+      const res = await fetch(`${API_URL}/nft/sell`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegramId: userId, nftId: nft.id, price: nft.price })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setBalance(data.newBalance);
+        showToast('success', `${nft.name} sold! +$${(nft.price / 100).toFixed(2)}`);
+      } else {
+        showToast('error', data.error || 'Sell failed');
+      }
+    } catch {
+      showToast('error', 'Network error');
+    } finally {
+      setSelling(null);
+    }
+  };
+
   // Generate dynamic changes based on live manipulation and random variance
   const getChange = (index: number) => {
     const nftId = `nft${index + 1}`;
@@ -285,8 +310,8 @@ const NFC = ({ userId, balance, setBalance }: any) => {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h1>NFT Marketplace</h1>
-          <p style={{ margin: 0, fontSize: '13px', opacity: 0.6 }}>Digital assets &amp; collectibles</p>
+          <h1>Акции</h1>
+          <p style={{ margin: 0, fontSize: '13px', opacity: 0.6 }}>Популярные бренды и скидки</p>
         </div>
         <div style={{ 
           background: 'var(--primary-glow)', 
@@ -324,7 +349,7 @@ const NFC = ({ userId, balance, setBalance }: any) => {
         gap: '12px',
         paddingBottom: '40px'
       }}>
-        {NFT_LIST.map((nft, i) => {
+        {BRAND_LIST.map((nft, i) => {
           const ch = getChange(i);
           return (
             <NFTCard 
@@ -333,7 +358,9 @@ const NFC = ({ userId, balance, setBalance }: any) => {
               changeVal={ch.val}
               isPositive={ch.isPositive}
               onBuy={handleBuy}
+              onSell={handleSell}
               buying={buying}
+              selling={selling}
               userId={userId}
               balance={balance}
               tick={tick}

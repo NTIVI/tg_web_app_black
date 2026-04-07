@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { DollarSign, PlayCircle, CheckCircle } from 'lucide-react';
 import { API_URL } from '../config';
 
@@ -9,12 +9,11 @@ interface StartProps {
 }
 
 const Start = ({ userId, balance, setBalance }: StartProps) => {
-  const [adState, setAdState] = useState<'idle' | 'loading' | 'watching' | 'done'>('idle');
+  const adState = 'idle' as 'idle' | 'loading' | 'watching' | 'done';
   const [adMessage, setAdMessage] = useState('');
   const [cooldownTime, setCooldownTime] = useState(0);
   const [surfCooldownTime, setSurfCooldownTime] = useState(0);
-  const [countdown, setCountdown] = useState(0);
-  const countdownRef = useRef<any>(null);
+  const countdown = 0;
 
   // Restore cooldown from localStorage on mount
   useEffect(() => {
@@ -58,67 +57,14 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
     fetch(`${API_URL}/settings/ads`).catch(() => {});
   }, []);
 
-  const claimReward = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_URL}/watch-ad`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegramId: userId }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setBalance(data.newBalance);
-        setAdMessage('✅ Reward claimed! +$0.50');
-        localStorage.setItem('last_ad_watch', Date.now().toString());
-        setCooldownTime(30);
-      } else {
-        setAdMessage(data.error?.includes('Cooldown') ? '⏰ Already claimed recently.' : '❌ Could not claim reward.');
-      }
-    } catch {
-      setAdMessage('❌ Network error.');
-    }
-    setAdState('done');
-    setTimeout(() => {
-      setAdState('idle');
-      setAdMessage('');
-    }, 4000);
-  }, [userId, setBalance]);
-
-  const handleWatchAd = async () => {
-    if (!userId) { setAdMessage('Please log in first.'); return; }
-    if (cooldownTime > 0) return;
-
-    setAdState('loading');
-    setAdMessage('Launching ad...');
-
-    // We no longer open an external browser. 
-    // The ad will be shown inside a fullscreen iframe in the UI below.
-    
-    // Start visible countdown to simulate ad watching and reward granting
-    let secs = 15;
-    setCountdown(secs);
-    
-    setAdState('watching');
-
-    if (countdownRef.current) clearInterval(countdownRef.current);
-    countdownRef.current = setInterval(async () => {
-      secs--;
-      setCountdown(secs);
-      if (secs <= 0) {
-        clearInterval(countdownRef.current);
-        setCountdown(0);
-        await claimReward();
-      }
-    }, 1000);
-  };
 
   const handleSurfAd = async () => {
     if (!userId) { setAdMessage('Please log in first.'); return; }
     if (surfCooldownTime > 0) return;
 
     // Open link
-    if (window.Telegram?.WebApp && window.Telegram.WebApp.openLink) {
-        window.Telegram.WebApp.openLink('https://publishers.richads.com/secure/direct-link', { try_instant_view: false });
+    if ((window as any).Telegram?.WebApp && (window as any).Telegram.WebApp.openLink) {
+        (window as any).Telegram.WebApp.openLink('https://publishers.richads.com/secure/direct-link', { try_instant_view: false });
     } else {
         window.open('https://publishers.richads.com/secure/direct-link', '_blank');
     }

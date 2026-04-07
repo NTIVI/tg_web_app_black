@@ -62,6 +62,14 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
     if (!userId) { setAdMessage('Пожалуйста, войдите в систему.'); return; }
     if (surfCooldownTime > 0) return;
 
+    const url = "https://11745.xml.4armn.com/direct-link?pubid=1007629&siteid=[SITE_ID]";
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg && tg.openLink) {
+        tg.openLink(url);
+    } else {
+        window.open(url, '_blank');
+    }
+
     setAdState('watching');
     setSurfCountdown(5);
 
@@ -252,42 +260,34 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
         }
       `}</style>
       
-      {/* WATCHING STATE — Fullscreen Iframe Ad with Floating Timer */}
+      {/* WATCHING STATE — Waiting Screen after opening ad */}
       {adState === 'watching' && (
         <div style={{
           position: 'fixed',
           top: 0, left: 0, width: '100vw', height: '100vh',
-          backgroundColor: '#000',
+          backgroundColor: 'rgba(0,0,0,0.9)',
+          backdropFilter: 'blur(10px)',
           zIndex: 99999,
-          display: 'flex', flexDirection: 'column'
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center'
         }}>
-          {/* Top Bar with Timer */}
           <div style={{
-            position: 'absolute', top: '16px', right: '16px',
-            background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
-            padding: '8px 16px', borderRadius: '20px',
-            display: 'flex', alignItems: 'center', gap: '8px', zIndex: 100000,
-            border: '1px solid rgba(255,255,255,0.1)'
+            background: 'linear-gradient(145deg, #1e40af, #a855f7)',
+            width: '80px', height: '80px', borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '32px', fontWeight: '900', color: 'white',
+            marginBottom: '24px', boxShadow: '0 0 30px var(--primary-glow)',
+            animation: 'pulse 1.5s infinite'
           }}>
-            <div style={{
-              width: '24px', height: '24px', borderRadius: '50%',
-              border: '2px solid var(--primary-color)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '12px', fontWeight: '900', color: 'var(--primary-color)'
-            }}>
-              {surfCountdown > 0 ? surfCountdown : '✓'}
-            </div>
-            <span style={{ fontWeight: '700', fontSize: '14px', color: 'white' }}>
-              {surfCountdown > 0 ? 'Ждите...' : 'Награда получена!'}
-            </span>
+            {surfCountdown > 0 ? surfCountdown : '✓'}
           </div>
-          
-          {/* Embedded Ad */}
-          <iframe 
-            src="https://11745.xml.4armn.com/direct-link?pubid=1007629&siteid=[SITE_ID]"
-            style={{ width: '100%', height: '100%', border: 'none' }}
-            sandbox="allow-scripts allow-popups allow-forms allow-same-origin"
-          />
+          <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px', color: 'white' }}>
+            Сёрфинг...
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '15px', maxWidth: '80%', textAlign: 'center' }}>
+            Мы открыли сайт вебспонсора в новой вкладке. 
+            Пожалуйста, подождите начисления награды.
+          </p>
         </div>
       )}      
     </div>

@@ -2,6 +2,21 @@ import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
 import { Wallet, Trophy, Package, Calendar, ShieldCheck, Layers } from 'lucide-react';
 
+const BRAND_IMAGES: Record<string, string> = {
+  'brand1': '/brands/apple.png',
+  'brand2': '/brands/geforce.png',
+  'brand3': '/brands/playstation.png',
+  'brand4': '/brands/xbox.png',
+  'brand5': '/brands/steam.png',
+  'brand6': '/brands/netflix.png',
+  'nft1': '/nfts/nft1.png',
+  'nft2': '/nfts/nft2.png',
+  'nft3': '/nfts/nft3.png',
+  'nft4': '/nfts/nft4.png',
+  'nft5': '/nfts/nft5.png',
+  'nft6': '/nfts/nft6.png',
+};
+
 const Profile = ({ userId, tgUser, balance }: any) => {
   const [purchases, setPurchases] = useState<any[]>([]);
   const [myNfts, setMyNfts] = useState<any[]>([]);
@@ -14,7 +29,7 @@ const Profile = ({ userId, tgUser, balance }: any) => {
     fetch(`${API_URL}/nft/my/${userId}`).then(r => r.json()).then(data => {
       const aggregated: Record<string, any> = {};
       (data.nfts || []).forEach((n: any) => {
-        if (!aggregated[n.nft_id]) aggregated[n.nft_id] = { id: n.nft_id, qty: 0, price: n.purchase_price, img: `/nfts/${n.nft_id}.png` };
+        if (!aggregated[n.nft_id]) aggregated[n.nft_id] = { id: n.nft_id, qty: 0, price: n.purchase_price, img: BRAND_IMAGES[n.nft_id] || `/nfts/${n.nft_id}.png` };
         aggregated[n.nft_id].qty += n.quantity;
       });
       setMyNfts(Object.values(aggregated));
@@ -87,7 +102,7 @@ const Profile = ({ userId, tgUser, balance }: any) => {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
         <Layers size={20} color="var(--primary-color)" />
-        <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Мои NFT</h3>
+        <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Мои акции</h3>
       </div>
 
       <div className="glass-panel" style={{ 
@@ -115,7 +130,7 @@ const Profile = ({ userId, tgUser, balance }: any) => {
               <div style={{ fontSize: '9px', opacity: 0.5 }}>x{nft.qty}</div>
             </div>
           )) : (
-            <div style={{ fontSize: '13px', opacity: 0.5, padding: '10px' }}>У вас пока нет NFT</div>
+            <div style={{ fontSize: '13px', opacity: 0.5, padding: '10px' }}>У вас пока нет акций</div>
           )}
         </div>
         <div style={{ 

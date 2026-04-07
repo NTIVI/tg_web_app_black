@@ -130,33 +130,29 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
     setAdState('loading');
     setAdMessage('Launching ad...');
 
-    // Start visible countdown (simulates ad duration)
+    const adUrl = "https://11745.xml.4armn.com/direct-link?pubid=1007629&siteid=[SITE_ID]";
+    if ((window as any).Telegram?.WebApp?.openLink) {
+      (window as any).Telegram.WebApp.openLink(adUrl);
+    } else {
+      window.open(adUrl, '_blank');
+    }
+
+    // Start visible countdown to simulate ad watching and reward granting
     let secs = 15;
     setCountdown(secs);
+    
+    setAdState('watching');
+
     if (countdownRef.current) clearInterval(countdownRef.current);
-    countdownRef.current = setInterval(() => {
+    countdownRef.current = setInterval(async () => {
       secs--;
       setCountdown(secs);
       if (secs <= 0) {
         clearInterval(countdownRef.current);
+        setCountdown(0);
+        await claimReward();
       }
     }, 1000);
-
-    setAdState('watching');
-
-    // Launch the actual Adsgram rewarded ad
-    const result = await showAd();
-
-    clearInterval(countdownRef.current);
-    setCountdown(0);
-
-    if (result === 'skipped') {
-      setAdMessage('⚠️ Ad skipped. Watch the full ad to earn reward.');
-      setAdState('idle');
-    } else {
-      // rewarded or error — still reward the user (ad was shown)
-      await claimReward();
-    }
   };
 
   return (

@@ -74,13 +74,9 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
     setAdState('loading');
     setAdMessage('Launching ad...');
 
-    const adUrl = "https://11745.xml.4armn.com/direct-link?pubid=1007629&siteid=[SITE_ID]";
-    if ((window as any).Telegram?.WebApp?.openLink) {
-      (window as any).Telegram.WebApp.openLink(adUrl);
-    } else {
-      window.open(adUrl, '_blank');
-    }
-
+    // We no longer open an external browser. 
+    // The ad will be shown inside a fullscreen iframe in the UI below.
+    
     // Start visible countdown to simulate ad watching and reward granting
     let secs = 15;
     setCountdown(secs);
@@ -126,59 +122,42 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
 
         <div style={{ position: 'relative', zIndex: 1 }}>
 
-          {/* WATCHING STATE — visible countdown */}
+          {/* WATCHING STATE — Fullscreen Iframe Ad with Floating Timer */}
           {adState === 'watching' && (
-            <div style={{ minHeight: '220px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
-              {/* Animated ad "screen" */}
+            <div style={{
+              position: 'fixed',
+              top: 0, left: 0, width: '100vw', height: '100vh',
+              backgroundColor: '#000',
+              zIndex: 9999,
+              display: 'flex', flexDirection: 'column'
+            }}>
+              {/* Top Bar with Timer */}
               <div style={{
-                width: '100%',
-                height: '130px',
-                borderRadius: '16px',
-                background: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(30,64,175,0.15))',
-                border: '2px solid rgba(168,85,247,0.4)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'column',
-                gap: '10px',
-                position: 'relative',
-                overflow: 'hidden'
+                position: 'absolute', top: '16px', right: '16px',
+                background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
+                padding: '8px 16px', borderRadius: '20px',
+                display: 'flex', alignItems: 'center', gap: '8px', zIndex: 10000,
+                border: '1px solid rgba(255,255,255,0.1)'
               }}>
-                {/* Scanning line animation */}
                 <div style={{
-                  position: 'absolute',
-                  top: 0, left: 0, right: 0,
-                  height: '3px',
-                  background: 'linear-gradient(90deg, transparent, var(--primary-color), transparent)',
-                  animation: 'scanLine 2s linear infinite'
-                }} />
-                <div style={{ fontSize: '36px' }}>📺</div>
-                <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', fontWeight: '700' }}>
-                  Advertisement is playing...
-                </div>
-              </div>
-
-              {/* Countdown ring */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  width: '52px', height: '52px', borderRadius: '50%',
-                  border: '3px solid var(--primary-color)',
+                  width: '24px', height: '24px', borderRadius: '50%',
+                  border: '2px solid var(--primary-color)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '20px', fontWeight: '900', color: 'var(--primary-color)',
-                  boxShadow: '0 0 14px var(--primary-glow)',
-                  animation: 'pulse 1s ease-in-out infinite'
+                  fontSize: '12px', fontWeight: '900', color: 'var(--primary-color)'
                 }}>
                   {countdown > 0 ? countdown : '✓'}
                 </div>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontWeight: '800', fontSize: '15px' }}>
-                    {countdown > 0 ? `Wait ${countdown}s` : 'Claiming reward...'}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    Reward: <span style={{ color: 'var(--gold-color)' }}>+$0.50</span>
-                  </div>
-                </div>
+                <span style={{ fontWeight: '700', fontSize: '14px', color: 'white' }}>
+                  {countdown > 0 ? 'Wait...' : 'Reward Claimed!'}
+                </span>
               </div>
+              
+              {/* Embedded Ad */}
+              <iframe 
+                src="https://11745.xml.4armn.com/direct-link?pubid=1007629&siteid=[SITE_ID]"
+                style={{ width: '100%', height: '100%', border: 'none' }}
+                sandbox="allow-scripts allow-popups allow-forms allow-same-origin"
+              />
             </div>
           )}
 

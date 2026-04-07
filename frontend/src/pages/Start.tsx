@@ -62,7 +62,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
     if (!userId) { setAdMessage('Пожалуйста, войдите в систему.'); return; }
     if (surfCooldownTime > 0) return;
 
-    const url = "https://11745.xml.4armn.com/direct-link?pubid=1007629&siteid=[SITE_ID]";
+    const url = "https://11745.xml.4armn.com/direct-link?pubid=1006513&siteid=[SITE_ID]";
     const tg = (window as any).Telegram?.WebApp;
     if (tg && tg.openLink) {
         tg.openLink(url);

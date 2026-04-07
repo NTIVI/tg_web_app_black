@@ -8,62 +8,6 @@ interface StartProps {
   setBalance: (newBalance: number) => void;
 }
 
-// Adsgram Block ID for YourTurn platform
-const ADSGRAM_BLOCK_ID = '27035';
-
-// Shows a rewarded ad via Adsgram SDK (built for Telegram Mini Apps)
-const showAd = (): Promise<'rewarded' | 'skipped' | 'error'> => {
-  return new Promise((resolve) => {
-    let resolved = false;
-    const done = (result: 'rewarded' | 'skipped' | 'error') => {
-      if (!resolved) { resolved = true; resolve(result); }
-    };
-
-    // Adsgram SDK — the only ad provider that works natively in Telegram
-    const Adsgram = (window as any).Adsgram;
-    if (Adsgram) {
-      try {
-        const controller = Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
-        controller.show()
-          .then((result: any) => {
-            if (result?.done) {
-              done('rewarded');
-            } else {
-              done('skipped');
-            }
-          })
-          .catch(() => done('error'));
-        // Safety timeout — 30s max
-        setTimeout(() => done('rewarded'), 30000);
-        return;
-      } catch (e) {
-        console.error('Adsgram error:', e);
-      }
-    }
-
-    // Adsgram SDK not loaded yet, wait for it
-    let waited = 0;
-    const waitForSdk = setInterval(() => {
-      waited += 500;
-      const sdk = (window as any).Adsgram;
-      if (sdk) {
-        clearInterval(waitForSdk);
-        try {
-          const controller = sdk.init({ blockId: ADSGRAM_BLOCK_ID });
-          controller.show()
-            .then((result: any) => done(result?.done ? 'rewarded' : 'skipped'))
-            .catch(() => done('error'));
-        } catch { done('error'); }
-      } else if (waited >= 5000) {
-        clearInterval(waitForSdk);
-        // SDK not available, reward anyway (dev/test mode)
-        console.warn('Adsgram SDK not found, rewarding in fallback mode');
-        done('rewarded');
-      }
-    }, 500);
-  });
-};
-
 const Start = ({ userId, balance, setBalance }: StartProps) => {
   const [adState, setAdState] = useState<'idle' | 'loading' | 'watching' | 'done'>('idle');
   const [adMessage, setAdMessage] = useState('');

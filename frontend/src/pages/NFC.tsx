@@ -230,8 +230,8 @@ const NFC = ({ userId, balance, setBalance }: any) => {
   };
 
   const handleBuy = async (nft: any) => {
-    if (!userId) return showToast('error', 'Not logged in');
-    if (balance < nft.price) return showToast('error', 'Insufficient balance');
+    if (!userId) return showToast('error', 'Войдите в систему');
+    if (balance < nft.price) return showToast('error', 'Недостаточно средств');
     setBuying(nft.id);
     try {
       const res = await fetch(`${API_URL}/nft/buy`, {
@@ -242,19 +242,19 @@ const NFC = ({ userId, balance, setBalance }: any) => {
       const data = await res.json();
       if (res.ok && data.success) {
         setBalance(data.newBalance);
-        showToast('success', `${nft.name} purchased! -$${(nft.price / 100).toFixed(2)}`);
+        showToast('success', `${nft.name} куплено! -$${(nft.price / 100).toFixed(2)}`);
       } else {
-        showToast('error', data.error || 'Purchase failed');
+        showToast('error', data.error || 'Ошибка при покупке');
       }
     } catch {
-      showToast('error', 'Network error');
+      showToast('error', 'Ошибка сети');
     } finally {
       setBuying(null);
     }
   };
 
   const handleSell = async (nft: any) => {
-    if (!userId) return showToast('error', 'Not logged in');
+    if (!userId) return showToast('error', 'Войдите в систему');
     setSelling(nft.id);
     try {
       const res = await fetch(`${API_URL}/nft/sell`, {
@@ -265,12 +265,12 @@ const NFC = ({ userId, balance, setBalance }: any) => {
       const data = await res.json();
       if (res.ok && data.success) {
         setBalance(data.newBalance);
-        showToast('success', `${nft.name} sold! +$${(nft.price / 100).toFixed(2)}`);
+        showToast('success', `${nft.name} продано! +$${(nft.price / 100).toFixed(2)}`);
       } else {
-        showToast('error', data.error || 'Sell failed');
+        showToast('error', data.error || 'Ошибка при продаже');
       }
     } catch {
-      showToast('error', 'Network error');
+      showToast('error', 'Ошибка сети');
     } finally {
       setSelling(null);
     }
@@ -339,7 +339,7 @@ const NFC = ({ userId, balance, setBalance }: any) => {
       {userId && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '15px', fontWeight: '800' }}>
           <DollarSign size={14} color="var(--gold-color)" />
-          <span>Your balance: <strong style={{ color: 'var(--gold-color)' }}>${((balance || 0) / 100).toFixed(2)}</strong></span>
+          <span>Ваш баланс: <strong style={{ color: 'var(--gold-color)' }}>${((balance || 0) / 100).toFixed(2)}</strong></span>
         </div>
       )}
 

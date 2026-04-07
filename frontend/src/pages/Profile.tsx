@@ -39,10 +39,10 @@ const Profile = ({ userId, tgUser, balance }: any) => {
   return (
     <div className="page" style={{ background: 'var(--background-color)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1>Profile</h1>
+        <h1>Профиль</h1>
         <div className="glass-panel" style={{ padding: '8px 16px', margin: 0, borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--primary-color)' }}>
           <Trophy size={16} color="var(--gold-color)" />
-          <span style={{ fontWeight: '800', color: 'var(--gold-color)', fontSize: '14px' }}>LVL {tgUser?.level || 1}</span>
+          <span style={{ fontWeight: '800', color: 'var(--gold-color)', fontSize: '14px' }}>УР {tgUser?.level || 1}</span>
         </div>
       </div>
 
@@ -67,7 +67,7 @@ const Profile = ({ userId, tgUser, balance }: any) => {
           <div style={{ maxWidth: '240px', margin: '0 auto 24px auto' }}>
             <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div style={{ 
-                width: `${(balance % 1000) / 10}%`, 
+                width: `${((tgUser?.xp || balance || 0) % 1000) / 10}%`, 
                 height: '100%', 
                 background: 'linear-gradient(to right, #1e40af, #a855f7)',
                 borderRadius: '10px',
@@ -75,8 +75,8 @@ const Profile = ({ userId, tgUser, balance }: any) => {
               }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
-              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: '700', textTransform: 'uppercase' }}>Progress</span>
-              <span style={{ fontSize: '10px', color: 'var(--success-color)', fontWeight: '800' }}>{balance % 1000} / 1000 XP</span>
+              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: '700', textTransform: 'uppercase' }}>Прогресс</span>
+              <span style={{ fontSize: '10px', color: 'var(--success-color)', fontWeight: '800' }}>{(tgUser?.xp || balance || 0) % 1000} / 1000 XP</span>
             </div>
           </div>
           
@@ -84,7 +84,7 @@ const Profile = ({ userId, tgUser, balance }: any) => {
             <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', padding: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '4px', justifyContent: 'center' }}>
                 <Wallet size={12} />
-                <span>Balance</span>
+                <span>Баланс</span>
               </div>
               <div style={{ color: 'var(--gold-color)', fontSize: '18px', fontWeight: '800' }}>${((balance || 0) / 100).toFixed(2)}</div>
             </div>
@@ -92,9 +92,9 @@ const Profile = ({ userId, tgUser, balance }: any) => {
             <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', padding: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '4px', justifyContent: 'center' }}>
                 <ShieldCheck size={12} />
-                <span>Status</span>
+                <span>Статус</span>
               </div>
-              <div style={{ color: 'var(--primary-color)', fontSize: '18px', fontWeight: '800' }}>Active</div>
+              <div style={{ color: 'var(--primary-color)', fontSize: '18px', fontWeight: '800' }}>Активен</div>
             </div>
           </div>
         </div>
@@ -140,14 +140,14 @@ const Profile = ({ userId, tgUser, balance }: any) => {
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <span style={{ fontSize: '12px', opacity: 0.5, fontWeight: '600' }}>Collection Status</span>
+          <span style={{ fontSize: '12px', opacity: 0.5, fontWeight: '600' }}>Статус коллекции</span>
           <span style={{ fontSize: '13px', fontWeight: '900', color: 'var(--primary-color)' }}>Всего: {myNfts.reduce((acc, n) => acc + n.qty, 0)} шт</span>
         </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
         <Package size={20} color="var(--primary-color)" />
-        <h3 style={{ fontSize: '18px', fontWeight: '700' }}>My Purchases</h3>
+        <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Мои покупки</h3>
       </div>
 
       <div className="glass-panel" style={{ padding: '0 20px' }}>
@@ -166,14 +166,14 @@ const Profile = ({ userId, tgUser, balance }: any) => {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                 <div style={{ color: 'var(--gold-color)', fontWeight: '800', fontSize: '14px' }}>-${((p.price || 0) / 100).toFixed(2)}</div>
-                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Completed</div>
+                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Выполнено</div>
               </div>
             </div>
           ))
         ) : (
           <div style={{ padding: '40px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
             <Package size={32} style={{ opacity: 0.2 }} />
-            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '14px', margin: 0 }}>You haven't made any purchases yet.</p>
+            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '14px', margin: 0 }}>Вы еще не совершали покупок.</p>
           </div>
         )}
       </div>

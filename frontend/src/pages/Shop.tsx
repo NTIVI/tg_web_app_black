@@ -21,9 +21,9 @@ const Shop = ({ userId, balance, setBalance }: ShopProps) => {
   const [message, setMessage] = useState('');
 
   const handleBuy = async (item: typeof items[0]) => {
-    if (!userId) return setMessage('Please wait for init.');
+    if (!userId) return setMessage('Пожалуйста, подождите инициализацию.');
     if (balance < item.price) {
-      setMessage(`Not enough funds for ${item.name}!`);
+      setMessage(`Недостаточно средств для ${item.name}!`);
       setTimeout(() => setMessage(''), 3000);
       return;
     }
@@ -38,20 +38,20 @@ const Shop = ({ userId, balance, setBalance }: ShopProps) => {
       const data = await res.json();
       if (data.success) {
         setBalance(data.newBalance);
-        setMessage(`Successfully bought ${item.name}!`);
+        setMessage(`Успешно куплено ${item.name}!`);
       } else {
-        setMessage(data.error || 'Failed to buy');
+        setMessage(data.error || 'Ошибка при покупке');
       }
     } catch (err) {
-      setMessage('Network error.');
+      setMessage('Ошибка сети.');
     }
     setTimeout(() => setMessage(''), 3000);
   };
 
   return (
     <div className="page">
-      <h1>Premium Shop</h1>
-      <p>Spend your available balance on amazing prizes.</p>
+      <h1>Магазин</h1>
+      <p>Тратьте баланс на крутые призы.</p>
 
       {message && (
         <div style={{ backgroundColor: 'var(--surface-color-light)', padding: '12px', borderRadius: '8px', margin: '16px 0', border: '1px solid var(--primary-color)' }}>
@@ -61,18 +61,18 @@ const Shop = ({ userId, balance, setBalance }: ShopProps) => {
 
       <div className="shop-grid" style={{ marginTop: '24px' }}>
         {items.map(item => (
-          <div key={item.id} className="shop-item">
-            <img src={item.img} alt={item.name} className="shop-item-image" />
-            <div className="shop-item-title">{item.name}</div>
+          <div key={item.id} className="shop-item" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <img src={item.img} alt={item.name} className="shop-item-image" style={{ objectFit: 'cover' }} />
+            <div className="shop-item-title" style={{ flexGrow: 1, minHeight: '40px' }}>{item.name}</div>
             <div className="shop-item-price">${(item.price / 100).toFixed(2)}</div>
             <button 
               className="btn-primary" 
-              style={{ width: '100%', padding: '10px' }}
+              style={{ width: '100%', padding: '10px', marginTop: 'auto' }}
               onClick={() => handleBuy(item)}
               disabled={balance < item.price}
             >
               <ShoppingCart size={18} />
-              Buy
+              Купить
             </button>
           </div>
         ))}

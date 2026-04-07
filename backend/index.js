@@ -90,8 +90,8 @@ app.post('/api/watch-ad', async (req, res) => {
             if (diff < 30) return res.status(429).json({ error: 'Cooldown active', timeLeft: 30 - diff });
         }
 
-        await DB.run('UPDATE users SET balance = balance + 50, last_ad_watch = CURRENT_TIMESTAMP WHERE telegram_id = ?', [telegramId]);
-        const updatedUser = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+        await DB.run('UPDATE users SET balance = balance + 50, xp = xp + 50, last_ad_watch = CURRENT_TIMESTAMP WHERE telegram_id = ?', [telegramId]);
+        const updatedUser = await DB.get('SELECT balance, xp FROM users WHERE telegram_id = ?', [telegramId]);
         res.json({ success: !!updatedUser, newBalance: updatedUser?.balance });
     } catch (err) { 
         console.error('Watch ad error:', err);
@@ -103,16 +103,16 @@ app.post('/api/surf-ad', async (req, res) => {
     const { telegramId } = req.body;
     if (!telegramId) return res.status(400).json({ error: 'Missing telegramId' });
     try {
-        // Cooldown mechanism for surf ad (e.g., 10 seconds, or customize as needed)
+        // Cooldown mechanism for surf ad (5 seconds)
         const user = await DB.get('SELECT last_surf_watch FROM users WHERE telegram_id = ?', [telegramId]);
         if (user?.last_surf_watch) {
             const lastWatch = new Date(user.last_surf_watch + 'Z');
             const diff = (new Date() - lastWatch) / 1000;
-            if (diff < 10) return res.status(429).json({ error: 'Cooldown active', timeLeft: 10 - diff });
+            if (diff < 5) return res.status(429).json({ error: 'Cooldown active', timeLeft: 5 - diff });
         }
 
-        await DB.run('UPDATE users SET balance = balance + 10, last_surf_watch = CURRENT_TIMESTAMP WHERE telegram_id = ?', [telegramId]);
-        const updatedUser = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+        await DB.run('UPDATE users SET balance = balance + 10, xp = xp + 10, last_surf_watch = CURRENT_TIMESTAMP WHERE telegram_id = ?', [telegramId]);
+        const updatedUser = await DB.get('SELECT balance, xp FROM users WHERE telegram_id = ?', [telegramId]);
         res.json({ success: !!updatedUser, newBalance: updatedUser?.balance });
     } catch (err) { 
         console.error('Surf ad error:', err);
@@ -185,7 +185,7 @@ app.get('/api/bonus/daily-status/:telegramId', async (req, res) => {
             }
         }
         
-        const rewards = [10, 20, 50, 100, 150, 200, 500];
+        const rewards = [5000, 10, 30, 50, 70, 100, 150];
         const nextReward = rewards[Math.min(currentStreak, rewards.length - 1)];
         
         res.json({ canClaim, currentStreak, nextReward });
@@ -207,14 +207,14 @@ app.post('/api/bonus/daily-claim', async (req, res) => {
             
             // Increment streak if within 48h, else reset to 1
             const newStreak = diffHours < 48 ? (user.daily_streak || 0) + 1 : 1;
-            const rewards = [10, 20, 50, 100, 150, 200, 500];
+            const rewards = [5000, 10, 30, 50, 70, 100, 150];
             const reward = rewards[Math.min(newStreak - 1, rewards.length - 1)];
             
             await DB.run('UPDATE users SET balance = balance + ?, daily_streak = ?, last_daily_claim = CURRENT_TIMESTAMP WHERE telegram_id = ?', [reward, newStreak, telegramId]);
             res.json({ success: true, reward, newStreak });
         } else {
             // First time claim
-            const reward = 10;
+            const reward = 5000;
             await DB.run('UPDATE users SET balance = balance + ?, daily_streak = 1, last_daily_claim = CURRENT_TIMESTAMP WHERE telegram_id = ?', [reward, telegramId]);
             res.json({ success: true, reward, newStreak: 1 });
         }
@@ -282,7 +282,7 @@ app.post('/api/nft/buy', async (req, res) => {
         if (!user || user.balance < price) return res.status(400).json({ error: 'Insufficient funds' });
         
         await DB.run('UPDATE users SET balance = balance - ? WHERE telegram_id = ?', [price, telegramId]);
-        await DB.run('INSERT INTO purchases (telegram_id, item_name, price) VALUES (?,?,?)', [telegramId, name, price]);
+        // await DB.run('INSERT INTO purchases (telegram_id, item_name, price) VALUES (?,?,?)', [telegramId, name, price]); // Removed so it doesn't show in Shop purchases
         await DB.run('INSERT INTO user_nfts (telegram_id, nft_id, purchase_price) VALUES (?,?,?)', [telegramId, nftId, price]);
         res.json({ success: true, newBalance: user.balance - price });
     } catch { res.status(500).json({ error: 'Purchase error' }); }

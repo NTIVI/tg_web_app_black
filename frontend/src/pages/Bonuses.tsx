@@ -21,9 +21,9 @@ const TikTokIcon = () => (
 );
 
 const BONUS_LIST = [
-  { id: 'tg_channel', title: 'Join Telegram Channel', reward: 1000, icon: <TelegramIcon />, url: 'https://t.me/+CVRfTOr2cCdhYTU6' },
-  { id: 'tiktok', title: 'Follow on TikTok', reward: 500, icon: <TikTokIcon />, url: 'https://www.tiktok.com/@just___000' },
-  { id: 'youtube', title: 'Subscribe to YouTube', reward: 1000, icon: <YoutubeIcon />, url: 'https://www.youtube.com/@Devki_keksi' },
+  { id: 'tg_channel', title: 'Вступить в Telegram канал', reward: 1000, icon: <TelegramIcon />, url: 'https://t.me/+CVRfTOr2cCdhYTU6', subs: '24.5k Подписчиков' },
+  { id: 'tiktok', title: 'Подписаться на TikTok', reward: 500, icon: <TikTokIcon />, url: 'https://www.tiktok.com/@just___000', subs: '12k Подписчиков' },
+  { id: 'youtube', title: 'Подписаться на YouTube', reward: 1000, icon: <YoutubeIcon />, url: 'https://www.youtube.com/@Devki_keksi', subs: '15.2k Подписчиков' },
 ];
 
 const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDaily }: any) => {
@@ -31,7 +31,7 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
   const [claiming, setClaiming] = useState<string | null>(null);
 
   const streak = dailyStatus?.currentStreak || 0;
-  const steps = [10, 20, 50, 100, 150, 200, 500];
+  const steps = [5000, 10, 30, 50, 70, 100, 150];
 
   useEffect(() => {
     const tid = tgUser?.telegram_id || tgUser?.id;
@@ -236,7 +236,8 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
             
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: '700', fontSize: '15px' }}>{bonus.title}</div>
-              <div style={{ color: 'var(--gold-color)', fontWeight: '800', fontSize: '14px' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '2px' }}>{bonus.subs}</div>
+              <div style={{ color: 'var(--gold-color)', fontWeight: '800', fontSize: '14px', marginTop: '4px' }}>
                 +${(bonus.reward / 100).toFixed(2)}
               </div>
             </div>
@@ -259,11 +260,11 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
                 <div className="spinner" style={{ width: '16px', height: '16px', borderTopColor: 'white' }}></div>
               ) : claimedIds.includes(bonus.id) ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <CheckCircle2 size={16} /> Done
+                  <CheckCircle2 size={16} /> Готово
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <ExternalLink size={14} /> Start
+                  <ExternalLink size={14} /> Начать
                 </div>
               )}
             </button>

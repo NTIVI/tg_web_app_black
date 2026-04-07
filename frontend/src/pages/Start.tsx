@@ -9,11 +9,11 @@ interface StartProps {
 }
 
 const Start = ({ userId, balance, setBalance }: StartProps) => {
-  const adState = 'idle' as 'idle' | 'loading' | 'watching' | 'done';
+  const [adState, setAdState] = useState<'idle' | 'loading' | 'watching' | 'done'>('idle');
   const [adMessage, setAdMessage] = useState('');
   const [cooldownTime, setCooldownTime] = useState(0);
   const [surfCooldownTime, setSurfCooldownTime] = useState(0);
-  const countdown = 0;
+  const [surfCountdown, setSurfCountdown] = useState(0);
 
   // Restore cooldown from localStorage on mount
   useEffect(() => {
@@ -24,7 +24,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
     }
     const lastSurf = localStorage.getItem('last_surf_watch');
     if (lastSurf) {
-      const diff = 10 - Math.floor((Date.now() - parseInt(lastSurf)) / 1000);
+      const diff = 5 - Math.floor((Date.now() - parseInt(lastSurf)) / 1000);
       if (diff > 0) setSurfCooldownTime(diff);
     }
   }, []);
@@ -59,16 +59,26 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
 
 
   const handleSurfAd = async () => {
-    if (!userId) { setAdMessage('Please log in first.'); return; }
+    if (!userId) { setAdMessage('Пожалуйста, войдите в систему.'); return; }
     if (surfCooldownTime > 0) return;
 
-    // Open link
-    if ((window as any).Telegram?.WebApp && (window as any).Telegram.WebApp.openLink) {
-        (window as any).Telegram.WebApp.openLink('https://publishers.richads.com/secure/direct-link', { try_instant_view: false });
-    } else {
-        window.open('https://publishers.richads.com/secure/direct-link', '_blank');
-    }
+    setAdState('watching');
+    setSurfCountdown(5);
 
+    const t = setInterval(() => {
+      setSurfCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(t);
+          finishSurf();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const finishSurf = async () => {
+    setAdState('loading');
     try {
       const res = await fetch(`${API_URL}/surf-ad`, {
         method: 'POST',
@@ -80,25 +90,34 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
         setBalance(data.newBalance);
         setAdMessage('✅ Сёрфинг пройден! +$0.10');
         localStorage.setItem('last_surf_watch', Date.now().toString());
-        setSurfCooldownTime(10);
+        setSurfCooldownTime(5);
+        setAdState('done');
       } else {
         setAdMessage(data.error?.includes('Cooldown') ? '⏰ Подождите перед следующим сёрфингом.' : '❌ Ошибка начисления.');
+        setAdState('done');
       }
     } catch {
-      setAdMessage('❌ Network error.');
+      setAdMessage('❌ Ошибка сети.');
+      setAdState('done');
     }
+    setTimeout(() => setAdState('idle'), 3000);
   };
 
   return (
     <div className="page" style={{ paddingBottom: '120px' }}>
-      <h1 style={{ textAlign: 'center', marginBottom: '32px' }}>Welcome YourTurn</h1>
+      <h1 style={{ textAlign: 'center', marginBottom: '32px' }}>Добро пожаловать</h1>
 
-      <div className="balance-card">
+      <div className="balance-card" style={{
+        background: 'linear-gradient(145deg, #1e40af, #a855f7)',
+        boxShadow: '0 8px 32px rgba(168, 85, 247, 0.4)',
+        border: 'none',
+        borderRadius: '24px'
+      }}>
         <div>
-          <h2 style={{ fontSize: '18px', opacity: 0.9 }}>Your Balance</h2>
-          <p style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>Total balance earned</p>
+          <h2 style={{ fontSize: '16px', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '1px' }}>Ваш баланс</h2>
+          <p style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>Заработано всего</p>
         </div>
-        <div className="balance-amount">
+        <div className="balance-amount" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)', color: '#fff' }}>
           <DollarSign size={28} />
           <span>{((balance || 0) / 100).toFixed(2)}</span>
         </div>
@@ -139,10 +158,10 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '12px', fontWeight: '900', color: 'var(--primary-color)'
                 }}>
-                  {countdown > 0 ? countdown : '✓'}
+                  {surfCountdown > 0 ? surfCountdown : '✓'}
                 </div>
                 <span style={{ fontWeight: '700', fontSize: '14px', color: 'white' }}>
-                  {countdown > 0 ? 'Wait...' : 'Reward Claimed!'}
+                  {surfCountdown > 0 ? 'Ждите...' : 'Награда получена!'}
                 </span>
               </div>
               
@@ -159,7 +178,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
           {adState === 'loading' && (
             <div style={{ minHeight: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
               <div className="spinner" style={{ width: '48px', height: '48px' }} />
-              <p style={{ fontSize: '15px', fontWeight: '700' }}>Preparing advertisement...</p>
+              <p style={{ fontSize: '15px', fontWeight: '700' }}>Подготовка награды...</p>
             </div>
           )}
 
@@ -186,9 +205,9 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
                 <PlayCircle size={36} color="white" />
               </div>
 
-              <h2 style={{ marginBottom: '8px', fontSize: '22px', fontWeight: '800' }}>Watch ADS</h2>
+              <h2 style={{ marginBottom: '8px', fontSize: '22px', fontWeight: '800' }}>Смотреть рекламу</h2>
               <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '14px' }}>
-                Watch a quick spotlight video to claim <span style={{ color: 'var(--gold-color)', fontWeight: '700' }}>$0.50</span> instantly.
+                Посмотри короткое видео и получи <span style={{ color: 'var(--gold-color)', fontWeight: '700' }}>$0.50</span> моментально.
               </p>
 
               {adMessage && (
@@ -209,12 +228,19 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
                   width: '100%', height: '56px', fontSize: '17px', fontWeight: '700',
                   borderRadius: '18px',
                   boxShadow: '0 10px 25px rgba(157, 80, 187, 0.3)',
-                  marginBottom: '16px'
+                  marginBottom: '16px',
+                  opacity: 0.5,
+                  cursor: 'not-allowed'
                 }}
                 onClick={() => {}}
               >
-                Claim My Reward
+                Смотреть рекламу ($0.50)
               </button>
+
+              <h2 style={{ marginBottom: '8px', fontSize: '22px', fontWeight: '800', marginTop: '24px' }}>Сёрфинг</h2>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '14px' }}>
+                Посети сайт спонсора на 5 секунд и получи <span style={{ color: 'var(--gold-color)', fontWeight: '700' }}>$0.10</span> моментально. Опыт также начисляется!
+              </p>
 
               <button
                 className="btn-primary"
@@ -222,30 +248,34 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
                 style={{
                   width: '100%', height: '56px', fontSize: '17px', fontWeight: '700',
                   borderRadius: '18px',
-                  background: 'linear-gradient(135deg, #10b981, #059669)',
-                  boxShadow: surfCooldownTime > 0 ? 'none' : '0 10px 25px rgba(16, 185, 129, 0.3)'
+                  background: 'linear-gradient(135deg, #1e40af, #a855f7)',
+                  boxShadow: surfCooldownTime > 0 ? 'none' : '0 10px 25px rgba(157, 80, 187, 0.3)'
                 }}
                 onClick={handleSurfAd}
               >
                 {surfCooldownTime > 0
                   ? `Сёрфинг ${Math.floor(surfCooldownTime / 60)}:${(surfCooldownTime % 60).toString().padStart(2, '0')}`
-                  : 'Сёрфинг ($0.10)'}
+                  : 'Начать Сёрфинг ($0.10)'}
               </button>
             </div>
           )}
         </div>
       </div>
 
-      <div style={{ padding: '0 10px', marginTop: '16px' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '12px' }}>How it works?</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary-color)', flexShrink: 0 }} />
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Watch ads every 2 minutes to grow your balance.</div>
+      <div style={{ padding: '20px', marginTop: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '16px', color: 'var(--primary-color)' }}>Как это работает?</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'rgba(30, 64, 175, 0.2)', border: '1px solid var(--primary-color)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)', fontWeight: 'bold' }}>1</div>
+            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Смотрите рекламу или сёрфите сайты спонсоров.</div>
           </div>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary-color)', flexShrink: 0 }} />
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Use balance in the Shop to buy premium access.</div>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'rgba(30, 64, 175, 0.2)', border: '1px solid var(--primary-color)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)', fontWeight: 'bold' }}>2</div>
+            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Зарабатывайте доллары и получайте очки опыта (XP).</div>
+          </div>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'rgba(30, 64, 175, 0.2)', border: '1px solid var(--primary-color)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)', fontWeight: 'bold' }}>3</div>
+            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Тратьте баланс в Магазине и на Акции брендов!</div>
           </div>
         </div>
       </div>

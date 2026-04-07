@@ -23,13 +23,19 @@ const initDB = () => {
             last_name TEXT,
             photo_url TEXT,
             balance INTEGER DEFAULT 0,
+            xp INTEGER DEFAULT 0,
             level INTEGER DEFAULT 1,
             registered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             last_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
             yt_balance INTEGER DEFAULT 0
         )`);
 
-        // Migration: ensure level and daily bonus columns exist
+        // Migration: ensure level, xp and daily bonus columns exist
+        db.run(`ALTER TABLE users ADD COLUMN xp INTEGER DEFAULT 0`, (err) => {
+            if (err && !err.message.includes("duplicate column name")) {
+                console.error("Migration error (xp):", err.message);
+            }
+        });
         db.run(`ALTER TABLE users ADD COLUMN level INTEGER DEFAULT 1`, (err) => {
             if (err && !err.message.includes("duplicate column name")) {
                 console.error("Migration error (level):", err.message);

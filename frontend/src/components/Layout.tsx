@@ -15,7 +15,7 @@ const Layout = () => {
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
           <Play size={24} />
-          <span>Start</span>
+          <span>Старт</span>
         </NavLink>
 
         <NavLink 
@@ -31,7 +31,7 @@ const Layout = () => {
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
           <ShoppingBag size={24} />
-          <span>Shop</span>
+          <span>Магазин</span>
         </NavLink>
 
         <NavLink 
@@ -39,7 +39,7 @@ const Layout = () => {
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
           <Trophy size={24} />
-          <span>Top</span>
+          <span>Топ</span>
         </NavLink>
 
         <NavLink 
@@ -47,7 +47,7 @@ const Layout = () => {
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
           <Gift size={24} />
-          <span>Bonus</span>
+          <span>Бонусы</span>
         </NavLink>
         
         <NavLink 
@@ -55,7 +55,7 @@ const Layout = () => {
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
           <User size={24} />
-          <span>Profile</span>
+          <span>Профиль</span>
         </NavLink>
         
       </nav>

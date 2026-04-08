@@ -13,12 +13,12 @@ import {
 } from 'lucide-react';
 
 const BRAND_LIST = [
-  { id: 'brand1', name: 'Apple', price: 99900, image: 'https://logo.clearbit.com/apple.com' },
-  { id: 'brand2', name: 'NVIDIA', price: 1999, image: 'https://logo.clearbit.com/nvidia.com' },
-  { id: 'brand3', name: 'samsung', price: 49900, image: 'https://logo.clearbit.com/samsung.com' },
-  { id: 'brand4', name: 'Xiaomi', price: 49900, image: 'https://logo.clearbit.com/mi.com' },
-  { id: 'brand5', name: 'HP', price: 5000, image: 'https://logo.clearbit.com/hp.com' },
-  { id: 'brand6', name: 'INFINIX', price: 1500, image: 'https://logo.clearbit.com/infinixmobility.com' },
+  { id: 'brand1', name: 'Apple', price: 99900, image: '/brands/apple.png' },
+  { id: 'brand2', name: 'NVIDIA', price: 1999, image: '/brands/geforce.png' },
+  { id: 'brand3', name: 'samsung', price: 49900, image: '/brands/samsung.png' },
+  { id: 'brand4', name: 'Xiaomi', price: 49900, image: '/brands/xiaomi.png' },
+  { id: 'brand5', name: 'HP', price: 5000, image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/HP_logo_2012.svg/200px-HP_logo_2012.svg.png' },
+  { id: 'brand6', name: 'INFINIX', price: 1500, image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Infinix_Logo.svg/200px-Infinix_Logo.svg.png' },
 ];
 
 const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, userId, balance, tick }: any) => {
@@ -172,7 +172,7 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
   );
 };
 
-const NFC = ({ userId, balance, setBalance }: any) => {
+const Promotions = ({ userId, balance, setBalance }: any) => {
   const [rates, setRates] = useState<Record<string, number>>({});
   const [variance, setVariance] = useState<Record<string, number>>({});
   const [tick, setTick] = useState(0);
@@ -407,4 +407,4 @@ const NFC = ({ userId, balance, setBalance }: any) => {
   );
 };
 
-export default NFC;
+export default Promotions;

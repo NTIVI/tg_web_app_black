@@ -19,7 +19,7 @@ const Layout = () => {
         </NavLink>
 
         <NavLink 
-          to="/nfc" 
+          to="/promotions" 
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
           <Smartphone size={24} />

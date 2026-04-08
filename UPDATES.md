@@ -22,6 +22,10 @@ The repository has been updated with the following final changes:
 ## 6. Layout Improvements
 - **Banner Removed**: Deleted the unwanted `AdBanner` component from the main layout for a cleaner UI.
 
-## 7. Repository Sync
-- All code is synced with the `main` branch.
-- Production build verified via `npm run build`.
+## 8. Promotions (Акции) Improvements
+- **Image Fix visibility**: Replaced unreliable external brand logos with local high-quality assets for Apple, NVIDIA, Samsung, and Xiaomi. Added stable official sources for HP and Infinix.
+- **Full Rebranding**: Renamed all internal references of "NFC" to "Promotions" (Акции) to ensure consistency between the UI and codebase.
+- **Route Update**: The path `/nfc` has been changed to `/promotions`.
+
+## 9. Repository Sync
+- All code is synced and the repository has been updated with the latest rebranding and image fixes.

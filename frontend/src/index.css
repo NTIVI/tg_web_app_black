@@ -258,10 +258,13 @@ p {
 .shop-item-image {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 14px;
-  object-fit: cover;
+  border-radius: 18px;
+  object-fit: contain;
   margin-bottom: 12px;
-  background: #111;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.03) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
 }
 
 .shop-item-title {

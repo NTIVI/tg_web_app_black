@@ -36,5 +36,18 @@ The repository has been updated with the following final changes:
 - **Visuals**: Added premium glassmorphism glow effects and improved spacing for a more high-end feel.
 - **Cleanup**: Simplified the header in the Promotions section for a cleaner look.
 
-## 12. Repository Sync
-- All code is synced and the repository has been updated with the latest UI enhancements and data logic.
+## 13. Unified Image Design
+- **Cross-Section Styling**: Synchronized the design of brand logos in "Promotions" and products in "Shop".
+- **Visuals**: Switched to rounded squared containers (18px) with a dark glassmorphic background for a more premium, cohesive look.
+
+## 14. Premium Leaderboard (Top)
+- **Top 3 Podium**: Implemented a visual podium for the top 3 players with unique sizes, crowns, and glowing status borders.
+- **Mobile Optimization**: Redesigned player rows for better readability on small screens and added smooth entry animations.
+
+## 15. Admin Panel Enhancements
+- **Tab Layout**: Redesigned the tab switcher with high-end glassmorphism and animated active states.
+- **Branding**: Renamed all "NFT" references to "Акции" to match the user interface.
+- **Clean Workspace**: Bottom navigation is now hidden on the admin page to provide a dedicated fullscreen management console.
+
+## 16. Repository Sync
+- All code is synced and the repository has been updated with the latest premium UI enhancements and structural fixes.

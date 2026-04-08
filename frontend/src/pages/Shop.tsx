@@ -62,7 +62,7 @@ const Shop = ({ userId, balance, setBalance }: ShopProps) => {
       <div className="shop-grid" style={{ marginTop: '24px' }}>
         {items.map(item => (
           <div key={item.id} className="shop-item" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <img src={item.img} alt={item.name} className="shop-item-image" style={{ objectFit: 'cover' }} />
+            <img src={item.img} alt={item.name} className="shop-item-image" />
             <div className="shop-item-title" style={{ flexGrow: 1, minHeight: '40px' }}>{item.name}</div>
             <div className="shop-item-price">${(item.price / 100).toFixed(2)}</div>
             <button 

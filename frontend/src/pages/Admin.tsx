@@ -216,46 +216,143 @@ const Admin = () => {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '32px', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ 
+        display: 'flex', 
+        gap: '8px', 
+        marginBottom: '32px', 
+        background: 'rgba(255,255,255,0.03)', 
+        padding: '6px', 
+        borderRadius: '24px', 
+        border: '1px solid rgba(255,255,255,0.05)',
+        backdropFilter: 'blur(10px)',
+        overflowX: 'auto',
+        msOverflowStyle: 'none',
+        scrollbarWidth: 'none',
+        paddingRight: '12px'
+      }}>
         <button 
-          className={`btn-primary ${activeTab === 'users' ? '' : 'inactive'}`} 
-          style={{ flex: 1, padding: '12px', borderRadius: '14px', background: activeTab === 'users' ? '' : 'transparent', color: activeTab === 'users' ? 'white' : 'var(--text-secondary)', minWidth: '100px', boxShadow: activeTab === 'users' ? '' : 'none', border: 'none' }}
+          className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`} 
+          style={{ 
+            flex: 1, 
+            padding: '12px 16px', 
+            borderRadius: '18px', 
+            background: activeTab === 'users' ? 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))' : 'transparent', 
+            color: activeTab === 'users' ? 'white' : 'var(--text-secondary)', 
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            minWidth: '100px',
+            boxShadow: activeTab === 'users' ? '0 10px 20px rgba(30, 64, 175, 0.3)' : 'none',
+            transform: activeTab === 'users' ? 'scale(1.02)' : 'scale(1)'
+          }}
           onClick={() => setActiveTab('users')}
         >
-          <Users size={20} />
-          <span style={{ fontWeight: '700' }}>Users</span>
+          <Users size={18} />
+          <span style={{ fontWeight: '800', fontSize: '13px' }}>Пользователи</span>
         </button>
+
         <button 
-          className={`btn-primary ${activeTab === 'purchases' ? '' : 'inactive'}`} 
-          style={{ flex: 1, padding: '12px', borderRadius: '14px', background: activeTab === 'purchases' ? '' : 'transparent', color: activeTab === 'purchases' ? 'white' : 'var(--text-secondary)', minWidth: '110px', boxShadow: activeTab === 'purchases' ? '' : 'none', border: 'none' }}
+          className={`tab-btn ${activeTab === 'purchases' ? 'active' : ''}`} 
+          style={{ 
+            flex: 1, 
+            padding: '12px 16px', 
+            borderRadius: '18px', 
+            background: activeTab === 'purchases' ? 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))' : 'transparent', 
+            color: activeTab === 'purchases' ? 'white' : 'var(--text-secondary)', 
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            minWidth: '100px',
+            boxShadow: activeTab === 'purchases' ? '0 10px 20px rgba(30, 64, 175, 0.3)' : 'none',
+            transform: activeTab === 'purchases' ? 'scale(1.02)' : 'scale(1)'
+          }}
           onClick={() => setActiveTab('purchases')}
         >
-          <ShoppingBag size={20} />
-          <span style={{ fontWeight: '700' }}>Stats</span>
+          <ShoppingBag size={18} />
+          <span style={{ fontWeight: '800', fontSize: '13px' }}>Стат. Магазин</span>
         </button>
+
         <button 
-          className={`btn-primary ${activeTab === 'nft' ? '' : 'inactive'}`} 
-          style={{ flex: 1, padding: '12px', borderRadius: '14px', background: activeTab === 'nft' ? '' : 'transparent', color: activeTab === 'nft' ? 'white' : 'var(--text-secondary)', minWidth: '80px', boxShadow: activeTab === 'nft' ? '' : 'none', border: 'none' }}
+          className={`tab-btn ${activeTab === 'nft' ? 'active' : ''}`} 
+          style={{ 
+            flex: 1, 
+            padding: '12px 16px', 
+            borderRadius: '18px', 
+            background: activeTab === 'nft' ? 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))' : 'transparent', 
+            color: activeTab === 'nft' ? 'white' : 'var(--text-secondary)', 
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            minWidth: '100px',
+            boxShadow: activeTab === 'nft' ? '0 10px 20px rgba(30, 64, 175, 0.3)' : 'none',
+            transform: activeTab === 'nft' ? 'scale(1.02)' : 'scale(1)'
+          }}
           onClick={() => setActiveTab('nft')}
         >
-          <Zap size={20} />
-          <span style={{ fontWeight: '700' }}>NFT</span>
+          <Zap size={18} />
+          <span style={{ fontWeight: '800', fontSize: '13px' }}>Акции (%)</span>
         </button>
+
         <button 
-          className={`btn-primary ${activeTab === 'nft_stats' ? '' : 'inactive'}`} 
-          style={{ flex: 1, padding: '12px', borderRadius: '14px', background: activeTab === 'nft_stats' ? '' : 'transparent', color: activeTab === 'nft_stats' ? 'white' : 'var(--text-secondary)', minWidth: '100px', boxShadow: activeTab === 'nft_stats' ? '' : 'none', border: 'none' }}
+          className={`tab-btn ${activeTab === 'nft_stats' ? 'active' : ''}`} 
+          style={{ 
+            flex: 1, 
+            padding: '12px 16px', 
+            borderRadius: '18px', 
+            background: activeTab === 'nft_stats' ? 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))' : 'transparent', 
+            color: activeTab === 'nft_stats' ? 'white' : 'var(--text-secondary)', 
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            minWidth: '100px',
+            boxShadow: activeTab === 'nft_stats' ? '0 10px 20px rgba(30, 64, 175, 0.3)' : 'none',
+            transform: activeTab === 'nft_stats' ? 'scale(1.02)' : 'scale(1)'
+          }}
           onClick={() => setActiveTab('nft_stats')}
         >
-          <Plus size={20} />
-          <span style={{ fontWeight: '700' }}>Stats</span>
+          <Plus size={18} />
+          <span style={{ fontWeight: '800', fontSize: '13px' }}>Стат. Акций</span>
         </button>
+
         <button 
-          className={`btn-primary ${activeTab === 'social' ? '' : 'inactive'}`} 
-          style={{ flex: 1, padding: '12px', borderRadius: '14px', background: activeTab === 'social' ? '' : 'transparent', color: activeTab === 'social' ? 'white' : 'var(--text-secondary)', minWidth: '100px', boxShadow: activeTab === 'social' ? '' : 'none', border: 'none' }}
+          className={`tab-btn ${activeTab === 'social' ? 'active' : ''}`} 
+          style={{ 
+            flex: 1, 
+            padding: '12px 16px', 
+            borderRadius: '18px', 
+            background: activeTab === 'social' ? 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))' : 'transparent', 
+            color: activeTab === 'social' ? 'white' : 'var(--text-secondary)', 
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            minWidth: '100px',
+            boxShadow: activeTab === 'social' ? '0 10px 20px rgba(30, 64, 175, 0.3)' : 'none',
+            transform: activeTab === 'social' ? 'scale(1.02)' : 'scale(1)'
+          }}
           onClick={() => setActiveTab('social')}
         >
-          <Users size={20} />
-          <span style={{ fontWeight: '700' }}>Social</span>
+          <Users size={18} />
+          <span style={{ fontWeight: '800', fontSize: '13px' }}>Соцсети</span>
         </button>
       </div>
 
@@ -444,7 +541,7 @@ const Admin = () => {
       {activeTab === 'nft' && (
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', padding: '32px' }}>
-            <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px', textAlign: 'center' }}>Индивидуальное Управление NFT (%)</h3>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px', textAlign: 'center' }}>Индивидуальное Управление Акциями (%)</h3>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               {[
@@ -503,7 +600,7 @@ const Admin = () => {
                 <thead>
                   <tr style={{ textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                     <th style={{ padding: '12px 8px', opacity: 0.6 }}>Пользователь</th>
-                    <th style={{ padding: '12px 8px', opacity: 0.6 }}>NFT</th>
+                    <th style={{ padding: '12px 8px', opacity: 0.6 }}>Акция</th>
                     <th style={{ padding: '12px 8px', opacity: 0.6 }}>Количество куплено</th>
                     <th style={{ padding: '12px 8px', opacity: 0.6, textAlign: 'right' }}>Последняя покупка</th>
                   </tr>

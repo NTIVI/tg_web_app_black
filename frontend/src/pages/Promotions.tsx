@@ -15,10 +15,12 @@ import {
 const BRAND_LIST = [
   { id: 'brand1', name: 'Apple', price: 99900, image: '/brands/apple.png' },
   { id: 'brand2', name: 'NVIDIA', price: 1999, image: '/brands/geforce.png' },
-  { id: 'brand3', name: 'samsung', price: 49900, image: '/brands/samsung.png' },
+  { id: 'brand3', name: 'Samsung', price: 49900, image: '/brands/samsung.png' },
   { id: 'brand4', name: 'Xiaomi', price: 49900, image: '/brands/xiaomi.png' },
-  { id: 'brand5', name: 'HP', price: 5000, image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/HP_logo_2012.svg/200px-HP_logo_2012.svg.png' },
-  { id: 'brand6', name: 'INFINIX', price: 1500, image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Infinix_Logo.svg/200px-Infinix_Logo.svg.png' },
+  { id: 'brand5', name: 'Netflix', price: 5000, image: '/brands/netflix.png' },
+  { id: 'brand6', name: 'PlayStation', price: 1500, image: '/brands/playstation.png' },
+  { id: 'brand7', name: 'Steam', price: 3000, image: '/brands/steam.png' },
+  { id: 'brand8', name: 'Xbox', price: 2500, image: '/brands/xbox.png' },
 ];
 
 const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, userId, balance, tick }: any) => {
@@ -189,6 +191,8 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
         brand4: (Math.random() - 0.5) * 2,
         brand5: (Math.random() - 0.5) * 2,
         brand6: (Math.random() - 0.5) * 2,
+        brand7: (Math.random() - 0.5) * 2,
+        brand8: (Math.random() - 0.5) * 2,
     });
 
     // Poll NFT manipulation status every 3s
@@ -279,7 +283,7 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
   // Generate dynamic changes based on live manipulation and random variance
   const getChange = (index: number) => {
     const nftId = `brand${index + 1}`;
-    let base = [5.3, -2.1, 0.8, -1.5, 4.2, -0.5][index % 6];
+    let base = [5.3, -2.1, 0.8, -1.5, 4.2, -0.5, 2.4, -1.2][index % 8];
     
     if (rates && rates[nftId] !== undefined && rates[nftId] !== null) {
       base = typeof rates[nftId] === 'string' ? parseFloat(rates[nftId] as any) : rates[nftId];

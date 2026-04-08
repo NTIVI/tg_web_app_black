@@ -450,10 +450,12 @@ const Admin = () => {
               {[
                   { id: 'brand1', name: 'Apple' },
                   { id: 'brand2', name: 'NVIDIA' },
-                  { id: 'brand3', name: 'samsung' },
+                  { id: 'brand3', name: 'Samsung' },
                   { id: 'brand4', name: 'Xiaomi' },
-                  { id: 'brand5', name: 'HP' },
-                  { id: 'brand6', name: 'INFINIX' },
+                  { id: 'brand5', name: 'Netflix' },
+                  { id: 'brand6', name: 'PlayStation' },
+                  { id: 'brand7', name: 'Steam' },
+                  { id: 'brand8', name: 'Xbox' },
               ].map(nft => (
                 <div key={nft.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
                   <div style={{ fontSize: '14px', fontWeight: '800', marginBottom: '8px', color: 'var(--primary-color)', textAlign: 'center' }}>{nft.name}</div>

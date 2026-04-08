@@ -76,29 +76,43 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center', 
-          margin: '4px 0',
+          margin: '12px 0',
           position: 'relative'
         }}>
+          {/* Logo Container Design */}
+          <div style={{ 
+            width: '80px', 
+            height: '80px', 
+            background: 'rgba(255, 255, 255, 0.9)', 
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '12px',
+            boxShadow: '0 8px 16px rgba(0,0,0,0.2), 0 0 20px rgba(255,255,255,0.1)',
+            zIndex: 1,
+            position: 'relative'
+          }}>
+            <img 
+              src={nft.image} 
+              alt={nft.name} 
+              style={{ 
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'contain', 
+              }} 
+            />
+          </div>
+          {/* Decorative Glow behind the logo */}
           <div style={{ 
             position: 'absolute', 
-            width: '80%', 
-            height: '80%', 
+            width: '100px', 
+            height: '100px', 
             background: 'var(--primary-glow)', 
-            filter: 'blur(20px)', 
+            filter: 'blur(30px)', 
             borderRadius: '50%',
-            opacity: 0.3
+            opacity: 0.4
           }}></div>
-          <img 
-            src={nft.image} 
-            alt={nft.name} 
-            style={{ 
-              width: '100%', 
-              maxHeight: '70px', 
-              objectFit: 'contain', 
-              borderRadius: '8px',
-              zIndex: 1
-            }} 
-          />
         </div>
 
         <div style={{ textAlign: 'center', marginBottom: '10px' }}>
@@ -315,7 +329,6 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
           <h1>Акции</h1>
-          <p style={{ margin: 0, fontSize: '13px', opacity: 0.6 }}>Популярные бренды и скидки</p>
         </div>
         <div style={{ 
           background: 'var(--primary-glow)', 

@@ -27,5 +27,14 @@ The repository has been updated with the following final changes:
 - **Full Rebranding**: Renamed all internal references of "NFC" to "Promotions" (Акции) to ensure consistency between the UI and codebase.
 - **Route Update**: The path `/nfc` has been changed to `/promotions`.
 
-## 9. Repository Sync
-- All code is synced and the repository has been updated with the latest rebranding and image fixes.
+## 10. Dynamic Social Stats
+- **Bonuses Page**: Subscriber counts for Telegram and TikTok are now dynamically formatted and pulled from the administration system (`socialStats`).
+- **Formatter**: Implemented a `formatSubs` utility to show counts as '2.3k' or '1.0M'.
+
+## 11. Enhanced Promotion UI
+- **Card Design**: Redesigned Promotion cards with a circular, high-contrast container for brand logos.
+- **Visuals**: Added premium glassmorphism glow effects and improved spacing for a more high-end feel.
+- **Cleanup**: Simplified the header in the Promotions section for a cleaner look.
+
+## 12. Repository Sync
+- All code is synced and the repository has been updated with the latest UI enhancements and data logic.

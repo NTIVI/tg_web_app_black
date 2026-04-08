@@ -41,12 +41,6 @@ const SOCIAL_CONFIG: any = {
   telegram: { title: 'Telegram', icon: <TelegramIcon />, bg: 'linear-gradient(135deg, rgba(0, 136, 204, 0.1) 0%, rgba(0, 136, 204, 0.05) 100%)', border: '1px solid rgba(0, 136, 204, 0.2)', iconColor: '#0088cc', barBg: 'linear-gradient(90deg, #0088cc 0%, #00aaff 100%)', textColor: '#00aaff' }
 };
 
-const BONUS_LIST = [
-  { id: 'tg_channel', title: 'Вступить в Telegram канал', reward: 1000, icon: <TelegramIcon />, url: 'https://t.me/+CVRfTOr2cCdhYTU6', subs: '24.5k Подписчиков' },
-  { id: 'tiktok', title: 'Подписаться на TikTok', reward: 500, icon: <TikTokIcon />, url: 'https://www.tiktok.com/@just___000', subs: '12k Подписчиков' },
-  { id: 'youtube', title: 'Подписаться на YouTube', reward: 1000, icon: <YoutubeIcon />, url: 'https://www.youtube.com/@Devki_keksi', subs: '15.2k Подписчиков' },
-];
-
 const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDaily }: any) => {
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
   const [claiming, setClaiming] = useState<string | null>(null);
@@ -126,6 +120,39 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
       }
     }, 2000);
   };
+
+  const formatSubs = (count: number) => {
+    if (count >= 1000000) return (count / 1000000).toFixed(1) + 'M';
+    if (count >= 1000) return (count / 1000).toFixed(1) + 'k';
+    return count.toString();
+  };
+
+  const BONUS_LIST = [
+    { 
+      id: 'tg_channel', 
+      title: 'Вступить в Telegram канал', 
+      reward: 1000, 
+      icon: <TelegramIcon />, 
+      url: 'https://t.me/+CVRfTOr2cCdhYTU6', 
+      subs: `${formatSubs(socialStats.telegram?.current || 2310)} Подписчиков` 
+    },
+    { 
+      id: 'tiktok', 
+      title: 'Подписаться на TikTok', 
+      reward: 500, 
+      icon: <TikTokIcon />, 
+      url: 'https://www.tiktok.com/@just___000', 
+      subs: `${formatSubs(socialStats.tiktok?.current || 8450)} Подписчиков` 
+    },
+    { 
+      id: 'youtube', 
+      title: 'Подписаться на YouTube', 
+      reward: 1000, 
+      icon: <YoutubeIcon />, 
+      url: 'https://www.youtube.com/@Devki_keksi', 
+      subs: '15.2k Подписчиков' // No YouTube stat in admin yet, keep static or add later
+    },
+  ];
 
   return (
     <div className="page" style={{ paddingBottom: '100px' }}>

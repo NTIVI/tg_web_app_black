@@ -13,12 +13,12 @@ import {
 } from 'lucide-react';
 
 const BRAND_LIST = [
-  { id: 'brand1', name: 'Apple iPhone 15 Pro', price: 99900, image: '/brands/apple.png' },
-  { id: 'brand2', name: 'GeForce NOW Ultimate', price: 1999, image: '/brands/geforce.png' },
-  { id: 'brand3', name: 'PlayStation 5', price: 49900, image: '/brands/playstation.png' },
-  { id: 'brand4', name: 'Xbox Series X', price: 49900, image: '/brands/xbox.png' },
-  { id: 'brand5', name: 'Steam Gift Card', price: 5000, image: '/brands/steam.png' },
-  { id: 'brand6', name: 'Netflix Premium', price: 1500, image: '/brands/netflix.png' },
+  { id: 'brand1', name: 'Apple', price: 99900, image: 'https://logo.clearbit.com/apple.com' },
+  { id: 'brand2', name: 'NVIDIA', price: 1999, image: 'https://logo.clearbit.com/nvidia.com' },
+  { id: 'brand3', name: 'samsung', price: 49900, image: 'https://logo.clearbit.com/samsung.com' },
+  { id: 'brand4', name: 'Xiaomi', price: 49900, image: 'https://logo.clearbit.com/mi.com' },
+  { id: 'brand5', name: 'HP', price: 5000, image: 'https://logo.clearbit.com/hp.com' },
+  { id: 'brand6', name: 'INFINIX', price: 1500, image: 'https://logo.clearbit.com/infinixmobility.com' },
 ];
 
 const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, userId, balance, tick }: any) => {
@@ -183,12 +183,12 @@ const NFC = ({ userId, balance, setBalance }: any) => {
   useEffect(() => {
     // Initial random variance
     setVariance({
-        nft1: (Math.random() - 0.5) * 2,
-        nft2: (Math.random() - 0.5) * 2,
-        nft3: (Math.random() - 0.5) * 2,
-        nft4: (Math.random() - 0.5) * 2,
-        nft5: (Math.random() - 0.5) * 2,
-        nft6: (Math.random() - 0.5) * 2,
+        brand1: (Math.random() - 0.5) * 2,
+        brand2: (Math.random() - 0.5) * 2,
+        brand3: (Math.random() - 0.5) * 2,
+        brand4: (Math.random() - 0.5) * 2,
+        brand5: (Math.random() - 0.5) * 2,
+        brand6: (Math.random() - 0.5) * 2,
     });
 
     // Poll NFT manipulation status every 3s
@@ -278,7 +278,7 @@ const NFC = ({ userId, balance, setBalance }: any) => {
 
   // Generate dynamic changes based on live manipulation and random variance
   const getChange = (index: number) => {
-    const nftId = `nft${index + 1}`;
+    const nftId = `brand${index + 1}`;
     let base = [5.3, -2.1, 0.8, -1.5, 4.2, -0.5][index % 6];
     
     if (rates && rates[nftId] !== undefined && rates[nftId] !== null) {

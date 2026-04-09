@@ -213,6 +213,7 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
     });
 
     // Poll NFT manipulation status every 3s
+    const fetchStatus = async () => {
       try {
         const res = await fetch(`${API_URL}/admin/nft/status`, {
           headers: {

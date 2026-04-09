@@ -138,7 +138,8 @@ app.post('/api/watch-ad', requireAuth, limiter, async (req, res) => {
     try {
         const user = await DB.get('SELECT last_ad_watch FROM users WHERE telegram_id = ?', [telegramId]);
         if (user?.last_ad_watch) {
-            const lastWatch = new Date(user.last_ad_watch + (user.last_ad_watch.endsWith('Z') ? '' : 'Z'));
+            const lastWatchStr = typeof user.last_ad_watch === 'string' ? user.last_ad_watch : user.last_ad_watch.toISOString();
+            const lastWatch = new Date(lastWatchStr + (lastWatchStr.endsWith('Z') ? '' : 'Z'));
             const diff = (new Date() - lastWatch) / 1000;
             if (diff < 30) return res.status(429).json({ error: 'Cooldown active', timeLeft: 30 - diff });
         }
@@ -165,7 +166,8 @@ app.post('/api/surf-ad', requireAuth, limiter, async (req, res) => {
         // Cooldown mechanism for surf ad (5 seconds)
         const user = await DB.get('SELECT last_surf_watch FROM users WHERE telegram_id = ?', [telegramId]);
         if (user?.last_surf_watch) {
-            const lastWatch = new Date(user.last_surf_watch + (user.last_surf_watch.endsWith('Z') ? '' : 'Z'));
+            const lastSurfStr = typeof user.last_surf_watch === 'string' ? user.last_surf_watch : user.last_surf_watch.toISOString();
+            const lastWatch = new Date(lastSurfStr + (lastSurfStr.endsWith('Z') ? '' : 'Z'));
             const diff = (new Date() - lastWatch) / 1000;
             if (diff < 5) return res.status(429).json({ error: 'Cooldown active', timeLeft: 5 - diff });
         }
@@ -222,8 +224,17 @@ app.post('/api/bonus/claim', requireAuth, async (req, res) => {
         if (existing) return res.status(400).json({ error: 'Already claimed' });
         
         await DB.run('INSERT INTO bonuses_claimed (telegram_id, bonus_id) VALUES (?, ?)', [telegramId, bonusId]);
-        await DB.run('UPDATE users SET balance = balance + ? WHERE telegram_id = ?', [reward, telegramId]);
-        res.json({ success: true });
+        const xpBoost = 100; // Fixed XP for bonus
+        await DB.run(`
+            UPDATE users SET 
+                balance = balance + ?, 
+                xp = xp + ?, 
+                level = FLOOR((xp + ?) / 1000) + 1 
+            WHERE telegram_id = ?
+        `, [reward, xpBoost, xpBoost, telegramId]);
+        
+        const updated = await DB.get('SELECT balance, xp, level FROM users WHERE telegram_id = ?', [telegramId]);
+        res.json({ success: true, balance: updated.balance, xp: updated.xp, level: updated.level });
     } catch (err) { res.status(500).json({ error: 'Claim error' }); }
 });
 
@@ -234,7 +245,7 @@ app.get('/api/bonus/daily-check/:id', requireAuth, async (req, res) => {
         if (!user) return res.status(404).json({ error: 'User not found' });
         
         const now = new Date();
-        const lastClaim = user.last_daily_claim ? new Date(user.last_daily_claim + (user.last_daily_claim.endsWith('Z') ? '' : 'Z')) : null;
+        const lastClaimVal = user.last_daily_claim; const lastClaimStr = lastClaimVal ? (typeof lastClaimVal === "string" ? lastClaimVal : lastClaimVal.toISOString()) : null; const lastClaim = lastClaimStr ? new Date(lastClaimStr + (lastClaimStr.endsWith('Z') ? '' : 'Z')) : null;
         let canClaim = true;
         
         if (lastClaim) {
@@ -253,7 +264,7 @@ app.post('/api/bonus/daily-claim', requireAuth, async (req, res) => {
         if (!user) return res.status(404).json({ error: 'User not found' });
         
         const now = new Date();
-        const lastClaim = user.last_daily_claim ? new Date(user.last_daily_claim + (user.last_daily_claim.endsWith('Z') ? '' : 'Z')) : null;
+        const lastClaimVal = user.last_daily_claim; const lastClaimStr = lastClaimVal ? (typeof lastClaimVal === "string" ? lastClaimVal : lastClaimVal.toISOString()) : null; const lastClaim = lastClaimStr ? new Date(lastClaimStr + (lastClaimStr.endsWith('Z') ? '' : 'Z')) : null;
         
         if (lastClaim) {
             const diffHours = (now - lastClaim) / (1000 * 60 * 60);
@@ -419,9 +430,11 @@ app.post('/api/nft/sell', requireAuth, async (req, res) => {
     } catch { res.status(500).json({ error: 'Sell error' }); }
 });
 
-app.get('/api/nft/my/:telegramId', async (req, res) => {
+app.get('/api/nft/my/:telegramId', requireAuth, async (req, res) => {
+    const requestedId = req.params.telegramId;
+    // Security: and optionally check if requestedId === req.user.id
     try {
-        const nfts = await DB.all('SELECT * FROM user_nfts WHERE telegram_id = ?', [req.params.telegramId]);
+        const nfts = await DB.all('SELECT * FROM user_nfts WHERE telegram_id = ?', [requestedId]);
         res.json({ nfts });
     } catch { res.status(500).json({ error: 'My NFTs error' }); }
 });

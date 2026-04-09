@@ -41,7 +41,7 @@ const SOCIAL_CONFIG: any = {
   telegram: { title: 'Telegram', icon: <TelegramIcon />, bg: 'linear-gradient(135deg, rgba(0, 136, 204, 0.1) 0%, rgba(0, 136, 204, 0.05) 100%)', border: '1px solid rgba(0, 136, 204, 0.2)', iconColor: '#0088cc', barBg: 'linear-gradient(90deg, #0088cc 0%, #00aaff 100%)', textColor: '#00aaff' }
 };
 
-const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDaily }: any) => {
+const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDaily, setTgUser }: any) => {
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [socialStats, setSocialStats] = useState<any>({
@@ -117,7 +117,15 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
           const data = await res.json();
           if (data.success) {
             setClaimedIds(prev => [...prev, bonus.id]);
-            setBalance((prev: number) => prev + bonus.reward);
+            if (data.balance !== undefined) {
+              setBalance(data.balance);
+            } else {
+              setBalance((prev: number) => prev + bonus.reward);
+            }
+            // Sync global user state with new XP and Level
+            if (setTgUser) {
+              setTgUser((prev: any) => ({ ...prev, ...data }));
+            }
           }
         }
       } catch (err) {

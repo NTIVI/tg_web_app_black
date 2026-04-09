@@ -59,6 +59,40 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
     fetch(`${API_URL}/settings/ads`).catch(() => {});
   }, []);
 
+  const handleWatchAd = async () => {
+    if (!userId) { setAdMessage('Пожалуйста, войдите в систему.'); return; }
+    if (cooldownTime > 0) return;
+
+    setAdState('loading');
+    try {
+      const res = await fetch(`${API_URL}/watch-ad`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify({ telegramId: userId }),
+      });
+      const data = await res.json();
+      if (data.newBalance !== undefined) {
+        setBalance(data.newBalance);
+        if (setTgUser) {
+          setTgUser((prev: any) => ({ ...prev, ...data }));
+        }
+        setAdMessage('✅ Награда получена! +$0.50');
+        setCooldownTime(30);
+        setAdState('done');
+      } else {
+        setAdMessage(data.error?.includes('Cooldown') ? '⏰ Подождите перед следующим просмотром.' : '❌ Ошибка начисления.');
+        setAdState('done');
+      }
+    } catch {
+      setAdMessage('❌ Ошибка сети.');
+      setAdState('done');
+    }
+    setTimeout(() => setAdState('idle'), 3000);
+  };
+
 
   const handleSurfAd = async () => {
     if (!userId) { setAdMessage('Пожалуйста, войдите в систему.'); return; }

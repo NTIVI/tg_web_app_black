@@ -6,28 +6,30 @@ interface StartProps {
   userId: string | null;
   balance: number;
   setBalance: (newBalance: number) => void;
+  tgUser: any;
+  setTgUser: (newUser: any) => void;
 }
 
-const Start = ({ userId, balance, setBalance }: StartProps) => {
+const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) => {
   const [adState, setAdState] = useState<'idle' | 'loading' | 'watching' | 'done'>('idle');
   const [adMessage, setAdMessage] = useState('');
   const [cooldownTime, setCooldownTime] = useState(0);
   const [surfCooldownTime, setSurfCooldownTime] = useState(0);
   const [surfCountdown, setSurfCountdown] = useState(0);
 
-  // Restore cooldown from localStorage on mount
+  // Restore cooldown from user data on mount/update
   useEffect(() => {
-    const lastWatch = localStorage.getItem('last_ad_watch');
-    if (lastWatch) {
-      const diff = 30 - Math.floor((Date.now() - parseInt(lastWatch)) / 1000);
+    if (tgUser?.last_ad_watch) {
+      const lastWatch = new Date(tgUser.last_ad_watch + (tgUser.last_ad_watch.endsWith('Z') ? '' : 'Z')).getTime();
+      const diff = 30 - Math.floor((Date.now() - lastWatch) / 1000);
       if (diff > 0) setCooldownTime(diff);
     }
-    const lastSurf = localStorage.getItem('last_surf_watch');
-    if (lastSurf) {
-      const diff = 5 - Math.floor((Date.now() - parseInt(lastSurf)) / 1000);
+    if (tgUser?.last_surf_watch) {
+      const lastSurf = new Date(tgUser.last_surf_watch + (tgUser.last_surf_watch.endsWith('Z') ? '' : 'Z')).getTime();
+      const diff = 5 - Math.floor((Date.now() - lastSurf) / 1000);
       if (diff > 0) setSurfCooldownTime(diff);
     }
-  }, []);
+  }, [tgUser]);
 
   // Cooldown countdown
   useEffect(() => {
@@ -82,14 +84,19 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
     try {
       const res = await fetch(`${API_URL}/surf-ad`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+        },
         body: JSON.stringify({ telegramId: userId }),
       });
       const data = await res.json();
       if (data.success) {
         setBalance(data.newBalance);
+        if (setTgUser) {
+          setTgUser((prev: any) => ({ ...prev, ...data }));
+        }
         setAdMessage('✅ Сёрфинг пройден! +$0.10');
-        localStorage.setItem('last_surf_watch', Date.now().toString());
         setSurfCooldownTime(5);
         setAdState('done');
       } else {
@@ -189,11 +196,9 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
                   width: '100%', height: '56px', fontSize: '17px', fontWeight: '700',
                   borderRadius: '18px',
                   boxShadow: '0 10px 25px rgba(157, 80, 187, 0.3)',
-                  marginBottom: '16px',
-                  opacity: 0.5,
-                  cursor: 'not-allowed'
+                  marginBottom: '16px'
                 }}
-                onClick={() => {}}
+                onClick={handleWatchAd}
               >
                 Смотреть рекламу ($0.50)
               </button>
@@ -284,7 +289,7 @@ const Start = ({ userId, balance, setBalance }: StartProps) => {
           
           {/* Embedded Ad */}
           <iframe 
-            src="https://11745.xml.4armn.com/direct-link?pubid=1006513&siteid=[SITE_ID]"
+            src={`https://11745.xml.4armn.com/direct-link?pubid=1006513&siteid=${userId || ''}`}
             style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
             sandbox="allow-scripts allow-popups allow-forms allow-same-origin"
           />

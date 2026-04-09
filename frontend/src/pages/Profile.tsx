@@ -23,10 +23,14 @@ const Profile = ({ userId, tgUser, balance }: any) => {
 
   useEffect(() => {
     if (!userId) return;
-    fetch(`${API_URL}/admin/purchases`).then(r => r.json()).then(data => {
+    const headers = {
+      'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+    };
+    
+    fetch(`${API_URL}/admin/purchases`, { headers }).then(r => r.json()).then(data => {
       setPurchases(data.purchases?.filter((p: any) => p.telegram_id === userId) || []);
     });
-    fetch(`${API_URL}/nft/my/${userId}`).then(r => r.json()).then(data => {
+    fetch(`${API_URL}/nft/my/${userId}`, { headers }).then(r => r.json()).then(data => {
       const aggregated: Record<string, any> = {};
       (data.nfts || []).forEach((n: any) => {
         if (!aggregated[n.nft_id]) aggregated[n.nft_id] = { id: n.nft_id, qty: 0, price: n.purchase_price, img: BRAND_IMAGES[n.nft_id] || `/nfts/${n.nft_id}.png` };

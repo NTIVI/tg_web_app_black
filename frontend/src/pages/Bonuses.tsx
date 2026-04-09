@@ -57,7 +57,11 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
   useEffect(() => {
     const tid = tgUser?.telegram_id || tgUser?.id;
     if (tid) {
-      fetch(`${API_URL}/bonuses/${tid}`)
+      fetch(`${API_URL}/bonuses/${tid}`, {
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+        }
+      })
         .then(res => res.json())
         .then(data => setClaimedIds(data.claimed || []))
         .catch(err => console.error("Error fetching claimed bonuses:", err));
@@ -99,7 +103,10 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
       try {
         const res = await fetch(`${API_URL}/bonus/claim`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+          },
           body: JSON.stringify({ 
             telegramId: tid, 
             bonusId: bonus.id, 

@@ -7,7 +7,11 @@ const Top = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API_URL}/top`)
+    fetch(`${API_URL}/top`, {
+      headers: {
+        'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+      }
+    })
       .then(res => res.json())
       .then(data => {
         setTopUsers(data.users || []);
@@ -20,7 +24,7 @@ const Top = () => {
   }, []);
 
   const formatBalance = (amount: number) => {
-    return (amount / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (amount / 100).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   if (loading) {
@@ -130,7 +134,7 @@ const Top = () => {
             fontWeight: '700',
             color: 'var(--text-secondary)'
           }}>
-            LVL {user.level || 1}
+            УР {user.level || 1}
           </div>
         </div>
       </div>
@@ -151,9 +155,9 @@ const Top = () => {
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
           <Trophy size={28} color="var(--gold-color)" />
-          <h1 style={{ margin: 0, fontSize: '32px' }}>Leaderboard</h1>
+          <h1 style={{ margin: 0, fontSize: '32px' }}>Рейтинг</h1>
         </div>
-        <p style={{ margin: 0, opacity: 0.6 }}>The world's richest players</p>
+        <p style={{ margin: 0, opacity: 0.6 }}>Самые богатые игроки мира</p>
       </div>
 
       {topUsers.length > 0 ? (
@@ -225,7 +229,7 @@ const Top = () => {
                         fontSize: '9px', 
                         fontWeight: '800' 
                       }}>
-                        Lvl {user.level || 1}
+                        Ур {user.level || 1}
                       </span>
                     </div>
                   </div>
@@ -239,7 +243,7 @@ const Top = () => {
               ))
             ) : (
                 <div style={{ textAlign: 'center', padding: '20px', fontSize: '13px', opacity: 0.5 }}>
-                    Reach the top to see more!
+                    Доберитесь до вершины, чтобы увидеть больше!
                 </div>
             )}
           </div>
@@ -247,7 +251,7 @@ const Top = () => {
       ) : (
         <div style={{ padding: '60px 0', textAlign: 'center' }}>
           <Star size={48} color="rgba(255,255,255,0.1)" style={{ marginBottom: '16px' }} />
-          <p>The leaderboard is currently empty.</p>
+          <p>Таблица лидеров пуста.</p>
         </div>
       )}
 

@@ -1,103 +1,78 @@
-import sqlite3 from 'sqlite3';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import pg from 'pg';
+import dotenv from 'dotenv';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const dbPath = join(__dirname, 'database.sqlite');
+dotenv.config();
 
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) console.error('SQLite connection error:', err.message);
-    else {
-        console.log('Connected to SQLite database.');
-        initDB();
+const { Pool } = pg;
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
     }
 });
 
-const initDB = () => {
-    db.serialize(() => {
+const initDB = async () => {
+    try {
+        const client = await pool.connect();
+        console.log('Connected to PostgreSQL (Neon) database.');
+
         // Users Table
-        db.run(`CREATE TABLE IF NOT EXISTS users (
+        await client.query(`CREATE TABLE IF NOT EXISTS users (
             telegram_id TEXT PRIMARY KEY,
             username TEXT,
             first_name TEXT,
             last_name TEXT,
             photo_url TEXT,
-            balance INTEGER DEFAULT 0,
-            xp INTEGER DEFAULT 0,
+            balance BIGINT DEFAULT 0,
+            xp BIGINT DEFAULT 0,
             level INTEGER DEFAULT 1,
-            registered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            last_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
-            yt_balance INTEGER DEFAULT 0
+            registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_daily_claim TIMESTAMP,
+            daily_streak INTEGER DEFAULT 0,
+            last_ad_watch TIMESTAMP,
+            last_surf_watch TIMESTAMP
         )`);
 
-        // Migration: ensure level, xp and daily bonus columns exist
-        db.run(`ALTER TABLE users ADD COLUMN xp INTEGER DEFAULT 0`, (err) => {
-            if (err && !err.message.includes("duplicate column name")) {
-                console.error("Migration error (xp):", err.message);
-            }
-        });
-        db.run(`ALTER TABLE users ADD COLUMN level INTEGER DEFAULT 1`, (err) => {
-            if (err && !err.message.includes("duplicate column name")) {
-                console.error("Migration error (level):", err.message);
-            }
-        });
-        db.run(`ALTER TABLE users ADD COLUMN last_daily_claim DATETIME`, (err) => {
-            if (err && !err.message.includes("duplicate column name")) {
-                console.error("Migration error (last_daily_claim):", err.message);
-            }
-        });
-        db.run(`ALTER TABLE users ADD COLUMN daily_streak INTEGER DEFAULT 0`, (err) => {
-            if (err && !err.message.includes("duplicate column name")) {
-                console.error("Migration error (daily_streak):", err.message);
-            }
-        });
-        db.run(`ALTER TABLE users ADD COLUMN last_ad_watch DATETIME`, (err) => {
-            if (err && !err.message.includes("duplicate column name")) {
-                console.error("Migration error (last_ad_watch):", err.message);
-            }
-        });
-        db.run(`ALTER TABLE users ADD COLUMN last_surf_watch DATETIME`, (err) => {
-            if (err && !err.message.includes("duplicate column name")) {
-                console.error("Migration error (last_surf_watch):", err.message);
-            }
-        });
-        db.run(`ALTER TABLE users ADD COLUMN yt_balance INTEGER DEFAULT 0`, (err) => {
-            if (err && !err.message.includes("duplicate column name")) {
-                console.error("Migration error (yt_balance):", err.message);
-            }
-        });
+        // Migration: Remove yt_balance if exists
+        try {
+            await client.query(`ALTER TABLE users DROP COLUMN IF EXISTS yt_balance`);
+        } catch (e) {
+            // Might fail if column doesn't exist or other issues, safe to ignore in most cases
+        }
 
         // Purchases Table
-        db.run(`CREATE TABLE IF NOT EXISTS purchases (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        await client.query(`CREATE TABLE IF NOT EXISTS purchases (
+            id SERIAL PRIMARY KEY,
             telegram_id TEXT,
             item_name TEXT,
-            price INTEGER,
-            purchased_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            price BIGINT,
+            purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`);
 
         // Bonuses Claimed Table
-        db.run(`CREATE TABLE IF NOT EXISTS bonuses_claimed (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        await client.query(`CREATE TABLE IF NOT EXISTS bonuses_claimed (
+            id SERIAL PRIMARY KEY,
             telegram_id TEXT,
             bonus_id TEXT,
-            claimed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            claimed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`);
 
         // Settings Table
-        db.run(`CREATE TABLE IF NOT EXISTS settings (
+        await client.query(`CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
             value TEXT
         )`);
 
         // User NFTs Table
-        db.run(`CREATE TABLE IF NOT EXISTS user_nfts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        await client.query(`CREATE TABLE IF NOT EXISTS user_nfts (
+            id SERIAL PRIMARY KEY,
             telegram_id TEXT,
             nft_id TEXT,
             quantity INTEGER DEFAULT 1,
-            purchase_price INTEGER,
-            purchased_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            purchase_price BIGINT,
+            purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`);
 
         // Default Ads & NFT Settings
@@ -111,10 +86,18 @@ const initDB = () => {
             ['nft_manipulation_duration', '0'],
             ['nft_manipulation_start', '0']
         ];
-        defaults.forEach(([k, v]) => {
-            db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, [k, v]);
-        });
-    });
+        
+        for (const [k, v] of defaults) {
+            await client.query(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING`, [k, v]);
+        }
+
+        client.release();
+        console.log('Database schema initialized.');
+    } catch (err) {
+        console.error('PostgreSQL connection error:', err.message);
+    }
 };
 
-export default db;
+initDB();
+
+export default pool;

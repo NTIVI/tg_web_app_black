@@ -213,9 +213,12 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
     });
 
     // Poll NFT manipulation status every 3s
-    const fetchStatus = async () => {
       try {
-        const res = await fetch(`${API_URL}/admin/nft/status`);
+        const res = await fetch(`${API_URL}/admin/nft/status`, {
+          headers: {
+            'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+          }
+        });
         const data = await res.json();
         setRates(data.rates || {});
       } catch { /* silent */ }
@@ -257,7 +260,10 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
     try {
       const res = await fetch(`${API_URL}/nft/buy`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+        },
         body: JSON.stringify({ telegramId: userId, nftId: nft.id, name: nft.name, price: nft.price })
       });
       const data = await res.json();
@@ -280,7 +286,10 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
     try {
       const res = await fetch(`${API_URL}/nft/sell`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+        },
         body: JSON.stringify({ telegramId: userId, nftId: nft.id, price: nft.price })
       });
       const data = await res.json();

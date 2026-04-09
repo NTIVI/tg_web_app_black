@@ -31,7 +31,10 @@ const Shop = ({ userId, balance, setBalance }: ShopProps) => {
     try {
       const res = await fetch(`${API_URL}/buy`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+        },
         body: JSON.stringify({ telegramId: userId, itemName: item.name, price: item.price }),
       });
       

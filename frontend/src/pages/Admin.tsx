@@ -53,16 +53,20 @@ const Admin = () => {
 
   const fetchData = async () => {
     try {
+      const headers = {
+        'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+      };
+      
       if (activeTab === 'users') {
-        const res = await fetch(`${API_URL}/admin/users`);
+        const res = await fetch(`${API_URL}/admin/users`, { headers });
         const data = await res.json();
         setUsers(data.users || []);
       } else if (activeTab === 'purchases') {
-        const res = await fetch(`${API_URL}/admin/purchases`);
+        const res = await fetch(`${API_URL}/admin/purchases`, { headers });
         const data = await res.json();
         setPurchases(data.purchases || []);
       } else if (activeTab === 'ads') {
-        const res = await fetch(`${API_URL}/settings/ads`);
+        const res = await fetch(`${API_URL}/settings/ads`, { headers });
         const data = await res.json();
         if (data.settings) {
           setAdsEnabled(data.settings.ads_enabled === 'true');
@@ -71,15 +75,15 @@ const Admin = () => {
           setTadsWidgetId(data.settings.monetag_zone_id || '');
         }
       } else if (activeTab === 'nft') {
-        const res = await fetch(`${API_URL}/admin/nft/status`);
+        const res = await fetch(`${API_URL}/admin/nft/status`, { headers });
         const data = await res.json();
         if (data.rates) setNftRates(data.rates);
       } else if (activeTab === 'nft_stats') {
-        const res = await fetch(`${API_URL}/admin/nft/stats`);
+        const res = await fetch(`${API_URL}/admin/nft/stats`, { headers });
         const data = await res.json();
         setNftStats(data.stats || []);
       } else if (activeTab === 'social') {
-        const res = await fetch(`${API_URL}/social-stats`);
+        const res = await fetch(`${API_URL}/social-stats`, { headers });
         const data = await res.json();
         if (data.stats) setSocialStats(data.stats);
       }
@@ -90,7 +94,10 @@ const Admin = () => {
     if (!amount || isNaN(parseInt(amount))) return;
     const res = await fetch(`${API_URL}/admin/user/balance`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+      },
       body: JSON.stringify({ telegramId, amount, action })
     });
     if (res.ok) {
@@ -104,7 +111,10 @@ const Admin = () => {
   const saveAds = async () => {
     const res = await fetch(`${API_URL}/admin/settings/ads`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+      },
       body: JSON.stringify({ 
         ads_enabled: adsEnabled, 
         ads_client_id: adsClientId, 
@@ -124,7 +134,10 @@ const Admin = () => {
 
     const res = await fetch(`${API_URL}/admin/nft/rates`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+      },
       body: JSON.stringify({ rates: parsedRates })
     });
     if (res.ok) {
@@ -136,7 +149,10 @@ const Admin = () => {
   const saveSocialStats = async () => {
     const res = await fetch(`${API_URL}/admin/social-stats`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+      },
       body: JSON.stringify({ stats: socialStats })
     });
     if (res.ok) {

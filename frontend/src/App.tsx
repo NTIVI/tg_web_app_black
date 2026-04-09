@@ -19,8 +19,15 @@ function App() {
   const [showDailyModal, setShowDailyModal] = useState(false);
   const [dailyStatus, setDailyStatus] = useState<any>(null);
   const [claimingDaily, setClaimingDaily] = useState(false);
+  const [isBot, setIsBot] = useState(false);
   
   useEffect(() => {
+    // Basic Client-Side Bot Check
+    if (navigator.webdriver) {
+      setIsBot(true);
+      console.warn('Bot detected by navigator.webdriver');
+    }
+
     const tg = (window as any).Telegram?.WebApp;
     if (tg) {
       tg.ready();
@@ -82,6 +89,9 @@ function App() {
 
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
+      if (data.token) {
+        sessionStorage.setItem('auth_token', data.token);
+      }
       if (data.user) {
         // Merge server data (balance, etc) with TG user data
         setTgUser((prev: any) => ({ ...prev, ...data.user }));
@@ -119,7 +129,10 @@ function App() {
     try {
       const res = await fetch(`${API_URL}/bonus/daily-claim`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+        },
         body: JSON.stringify({ telegramId: tgUser.telegram_id || tgUser.id })
       });
       const data = await res.json();
@@ -139,6 +152,7 @@ function App() {
     balance, 
     setBalance, 
     tgUser,
+    setTgUser,
     dailyStatus,
     handleClaimDaily,
     claimingDaily
@@ -150,6 +164,13 @@ function App() {
       <div className="spinner"></div>
       <h2 style={{ color: 'var(--primary-color)' }}>Вход...</h2>
       <p>Загрузка данных</p>
+    </div>
+  );
+
+  if (isBot) return (
+    <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px', textAlign: 'center', padding: '20px' }}>
+      <h2 style={{ color: 'var(--danger-color)' }}>Доступ ограничен</h2>
+      <p>Использование ботов и средств автоматизации запрещено. Пожалуйста, используйте официальное приложение Telegram.</p>
     </div>
   );
 

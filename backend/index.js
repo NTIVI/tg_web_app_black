@@ -179,7 +179,9 @@ app.post('/api/surf-ad', requireAuth, limiter, async (req, res) => {
             SET balance = balance + 6, 
                 xp = xp + 10, 
                 level = FLOOR((xp + 10) / 1000) + 1,
-                last_surf_watch = CURRENT_TIMESTAMP 
+                last_surf_watch = CURRENT_TIMESTAMP,
+                last_ad_watch = CURRENT_TIMESTAMP,
+                stock_multiplier = COALESCE(stock_multiplier, 1.0) + 0.005
             WHERE telegram_id = ?
         `, [telegramId]);
         const updatedUser = await DB.get('SELECT balance, xp, level, last_surf_watch FROM users WHERE telegram_id = ?', [telegramId]);

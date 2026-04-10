@@ -79,7 +79,7 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
         if (setTgUser) {
           setTgUser((prev: any) => ({ ...prev, ...data }));
         }
-        setAdMessage('✅ Награда получена! +$0.50');
+        setAdMessage('✅ Награда получена! +$0.35');
         setCooldownTime(30);
         setAdState('done');
       } else {
@@ -130,7 +130,7 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
         if (setTgUser) {
           setTgUser((prev: any) => ({ ...prev, ...data }));
         }
-        setAdMessage('✅ Сёрфинг пройден! +$0.10');
+        setAdMessage('✅ Сёрфинг пройден! +$0.06');
         setSurfCooldownTime(5);
         setAdState('done');
       } else {
@@ -209,7 +209,7 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
 
               <h2 style={{ marginBottom: '8px', fontSize: '22px', fontWeight: '800' }}>Смотреть рекламу</h2>
               <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '14px' }}>
-                Посмотри короткое видео и получи <span style={{ color: 'var(--gold-color)', fontWeight: '700' }}>$0.50</span> моментально.
+                Посмотри короткое видео и получи <span style={{ color: 'var(--gold-color)', fontWeight: '700' }}>$0.35</span> моментально.
               </p>
 
               {adMessage && (
@@ -234,7 +234,7 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
                 }}
                 onClick={handleWatchAd}
               >
-                Смотреть рекламу ($0.50)
+                Смотреть рекламу ($0.35)
               </button>
 
               <h2 style={{ marginBottom: '8px', fontSize: '22px', fontWeight: '800', marginTop: '24px' }}>Сёрфинг</h2>

@@ -193,12 +193,25 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
 
 const Promotions = ({ userId, balance, setBalance }: any) => {
   const [stockMultiplier, setStockMultiplier] = useState(1.0);
+  const [variance, setVariance] = useState<Record<string, number>>({});
   const [tick, setTick] = useState(0);
   const [buying, setBuying] = useState<string | null>(null);
   const [selling, setSelling] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
   useEffect(() => {
+    // Initial random variance
+    setVariance({
+        brand1: (Math.random() - 0.5) * 2,
+        brand2: (Math.random() - 0.5) * 2,
+        brand3: (Math.random() - 0.5) * 2,
+        brand4: (Math.random() - 0.5) * 2,
+        brand5: (Math.random() - 0.5) * 2,
+        brand6: (Math.random() - 0.5) * 2,
+        brand7: (Math.random() - 0.5) * 2,
+        brand8: (Math.random() - 0.5) * 2,
+    });
+
     const fetchStatus = async () => {
       if (!userId) return;
       try {
@@ -215,11 +228,30 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
     };
     fetchStatus();
     
+    // Fast interval for organic live market fluctuation
     const interval = setInterval(() => {
-      fetchStatus();
+      setVariance(prev => {
+        const next: Record<string, number> = {};
+        BRAND_LIST.forEach(nft => {
+          const oldVar = prev[nft.id] || 0;
+          let delta = (Math.random() - 0.5) * 0.8; // subtle changes
+          let newVal = oldVar + delta;
+          if (newVal > 2.0) newVal = 2.0;
+          if (newVal < -2.0) newVal = -2.0;
+          next[nft.id] = newVal;
+        });
+        return next;
+      });
       setTick(t => t + 1);
-    }, 5000);
-    return () => clearInterval(interval);
+    }, 2000);
+
+    // Slower interval (15s) to sync overall multiplier with backend 
+    const backendInterval = setInterval(() => fetchStatus(), 15000);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(backendInterval);
+    };
   }, [userId]);
 
   const showToast = (type: 'success' | 'error', msg: string) => {
@@ -280,8 +312,10 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
     }
   };
 
-  const getChange = () => {
-    const val = (stockMultiplier - 1.0) * 100;
+  const getChange = (index: number) => {
+    const nftId = `brand${index + 1}`;
+    const baseVal = (stockMultiplier - 1.0) * 100;
+    const val = baseVal + (variance[nftId] || 0);
     return { val, isPositive: val >= 0 };
   };
 
@@ -342,8 +376,8 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
         gap: '12px',
         paddingBottom: '40px'
       }}>
-        {BRAND_LIST.map((nft) => {
-          const ch = getChange();
+        {BRAND_LIST.map((nft, i) => {
+          const ch = getChange(i);
           return (
             <NFTCard 
               key={nft.id} 

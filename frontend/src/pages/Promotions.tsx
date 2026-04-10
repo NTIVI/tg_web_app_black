@@ -27,17 +27,6 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
   const currentPrice = Math.round(nft.price * (1 + changeVal / 100));
   const displayCurrentPrice = (currentPrice / 100).toFixed(2);
   const canAfford = balance >= currentPrice;
-  const [flash, setFlash] = useState(false);
-  const prevTickRef = useRef(tick);
-
-  useEffect(() => {
-    if (prevTickRef.current !== tick) {
-      prevTickRef.current = tick;
-      setFlash(true);
-      const t = setTimeout(() => setFlash(false), 600);
-      return () => clearTimeout(t);
-    }
-  }, [tick]);
 
   return (
     <div className="glass-panel" style={{ 
@@ -120,7 +109,6 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
 
         <div style={{ textAlign: 'center', marginBottom: '10px' }}>
           <div 
-            className={flash ? 'price-flash' : ''}
             style={{ 
               fontSize: '20px', 
               fontWeight: '900', 
@@ -133,7 +121,6 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
             ${displayCurrentPrice}
           </div>
           <div 
-            className={flash ? (isPositive ? 'pct-flash-green' : 'pct-flash-red') : ''}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
           >
             {isPositive ? <TrendingUp size={12} color="var(--success-color)" /> : <TrendingDown size={12} color="var(--danger-color)" />}

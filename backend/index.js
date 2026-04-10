@@ -150,7 +150,7 @@ app.post('/api/watch-ad', requireAuth, limiter, async (req, res) => {
                 xp = xp + 50, 
                 level = FLOOR((xp + 50) / 1000) + 1,
                 last_ad_watch = CURRENT_TIMESTAMP,
-                stock_multiplier = COALESCE(stock_multiplier, 1.0) * 1.012,
+                stock_multiplier = COALESCE(stock_multiplier, 1.0) + 0.015,
                 last_stock_penalty = CURRENT_TIMESTAMP
             WHERE telegram_id = ?
         `, [telegramId]);
@@ -204,28 +204,11 @@ app.get('/api/user/stocks', requireAuth, async (req, res) => {
         
         if (lastAdWatch) {
             const now = new Date();
-            const penTimeStr = user.last_stock_penalty || user.registered_at;
-            let lastPenalty = penTimeStr ? new Date(typeof penTimeStr === 'string' ? penTimeStr + (penTimeStr.endsWith('Z') ? '' : 'Z') : penTimeStr.toISOString()) : lastAdWatch;
-            
             const hoursSinceAd = (now.getTime() - lastAdWatch.getTime()) / (1000 * 60 * 60);
             
-            if (hoursSinceAd >= 48) {
-                let penaltyStart = lastPenalty;
-                const fortyEightHoursAfterAd = new Date(lastAdWatch.getTime() + 48 * 60 * 60 * 1000);
-                if (penaltyStart.getTime() < fortyEightHoursAfterAd.getTime()) {
-                    penaltyStart = fortyEightHoursAfterAd;
-                }
-                
-                const hoursSincePenaltyStart = (now.getTime() - penaltyStart.getTime()) / (1000 * 60 * 60);
-                if (hoursSincePenaltyStart >= 24) {
-                    const daysToPenalize = Math.floor(hoursSincePenaltyStart / 24);
-                    const penaltyFactor = Math.pow(0.97, daysToPenalize);
-                    multiplier = multiplier * penaltyFactor;
-                    
-                    if (multiplier < 0.01) multiplier = 0.01; // Avoid going below practically zero
-                    
-                    await DB.run(`UPDATE users SET stock_multiplier = ?, last_stock_penalty = CURRENT_TIMESTAMP WHERE telegram_id = ?`, [multiplier, telegramId]);
-                }
+            if (hoursSinceAd >= 24 && multiplier > 1.0) {
+                multiplier = 1.0;
+                await DB.run(`UPDATE users SET stock_multiplier = 1.0 WHERE telegram_id = ?`, [telegramId]);
             }
         }
         

@@ -4,11 +4,13 @@ import { Wallet, Trophy, Package, Calendar, ShieldCheck, Layers } from 'lucide-r
 
 const BRAND_IMAGES: Record<string, string> = {
   'brand1': '/brands/apple.png',
-  'brand2': '/brands/geforce.png',
-  'brand3': '/brands/playstation.png',
-  'brand4': '/brands/xbox.png',
-  'brand5': '/brands/steam.png',
-  'brand6': '/brands/netflix.png',
+  'brand2': '/brands/nvidia.png',
+  'brand3': '/brands/samsung.png',
+  'brand4': '/brands/xiaomi.png',
+  'brand5': '/brands/netflix.png',
+  'brand6': '/brands/epicgames.png',
+  'brand7': '/brands/steam.png',
+  'brand8': '/brands/xbox.png',
   'nft1': '/nfts/nft1.png',
   'nft2': '/nfts/nft2.png',
   'nft3': '/nfts/nft3.png',

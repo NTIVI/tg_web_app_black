@@ -566,7 +566,7 @@ const Admin = () => {
                   { id: 'brand3', name: 'Samsung' },
                   { id: 'brand4', name: 'Xiaomi' },
                   { id: 'brand5', name: 'Netflix' },
-                  { id: 'brand6', name: 'PlayStation' },
+                  { id: 'brand6', name: 'Epic Games' },
                   { id: 'brand7', name: 'Steam' },
                   { id: 'brand8', name: 'Xbox' },
               ].map(nft => (

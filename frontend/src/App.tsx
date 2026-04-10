@@ -20,6 +20,25 @@ function App() {
   const [dailyStatus, setDailyStatus] = useState<any>(null);
   const [claimingDaily, setClaimingDaily] = useState(false);
   const [isBot, setIsBot] = useState(false);
+  const [countdown, setCountdown] = useState(10);
+  const [simTimerDone, setSimTimerDone] = useState(false);
+  const [pendingDailyModal, setPendingDailyModal] = useState(false);
+
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setSimTimerDone(true);
+    }
+  }, [countdown]);
+
+  useEffect(() => {
+    if (simTimerDone && pendingDailyModal) {
+      setShowDailyModal(true);
+      setPendingDailyModal(false);
+    }
+  }, [simTimerDone, pendingDailyModal]);
   
   useEffect(() => {
     // Basic Client-Side Bot Check
@@ -116,7 +135,7 @@ function App() {
       const data = await res.json();
       if (data.canClaim) {
         setDailyStatus(data);
-        setShowDailyModal(true);
+        setPendingDailyModal(true);
       }
     } catch (e) {
       console.error('Check daily error:', e);
@@ -159,11 +178,30 @@ function App() {
   };
 
   // Only show error or blocking loader if we have NO user data at all (not even from initDataUnsafe)
-  if (loading && !tgUser) return (
+  // Also show while simulating the 10-second loader.
+  const isInitialLoading = !simTimerDone || (loading && !tgUser);
+
+  if (isInitialLoading) return (
     <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px', textAlign: 'center' }}>
-      <div className="spinner"></div>
-      <h2 style={{ color: 'var(--primary-color)' }}>Вход...</h2>
-      <p>Загрузка данных</p>
+      {countdown > 0 ? (
+        <div style={{ position: 'relative', width: '90px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+           <svg width="90" height="90" style={{ position: 'absolute', transform: 'rotate(-90deg)' }}>
+              <circle cx="45" cy="45" r="40" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="6" />
+              <circle cx="45" cy="45" r="40" fill="none" stroke="var(--primary-color)" strokeWidth="6" 
+                 strokeDasharray="251.2" strokeDashoffset={251.2 - (251.2 * (10 - countdown) / 10)}
+                 style={{ transition: 'stroke-dashoffset 1s linear' }} />
+           </svg>
+           <span style={{ fontSize: '28px', fontWeight: 'bold', color: 'white' }}>{countdown}</span>
+        </div>
+      ) : (
+        <div className="spinner" style={{ width: '40px', height: '40px' }}></div>
+      )}
+      <div>
+        <h2 style={{ color: 'var(--primary-color)', margin: '0 0 8px 0' }}>Вход...</h2>
+        <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
+          {countdown > 0 ? 'Синхронизация данных' : 'Завершение загрузки'}
+        </p>
+      </div>
     </div>
   );
 

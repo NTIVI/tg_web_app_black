@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
 import { 
   TrendingUp, 
@@ -13,17 +13,17 @@ import {
 } from 'lucide-react';
 
 const BRAND_LIST = [
-  { id: 'brand4', name: 'Xiaomi', price: 1500, image: '/brands/xiaomi.png?v=2' },
-  { id: 'brand8', name: 'Xbox', price: 4200, image: '/brands/xbox.png?v=2' },
-  { id: 'brand3', name: 'Samsung', price: 5800, image: '/brands/samsung.png?v=2' },
-  { id: 'brand6', name: 'Epic Games', price: 7900, image: '/brands/epicgames.png?v=2' },
-  { id: 'brand5', name: 'Netflix', price: 9800, image: '/brands/netflix.png?v=2' },
-  { id: 'brand7', name: 'Steam', price: 12400, image: '/brands/steam.png?v=2' },
-  { id: 'brand2', name: 'Nvidia', price: 14200, image: '/brands/nvidia.png?v=2' },
-  { id: 'brand1', name: 'Apple', price: 16500, image: '/brands/apple.png?v=2' },
+  { id: 'brand4', name: 'Xiaomi', price: 1500, image: '/brands/xiaomi.png?v=3' },
+  { id: 'brand8', name: 'Xbox', price: 4200, image: '/brands/xbox.png?v=3' },
+  { id: 'brand3', name: 'Samsung', price: 5800, image: '/brands/samsung.png?v=3' },
+  { id: 'brand6', name: 'Epic Games', price: 7900, image: '/brands/epicgames.png?v=3' },
+  { id: 'brand5', name: 'Netflix', price: 9800, image: '/brands/netflix.png?v=3' },
+  { id: 'brand7', name: 'Steam', price: 12400, image: '/brands/steam.png?v=3' },
+  { id: 'brand2', name: 'Nvidia', price: 14200, image: '/brands/nvidia.png?v=3' },
+  { id: 'brand1', name: 'Apple', price: 16500, image: '/brands/apple.png?v=3' },
 ];
 
-const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, userId, balance, tick }: any) => {
+const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, userId, balance }: any) => {
   const currentPrice = Math.round(nft.price * (1 + changeVal / 100));
   const displayCurrentPrice = (currentPrice / 100).toFixed(2);
   const canAfford = balance >= currentPrice;
@@ -181,7 +181,7 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
 const Promotions = ({ userId, balance, setBalance }: any) => {
   const [stockMultiplier, setStockMultiplier] = useState(1.0);
   const [variance, setVariance] = useState<Record<string, number>>({});
-  const [tick, setTick] = useState(0);
+
   const [buying, setBuying] = useState<string | null>(null);
   const [selling, setSelling] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
@@ -229,7 +229,6 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
         });
         return next;
       });
-      setTick(t => t + 1);
     }, 2000);
 
     // Slower interval (15s) to sync overall multiplier with backend 
@@ -377,7 +376,6 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
               selling={selling}
               userId={userId}
               balance={balance}
-              tick={tick}
             />
           );
         })}

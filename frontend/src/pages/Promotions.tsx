@@ -13,14 +13,14 @@ import {
 } from 'lucide-react';
 
 const BRAND_LIST = [
-  { id: 'brand4', name: 'Xiaomi', price: 1500, image: '/brands/xiaomi.png' },
-  { id: 'brand8', name: 'Xbox', price: 4200, image: '/brands/xbox.png' },
-  { id: 'brand3', name: 'Samsung', price: 5800, image: '/brands/samsung.png' },
-  { id: 'brand6', name: 'Epic Games', price: 7900, image: '/brands/epicgames.png' },
-  { id: 'brand5', name: 'Netflix', price: 9800, image: '/brands/netflix.png' },
-  { id: 'brand7', name: 'Steam', price: 12400, image: '/brands/steam.png' },
-  { id: 'brand2', name: 'Nvidia', price: 14200, image: '/brands/nvidia.png' },
-  { id: 'brand1', name: 'Apple', price: 16500, image: '/brands/apple.png' },
+  { id: 'brand4', name: 'Xiaomi', price: 1500, image: '/brands/xiaomi.png?v=2' },
+  { id: 'brand8', name: 'Xbox', price: 4200, image: '/brands/xbox.png?v=2' },
+  { id: 'brand3', name: 'Samsung', price: 5800, image: '/brands/samsung.png?v=2' },
+  { id: 'brand6', name: 'Epic Games', price: 7900, image: '/brands/epicgames.png?v=2' },
+  { id: 'brand5', name: 'Netflix', price: 9800, image: '/brands/netflix.png?v=2' },
+  { id: 'brand7', name: 'Steam', price: 12400, image: '/brands/steam.png?v=2' },
+  { id: 'brand2', name: 'Nvidia', price: 14200, image: '/brands/nvidia.png?v=2' },
+  { id: 'brand1', name: 'Apple', price: 16500, image: '/brands/apple.png?v=2' },
 ];
 
 const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, userId, balance, tick }: any) => {

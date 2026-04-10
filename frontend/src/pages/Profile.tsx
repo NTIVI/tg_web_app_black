@@ -3,14 +3,14 @@ import { API_URL } from '../config';
 import { Wallet, Trophy, Package, Calendar, ShieldCheck, Layers } from 'lucide-react';
 
 const BRAND_IMAGES: Record<string, string> = {
-  'brand1': '/brands/apple.png',
-  'brand2': '/brands/nvidia.png',
-  'brand3': '/brands/samsung.png',
-  'brand4': '/brands/xiaomi.png',
-  'brand5': '/brands/netflix.png',
-  'brand6': '/brands/epicgames.png',
-  'brand7': '/brands/steam.png',
-  'brand8': '/brands/xbox.png',
+  'brand1': '/brands/apple.png?v=2',
+  'brand2': '/brands/nvidia.png?v=2',
+  'brand3': '/brands/samsung.png?v=2',
+  'brand4': '/brands/xiaomi.png?v=2',
+  'brand5': '/brands/netflix.png?v=2',
+  'brand6': '/brands/epicgames.png?v=2',
+  'brand7': '/brands/steam.png?v=2',
+  'brand8': '/brands/xbox.png?v=2',
   'nft1': '/nfts/nft1.png',
   'nft2': '/nfts/nft2.png',
   'nft3': '/nfts/nft3.png',

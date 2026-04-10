@@ -49,5 +49,15 @@ The repository has been updated with the following final changes:
 - **Branding**: Renamed all "NFT" references to "Акции" to match the user interface.
 - **Clean Workspace**: Bottom navigation is now hidden on the admin page to provide a dedicated fullscreen management console.
 
-## 16. Repository Sync
-- All code is synced and the repository has been updated with the latest premium UI enhancements and structural fixes.
+## 17. Automated Social Media Scraper
+- **Real-Time Stats**: Implemented an automated scraping service for **YouTube**, **TikTok**, and **Telegram**.
+- **Scheduled Updates**: The system now refreshes follower/subscriber counts every 60 minutes.
+- **Failover Logic**: Added caching to ensure the UI remains functional if scraping is temporarily blocked.
+
+## 18. YouTube & Expanded Goals
+- **YouTube Integration**: Added YouTube as a 5th social network with brand icons and colors.
+- **Enhanced Grid**: Redesigned the "Our Goals" section in Bonuses to support 5 goals using a beautiful 2-2-1 responsive grid.
+- **Administrative URLs**: Added the ability to manage profile URLs and set custom "Target" values from the Admin Panel.
+
+## 19. Final Repository Sync
+- All code is synced with latest premium UI enhancements, backend scraping services, and structural fixes.

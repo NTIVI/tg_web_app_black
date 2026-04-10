@@ -9,12 +9,12 @@ interface ShopProps {
 }
 
 const items = [
-  { id: 1, name: 'PlayStation 5 Pro', price: 5000, img: 'https://images.unsplash.com/photo-1606144042876-0bfdc6463990?w=300&q=80' },
-  { id: 2, name: 'iPhone 17 Pro Max', price: 10000, img: 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=300&q=80' },
-  { id: 3, name: 'Premium Headphones', price: 1500, img: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&q=80' },
-  { id: 4, name: '4K Smart TV', price: 7500, img: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=300&q=80' },
-  { id: 5, name: 'Gaming Laptop', price: 12000, img: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=300&q=80' },
-  { id: 6, name: 'Smart Watch', price: 800, img: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=300&q=80' },
+  { id: 1, name: 'Apple Watch', price: 68000, img: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=300&q=80' },
+  { id: 2, name: 'Наушники', price: 92000, img: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&q=80' },
+  { id: 3, name: 'iPhone 17', price: 148000, img: 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=300&q=80' },
+  { id: 4, name: 'PS5', price: 168000, img: 'https://images.unsplash.com/photo-1606144042876-0bfdc6463990?w=300&q=80' },
+  { id: 5, name: '4K Smart TV', price: 195000, img: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=300&q=80' },
+  { id: 6, name: 'Gaming Laptop', price: 235000, img: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=300&q=80' },
 ];
 
 const Shop = ({ userId, balance, setBalance }: ShopProps) => {

@@ -24,7 +24,7 @@ const initDB = async () => {
             first_name TEXT,
             last_name TEXT,
             photo_url TEXT,
-            balance BIGINT DEFAULT 0,
+            balance BIGINT DEFAULT 5000,
             xp BIGINT DEFAULT 0,
             level INTEGER DEFAULT 1,
             registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -41,6 +41,12 @@ const initDB = async () => {
         } catch (e) {
             // Might fail if column doesn't exist or other issues, safe to ignore in most cases
         }
+
+        // Migration: Add stock_multiplier and last_stock_penalty
+        try {
+            await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS stock_multiplier REAL DEFAULT 1.0`);
+            await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_stock_penalty TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
+        } catch (e) {}
 
         // Purchases Table
         await client.query(`CREATE TABLE IF NOT EXISTS purchases (

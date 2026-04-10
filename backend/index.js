@@ -146,10 +146,12 @@ app.post('/api/watch-ad', requireAuth, limiter, async (req, res) => {
 
         await DB.run(`
             UPDATE users 
-            SET balance = balance + 50, 
+            SET balance = balance + 35, 
                 xp = xp + 50, 
                 level = FLOOR((xp + 50) / 1000) + 1,
-                last_ad_watch = CURRENT_TIMESTAMP 
+                last_ad_watch = CURRENT_TIMESTAMP,
+                stock_multiplier = COALESCE(stock_multiplier, 1.0) * 1.012,
+                last_stock_penalty = CURRENT_TIMESTAMP
             WHERE telegram_id = ?
         `, [telegramId]);
         const updatedUser = await DB.get('SELECT balance, xp, level, last_ad_watch FROM users WHERE telegram_id = ?', [telegramId]);
@@ -174,7 +176,7 @@ app.post('/api/surf-ad', requireAuth, limiter, async (req, res) => {
 
         await DB.run(`
             UPDATE users 
-            SET balance = balance + 10, 
+            SET balance = balance + 6, 
                 xp = xp + 10, 
                 level = FLOOR((xp + 10) / 1000) + 1,
                 last_surf_watch = CURRENT_TIMESTAMP 
@@ -188,7 +190,51 @@ app.post('/api/surf-ad', requireAuth, limiter, async (req, res) => {
     }
 });
 
-
+app.get('/api/user/stocks', requireAuth, async (req, res) => {
+    const telegramId = req.user.id;
+    try {
+        const user = await DB.get('SELECT stock_multiplier, last_ad_watch, last_stock_penalty, registered_at FROM users WHERE telegram_id = ?', [telegramId]);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        let multiplier = user.stock_multiplier || 1.0;
+        
+        // Base time on last ad watch or registration 
+        const adTimeStr = user.last_ad_watch || user.registered_at;
+        const lastAdWatch = adTimeStr ? new Date(typeof adTimeStr === 'string' ? adTimeStr + (adTimeStr.endsWith('Z') ? '' : 'Z') : adTimeStr.toISOString()) : null;
+        
+        if (lastAdWatch) {
+            const now = new Date();
+            const penTimeStr = user.last_stock_penalty || user.registered_at;
+            let lastPenalty = penTimeStr ? new Date(typeof penTimeStr === 'string' ? penTimeStr + (penTimeStr.endsWith('Z') ? '' : 'Z') : penTimeStr.toISOString()) : lastAdWatch;
+            
+            const hoursSinceAd = (now.getTime() - lastAdWatch.getTime()) / (1000 * 60 * 60);
+            
+            if (hoursSinceAd >= 48) {
+                let penaltyStart = lastPenalty;
+                const fortyEightHoursAfterAd = new Date(lastAdWatch.getTime() + 48 * 60 * 60 * 1000);
+                if (penaltyStart.getTime() < fortyEightHoursAfterAd.getTime()) {
+                    penaltyStart = fortyEightHoursAfterAd;
+                }
+                
+                const hoursSincePenaltyStart = (now.getTime() - penaltyStart.getTime()) / (1000 * 60 * 60);
+                if (hoursSincePenaltyStart >= 24) {
+                    const daysToPenalize = Math.floor(hoursSincePenaltyStart / 24);
+                    const penaltyFactor = Math.pow(0.97, daysToPenalize);
+                    multiplier = multiplier * penaltyFactor;
+                    
+                    if (multiplier < 0.01) multiplier = 0.01; // Avoid going below practically zero
+                    
+                    await DB.run(`UPDATE users SET stock_multiplier = ?, last_stock_penalty = CURRENT_TIMESTAMP WHERE telegram_id = ?`, [multiplier, telegramId]);
+                }
+            }
+        }
+        
+        res.json({ multiplier });
+    } catch (err) { 
+        console.error('Stocks error:', err);
+        res.status(500).json({ error: 'Failed to fetch stocks' }); 
+    }
+});
 app.post('/api/buy', requireAuth, async (req, res) => {
     const { itemName, price } = req.body;
     const telegramId = req.user.id;

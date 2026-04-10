@@ -13,14 +13,14 @@ import {
 } from 'lucide-react';
 
 const BRAND_LIST = [
-  { id: 'brand1', name: 'Apple', price: 99900, image: '/brands/apple.png' },
-  { id: 'brand2', name: 'NVIDIA', price: 1999, image: '/brands/geforce.png' },
-  { id: 'brand3', name: 'Samsung', price: 49900, image: '/brands/samsung.png' },
-  { id: 'brand4', name: 'Xiaomi', price: 49900, image: '/brands/xiaomi.png' },
-  { id: 'brand5', name: 'Netflix', price: 5000, image: '/brands/netflix.png' },
-  { id: 'brand6', name: 'PlayStation', price: 1500, image: '/brands/playstation.png' },
-  { id: 'brand7', name: 'Steam', price: 3000, image: '/brands/steam.png' },
-  { id: 'brand8', name: 'Xbox', price: 2500, image: '/brands/xbox.png' },
+  { id: 'brand4', name: 'Xiaomi', price: 1500, image: '/brands/xiaomi.png' },
+  { id: 'brand8', name: 'Xbox', price: 4200, image: '/brands/xbox.png' },
+  { id: 'brand3', name: 'Samsung', price: 5800, image: '/brands/samsung.png' },
+  { id: 'brand6', name: 'PlayStation', price: 7900, image: '/brands/playstation.png' },
+  { id: 'brand5', name: 'Netflix', price: 9800, image: '/brands/netflix.png' },
+  { id: 'brand7', name: 'Steam', price: 12400, image: '/brands/steam.png' },
+  { id: 'brand2', name: 'Nvidia', price: 14200, image: '/brands/geforce.png' },
+  { id: 'brand1', name: 'Apple', price: 16500, image: '/brands/apple.png' },
 ];
 
 const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, userId, balance, tick }: any) => {
@@ -192,62 +192,35 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
 };
 
 const Promotions = ({ userId, balance, setBalance }: any) => {
-  const [rates, setRates] = useState<Record<string, number>>({});
-  const [variance, setVariance] = useState<Record<string, number>>({});
+  const [stockMultiplier, setStockMultiplier] = useState(1.0);
   const [tick, setTick] = useState(0);
   const [buying, setBuying] = useState<string | null>(null);
   const [selling, setSelling] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
   useEffect(() => {
-    // Initial random variance
-    setVariance({
-        brand1: (Math.random() - 0.5) * 2,
-        brand2: (Math.random() - 0.5) * 2,
-        brand3: (Math.random() - 0.5) * 2,
-        brand4: (Math.random() - 0.5) * 2,
-        brand5: (Math.random() - 0.5) * 2,
-        brand6: (Math.random() - 0.5) * 2,
-        brand7: (Math.random() - 0.5) * 2,
-        brand8: (Math.random() - 0.5) * 2,
-    });
-
-    // Poll NFT manipulation status every 3s
     const fetchStatus = async () => {
+      if (!userId) return;
       try {
-        const res = await fetch(`${API_URL}/admin/nft/status`, {
+        const res = await fetch(`${API_URL}/user/stocks`, {
           headers: {
             'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
           }
         });
         const data = await res.json();
-        setRates(data.rates || {});
+        if (data.multiplier !== undefined) {
+          setStockMultiplier(data.multiplier);
+        }
       } catch { /* silent */ }
     };
     fetchStatus();
     
     const interval = setInterval(() => {
       fetchStatus();
-      
-      // Update variance for active trading feeling
-      setVariance(prev => {
-        const next: Record<string, number> = {};
-        BRAND_LIST.forEach(nft => {
-          const oldVar = prev[nft.id] || 0;
-          let delta = (Math.random() - 0.5) * 1.5;
-          let newVal = oldVar + delta;
-          if (newVal > 2.5) newVal = 2.5;
-          if (newVal < -2.5) newVal = -2.5;
-          next[nft.id] = newVal;
-        });
-        return next;
-      });
-
-      // Increment tick to trigger flash animation in cards
       setTick(t => t + 1);
-    }, 2000);
+    }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [userId]);
 
   const showToast = (type: 'success' | 'error', msg: string) => {
     setToast({ type, msg });
@@ -307,19 +280,9 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
     }
   };
 
-  // Generate dynamic changes based on live manipulation and random variance
-  const getChange = (index: number) => {
-    const nftId = `brand${index + 1}`;
-    let base = [5.3, -2.1, 0.8, -1.5, 4.2, -0.5, 2.4, -1.2][index % 8];
-    
-    if (rates && rates[nftId] !== undefined && rates[nftId] !== null) {
-      base = typeof rates[nftId] === 'string' ? parseFloat(rates[nftId] as any) : rates[nftId];
-      if (isNaN(base)) base = 0;
-    }
-    
-    const varValue = variance[nftId] || 0;
-    const val = base + varValue;
-    return { val, isPositive: val > 0 };
+  const getChange = () => {
+    const val = (stockMultiplier - 1.0) * 100;
+    return { val, isPositive: val >= 0 };
   };
 
   return (
@@ -379,8 +342,8 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
         gap: '12px',
         paddingBottom: '40px'
       }}>
-        {BRAND_LIST.map((nft, i) => {
-          const ch = getChange(i);
+        {BRAND_LIST.map((nft) => {
+          const ch = getChange();
           return (
             <NFTCard 
               key={nft.id} 

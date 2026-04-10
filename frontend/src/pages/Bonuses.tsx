@@ -38,17 +38,19 @@ const SOCIAL_CONFIG: any = {
   tiktok: { title: 'TikTok', icon: <TikTokIcon />, bg: 'linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(206, 32, 41, 0.05) 100%)', border: '1px solid rgba(236, 72, 153, 0.2)', iconColor: '#ff0050', barBg: 'linear-gradient(90deg, #ff0050 0%, #00f2fe 100%)', textColor: '#00f2fe' },
   instagram: { title: 'Instagram', icon: <InstagramIcon />, bg: 'linear-gradient(135deg, rgba(225, 48, 108, 0.1) 0%, rgba(253, 29, 29, 0.05) 100%)', border: '1px solid rgba(225, 48, 108, 0.2)', iconColor: '#E1306C', barBg: 'linear-gradient(90deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', textColor: '#E1306C' },
   facebook: { title: 'Facebook', icon: <FacebookIcon />, bg: 'linear-gradient(135deg, rgba(24, 119, 242, 0.1) 0%, rgba(24, 119, 242, 0.05) 100%)', border: '1px solid rgba(24, 119, 242, 0.2)', iconColor: '#1877F2', barBg: 'linear-gradient(90deg, #1877F2 0%, #3b5998 100%)', textColor: '#1877F2' },
-  telegram: { title: 'Telegram', icon: <TelegramIcon />, bg: 'linear-gradient(135deg, rgba(0, 136, 204, 0.1) 0%, rgba(0, 136, 204, 0.05) 100%)', border: '1px solid rgba(0, 136, 204, 0.2)', iconColor: '#0088cc', barBg: 'linear-gradient(90deg, #0088cc 0%, #00aaff 100%)', textColor: '#00aaff' }
+  telegram: { title: 'Telegram', icon: <TelegramIcon />, bg: 'linear-gradient(135deg, rgba(0, 136, 204, 0.1) 0%, rgba(0, 136, 204, 0.05) 100%)', border: '1px solid rgba(0, 136, 204, 0.2)', iconColor: '#0088cc', barBg: 'linear-gradient(90deg, #0088cc 0%, #00aaff 100%)', textColor: '#00aaff' },
+  youtube: { title: 'YouTube', icon: <YoutubeIcon />, bg: 'linear-gradient(135deg, rgba(255, 0, 0, 0.1) 0%, rgba(255, 0, 0, 0.05) 100%)', border: '1px solid rgba(255, 0, 0, 0.2)', iconColor: '#FF0000', barBg: 'linear-gradient(90deg, #FF0000 0%, #CC0000 100%)', textColor: '#FF0000' }
 };
 
 const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDaily, setTgUser }: any) => {
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [socialStats, setSocialStats] = useState<any>({
-    tiktok: { current: 8450, target: 10000 },
-    instagram: { current: 4200, target: 5000 },
-    telegram: { current: 2310, target: 3000 },
-    facebook: { current: 1540, target: 2000 }
+    tiktok: { current: 0, target: 10000 },
+    instagram: { current: 0, target: 5000 },
+    telegram: { current: 0, target: 3000 },
+    facebook: { current: 0, target: 2000 },
+    youtube: { current: 0, target: 10000 }
   });
 
   const streak = dailyStatus?.currentStreak || 0;
@@ -288,45 +290,69 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
 
       {/* Community Goal Section */}
       <h3 style={{ marginBottom: '16px', opacity: 0.8 }}>Наши цели</h3>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '24px' }}>
-      {Object.keys(socialStats).map(key => {
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(2, 1fr)', 
+        gap: '12px', 
+        marginBottom: '24px' 
+      }}>
+      {[ 'tiktok', 'instagram', 'telegram', 'facebook', 'youtube' ].map((key, i) => {
         const stat = socialStats[key] || { current: 0, target: 100 };
         const conf = SOCIAL_CONFIG[key] || SOCIAL_CONFIG.tiktok;
         const pct = stat.target > 0 ? Math.min(100, (stat.current / stat.target) * 100) : 0;
         const left = Math.max(0, stat.target - stat.current);
+        
+        // Make the last one span full width if it's an odd number
+        const isFullWidth = i === 4;
 
         return (
           <div 
             key={key}
             className="glass-panel" 
             style={{ 
-              padding: '24px', 
+              padding: '16px', 
               marginBottom: '0',
               background: conf.bg,
-              border: conf.border
+              border: conf.border,
+              gridColumn: isFullWidth ? 'span 2' : 'span 1',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-              <div style={{ color: conf.iconColor, width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <div style={{ 
+                color: conf.iconColor, 
+                width: '32px', 
+                height: '32px', 
+                borderRadius: '10px', 
+                background: 'rgba(255, 255, 255, 0.05)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
                 {conf.icon}
               </div>
-              <div>
-                <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '2px' }}>Цель {conf.title}</h2>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Помогите собрать {stat.target.toLocaleString()}!</p>
+              <div style={{ minWidth: 0 }}>
+                <h2 style={{ fontSize: '14px', fontWeight: '800', marginBottom: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conf.title}</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>Цель: {stat.target.toLocaleString()}</p>
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px', fontWeight: '700' }}>
-              <span>{stat.current.toLocaleString()} <span style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 'normal' }}>сейчас</span></span>
-              <span>{stat.target.toLocaleString()} <span style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 'normal' }}>цель</span></span>
-            </div>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px', fontWeight: '700' }}>
+                <span>{stat.current.toLocaleString()}</span>
+                <span style={{ opacity: 0.5 }}>{pct.toFixed(0)}%</span>
+              </div>
 
-            <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', marginBottom: '12px', overflow: 'hidden' }}>
-              <div style={{ width: `${pct}%`, height: '100%', background: conf.barBg, borderRadius: '4px', transition: 'width 1s ease' }}></div>
-            </div>
+              <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', marginBottom: '8px', overflow: 'hidden' }}>
+                <div style={{ width: `${pct}%`, height: '100%', background: conf.barBg, borderRadius: '3px', transition: 'width 1s ease' }}></div>
+              </div>
 
-            <div style={{ textAlign: 'center', fontSize: '13px', color: 'rgba(255,255,255,0.6)', fontWeight: '500' }}>
-              Осталось набрать <span style={{ color: conf.textColor, fontWeight: '700' }}>{left.toLocaleString()}</span> чел!
+              <div style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: '500' }}>
+                Ещё <span style={{ color: conf.textColor, fontWeight: '700' }}>{left.toLocaleString()}</span>
+              </div>
             </div>
           </div>
         );

@@ -409,18 +409,92 @@ app.get('/api/social-stats', async (req, res) => {
     try {
         const settings = await DB.all('SELECT key, value FROM settings WHERE key LIKE "social_%"');
         const stats = {
-            tiktok: { current: 8450, target: 10000 },
-            instagram: { current: 4200, target: 5000 },
-            telegram: { current: 2310, target: 3000 },
-            facebook: { current: 1540, target: 2000 }
+            tiktok: { current: 0, target: 10000, url: '' },
+            instagram: { current: 0, target: 5000, url: '' },
+            telegram: { current: 0, target: 3000, url: '' },
+            facebook: { current: 0, target: 2000, url: '' },
+            youtube: { current: 0, target: 10000, url: '' }
         };
         settings.forEach(s => {
-            const [_, net, type] = s.key.split('_');
-            if (stats[net]) stats[net][type] = parseInt(s.value);
+            const parts = s.key.split('_'); // social_network_type
+            if (parts.length === 3) {
+                const network = parts[1];
+                const type = parts[2];
+                if (stats[network]) {
+                    if (type === 'current' || type === 'target') {
+                        stats[network][type] = parseInt(s.value) || 0;
+                    } else if (type === 'url') {
+                        stats[network][type] = s.value;
+                    }
+                }
+            }
         });
         res.json({ stats });
     } catch (err) { res.status(500).json({ error: 'Stats error' }); }
 });
+
+const scrapeSocialStats = async () => {
+    console.log('Starting social stats scraping...');
+    const settings = await DB.all('SELECT key, value FROM settings WHERE key LIKE "social_%_url"');
+    const urls = {};
+    settings.forEach(s => {
+        const net = s.key.split('_')[1];
+        urls[net] = s.value;
+    });
+
+    const headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' };
+
+    // Scrape Telegram
+    if (urls.telegram) {
+        try {
+            const res = await fetch(urls.telegram, { headers });
+            const html = await res.text();
+            const match = html.match(/<div class="tgme_page_extra">([\d\s,]+)\s+members<\/div>/) || html.match(/<div class="tgme_page_extra">([\d\s,]+)\s+subscriber/);
+            if (match) {
+                const count = parseInt(match[1].replace(/[\s,]/g, ''));
+                await DB.run('INSERT INTO settings (key, value) VALUES ("social_telegram_current", ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [count.toString()]);
+            }
+        } catch (e) { console.error('Telegram scrape error:', e.message); }
+    }
+
+    // Scrape YouTube
+    if (urls.youtube) {
+        try {
+            const res = await fetch(urls.youtube, { headers });
+            const html = await res.text();
+            const match = html.match(/"subscriberCountText":\{"simpleText":"([\d.KMB]+)\s+subscriber/i);
+            if (match) {
+                let text = match[1].toUpperCase();
+                let count = parseFloat(text);
+                if (text.includes('K')) count *= 1000;
+                else if (text.includes('M')) count *= 1000000;
+                else if (text.includes('B')) count *= 1000000000;
+                await DB.run('INSERT INTO settings (key, value) VALUES ("social_youtube_current", ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [Math.round(count).toString()]);
+            }
+        } catch (e) { console.error('YouTube scrape error:', e.message); }
+    }
+
+    // Scrape TikTok
+    if (urls.tiktok) {
+        try {
+            const res = await fetch(urls.tiktok, { headers });
+            const html = await res.text();
+            const match = html.match(/"followerCount":(\d+)/);
+            if (match) {
+                await DB.run('INSERT INTO settings (key, value) VALUES ("social_tiktok_current", ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [match[1]]);
+            }
+        } catch (e) { console.error('TikTok scrape error:', e.message); }
+    }
+    
+    // Instagram and Facebook are significantly harder without specialized scrapers/proxies
+    // but we have placeholders for them.
+    
+    console.log('Social stats scraping completed.');
+};
+
+// Initial scrape and hourly schedule
+setTimeout(scrapeSocialStats, 5000); 
+setInterval(scrapeSocialStats, 60 * 60 * 1000);
 
 app.post('/api/admin/social-stats', requireAuth, async (req, res) => {
     const { stats } = req.body;

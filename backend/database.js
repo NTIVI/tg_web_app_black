@@ -90,7 +90,17 @@ const initDB = async () => {
             ['rewarded_ad_provider', 'monetag'],
             ['nft_manipulation_target', '0'],
             ['nft_manipulation_duration', '0'],
-            ['nft_manipulation_start', '0']
+            ['nft_manipulation_start', '0'],
+            ['social_tiktok_url', 'https://www.tiktok.com/@just___000'],
+            ['social_telegram_url', 'https://t.me/YourTurn_APP'],
+            ['social_youtube_url', 'https://youtube.com/@devki_keksi'],
+            ['social_instagram_url', ''],
+            ['social_facebook_url', ''],
+            ['social_tiktok_target', '10000'],
+            ['social_instagram_target', '5000'],
+            ['social_telegram_target', '3000'],
+            ['social_facebook_target', '2000'],
+            ['social_youtube_target', '10000']
         ];
         
         for (const [k, v] of defaults) {

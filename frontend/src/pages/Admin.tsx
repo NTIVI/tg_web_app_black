@@ -645,27 +645,51 @@ const Admin = () => {
             <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px', textAlign: 'center' }}>Управление Соцсетями</h3>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {Object.keys(socialStats).map(network => (
-                <div key={network} style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ fontSize: '15px', fontWeight: '800', marginBottom: '12px', color: 'var(--primary-color)', textTransform: 'capitalize' }}>{network}</div>
+              {[
+                { id: 'tiktok', name: 'TikTok' },
+                { id: 'instagram', name: 'Instagram' },
+                { id: 'telegram', name: 'Telegram' },
+                { id: 'facebook', name: 'Facebook' },
+                { id: 'youtube', name: 'YouTube' }
+              ].map(network => (
+                <div key={network.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ fontSize: '15px', fontWeight: '800', marginBottom: '16px', color: 'var(--primary-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{network.name}</span>
+                    <span style={{ fontSize: '12px', opacity: 0.5, fontWeight: 'normal' }}>
+                        {socialStats[network.id]?.current?.toLocaleString() || 0} сейчас
+                    </span>
+                  </div>
+                  
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ fontSize: '12px', opacity: 0.7, marginBottom: '6px', display: 'block' }}>Ссылка на профиль</label>
+                    <input 
+                      type="text"
+                      className="input-field" 
+                      value={socialStats[network.id]?.url || ''} 
+                      onChange={(e) => setSocialStats((prev: any) => ({ ...prev, [network.id]: { ...prev[network.id], url: e.target.value } }))} 
+                      placeholder="https://..."
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+
                   <div style={{ display: 'flex', gap: '16px' }}>
                     <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: '12px', opacity: 0.7, marginBottom: '6px', display: 'block' }}>Сейчас</label>
+                      <label style={{ fontSize: '12px', opacity: 0.7, marginBottom: '6px', display: 'block' }}>Ручное значение (Сейчас)</label>
                       <input 
                         type="number"
                         className="input-field" 
-                        value={socialStats[network]?.current || ''} 
-                        onChange={(e) => setSocialStats((prev: any) => ({ ...prev, [network]: { ...prev[network], current: parseInt(e.target.value) || 0 } }))} 
+                        value={socialStats[network.id]?.current || 0} 
+                        onChange={(e) => setSocialStats((prev: any) => ({ ...prev, [network.id]: { ...prev[network.id], current: parseInt(e.target.value) || 0 } }))} 
                         style={{ width: '100%' }}
                       />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: '12px', opacity: 0.7, marginBottom: '6px', display: 'block' }}>Цель</label>
+                      <label style={{ fontSize: '12px', opacity: 0.7, marginBottom: '6px', display: 'block' }}>Цель (Target)</label>
                       <input 
                         type="number"
                         className="input-field" 
-                        value={socialStats[network]?.target || ''} 
-                        onChange={(e) => setSocialStats((prev: any) => ({ ...prev, [network]: { ...prev[network], target: parseInt(e.target.value) || 0 } }))} 
+                        value={socialStats[network.id]?.target || 0} 
+                        onChange={(e) => setSocialStats((prev: any) => ({ ...prev, [network.id]: { ...prev[network.id], target: parseInt(e.target.value) || 0 } }))} 
                         style={{ width: '100%' }}
                       />
                     </div>

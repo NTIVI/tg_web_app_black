@@ -791,7 +791,7 @@ const Admin = () => {
                     <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                       <td style={{ padding: '12px 8px', fontWeight: '700' }}>{row.username ? `@${row.username}` : row.first_name || 'user'}</td>
                       <td style={{ padding: '12px 8px' }}>
-                        ({
+                        {({
                           brand1: 'Apple',
                           brand2: 'Nvidia',
                           brand3: 'Samsung',

@@ -344,12 +344,9 @@ p {
 .luxury-logo-pulse {
   width: 100px;
   height: 100px;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  border-radius: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 40px var(--primary-glow);
   animation: logoPulse 2s ease-in-out infinite;
 }
 
@@ -440,14 +437,11 @@ p {
 }
 
 .onboarding-logo {
-  width: 140px;
-  height: 140px;
-  background: linear-gradient(135deg, #1e40af, #a855f7);
-  border-radius: 40px;
+  width: 180px;
+  height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 60px var(--primary-glow);
   margin-bottom: 24px;
   animation: float 4s ease-in-out infinite;
 }

@@ -218,9 +218,7 @@ function App() {
       <div className="luxury-loader-bg" />
       <div className="luxury-loader-content">
         <div className="luxury-logo-pulse">
-           <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-             <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white" />
-           </svg>
+           <img src="/logo_main.png" alt="YourTurn Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
           <div className="luxury-text">Synchronizing</div>
@@ -241,13 +239,10 @@ function App() {
         <div className="onboarding-card">
           <div className="onboarding-logo-wrap">
             <div className="onboarding-logo">
-              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white" />
-              </svg>
+              <img src="/logo_main.png" alt="YourTurn Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '40px' }} />
             </div>
-            <h1 className="onboarding-title">LuckyTurn</h1>
             <p className="onboarding-bio">
-              Ваш путь в мир цифровых инвестиций и бонусов. Зарабатывайте бонусы, покупайте акции мировых брендов и развивайте свой профиль.
+              Ваш путь в мир цифровых инвестиций и бонусов 🚀. Зарабатывайте бонусы 💰, покупайте акции мировых брендов 📈 и развивайте свой профиль ✨.
             </p>
           </div>
           
@@ -265,7 +260,7 @@ function App() {
           <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '24px', textAlign: 'center' }}>О приложении</h2>
           <div className="onboarding-info-scroll">
             <h3>Что это за приложение?</h3>
-            <p>LuckyTurn — это инновационная платформа, которая превращает ваше время в реальные бонусы и цифровые активы.</p>
+            <p>YourTurn — это инновационная платформа, которая превращает ваше время в реальные бонусы и цифровые активы.</p>
             
             <h3>Как оно работает?</h3>
             <p>Вы выполняете простые действия: смотрите рекламные ролики или посещаете сайты партнеров. За это вы мгновенно получаете виртуальные доллары и XP (опыт).</p>

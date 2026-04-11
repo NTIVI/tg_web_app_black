@@ -6,6 +6,7 @@ interface ShopProps {
   userId: string | null;
   balance: number;
   setBalance: (newBalance: number) => void;
+  setPurchases: (newPurchases: any[]) => void;
 }
 
 const items = [
@@ -17,7 +18,7 @@ const items = [
   { id: 6, name: 'Gaming Laptop', price: 235000, img: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=300&q=80' },
 ];
 
-const Shop = ({ userId, balance, setBalance }: ShopProps) => {
+const Shop = ({ userId, balance, setBalance, setPurchases }: ShopProps) => {
   const [message, setMessage] = useState('');
 
   const handleBuy = async (item: typeof items[0]) => {
@@ -41,6 +42,7 @@ const Shop = ({ userId, balance, setBalance }: ShopProps) => {
       const data = await res.json();
       if (data.success) {
         setBalance(data.newBalance);
+        if (data.purchases) setPurchases(data.purchases);
         setMessage(`Успешно куплено ${item.name}!`);
       } else {
         setMessage(data.error || 'Ошибка при покупке');

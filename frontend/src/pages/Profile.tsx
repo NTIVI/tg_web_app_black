@@ -68,7 +68,7 @@ const Profile = ({ balance, tgUser, purchases, myNfts }: any) => {
           <div style={{ maxWidth: '240px', margin: '0 auto 24px auto' }}>
             <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div style={{ 
-                width: `${((tgUser?.xp || balance || 0) % 1000) / 10}%`, 
+                width: `${((tgUser?.xp || 0) % 1000) / 10}%`, 
                 height: '100%', 
                 background: 'linear-gradient(to right, #1e40af, #a855f7)',
                 borderRadius: '10px',
@@ -77,7 +77,7 @@ const Profile = ({ balance, tgUser, purchases, myNfts }: any) => {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
               <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: '700', textTransform: 'uppercase' }}>Прогресс</span>
-              <span style={{ fontSize: '10px', color: 'var(--success-color)', fontWeight: '800' }}>{(tgUser?.xp || balance || 0) % 1000} / 1000 XP</span>
+              <span style={{ fontSize: '10px', color: 'var(--success-color)', fontWeight: '800' }}>{(tgUser?.xp || 0) % 1000} / 1000 XP</span>
             </div>
           </div>
           

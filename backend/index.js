@@ -15,7 +15,11 @@ const token = process.env.BOT_TOKEN;
 
 app.use(cors());
 app.use(express.json());
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false
+}));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -238,7 +242,9 @@ app.post('/api/buy', requireAuth, async (req, res) => {
         
         await DB.run('UPDATE users SET balance = balance - ? WHERE telegram_id = ?', [price, telegramId]);
         await DB.run('INSERT INTO purchases (telegram_id, item_name, price) VALUES (?,?,?)', [telegramId, itemName, price]);
-        res.json({ success: true, newBalance: user.balance - price });
+        
+        const purchases = await DB.all('SELECT * FROM purchases WHERE telegram_id = ? ORDER BY purchased_at DESC', [telegramId]);
+        res.json({ success: true, newBalance: user.balance - price, purchases });
     } catch { res.status(500).json({ error: 'Buy error' }); }
 });
 

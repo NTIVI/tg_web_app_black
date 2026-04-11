@@ -137,7 +137,7 @@ function App() {
 
   const checkDailyBonus = async (userId: string) => {
     try {
-      const res = await fetch(`${API_URL}/bonus/daily-status/${userId}`);
+      const res = await fetch(`${API_URL}/bonus/daily-check/${userId}`);
       const data = await res.json();
       if (data.canClaim) {
         setDailyStatus(data);

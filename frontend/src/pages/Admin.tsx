@@ -87,7 +87,11 @@ const Admin = () => {
         const data = await res.json();
         if (data.stats) setSocialStats(data.stats);
       }
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error('Fetch error in Admin:', err); 
+      setSaveMessage('Error loading data. Check console or network.');
+      setTimeout(() => setSaveMessage(''), 5000);
+    }
   };
 
   const updateBalance = async (telegramId: string, amount: string, action: 'add' | 'remove') => {

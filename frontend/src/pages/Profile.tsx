@@ -20,8 +20,14 @@ const BRAND_IMAGES: Record<string, string> = {
 };
 
 const Profile = ({ userId, tgUser, balance }: any) => {
-  const [purchases, setPurchases] = useState<any[]>([]);
-  const [myNfts, setMyNfts] = useState<any[]>([]);
+  const [purchases, setPurchases] = useState<any[]>(() => {
+    const cached = localStorage.getItem(`cached_purchases_${userId}`);
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [myNfts, setMyNfts] = useState<any[]>(() => {
+    const cached = localStorage.getItem(`cached_nfts_${userId}`);
+    return cached ? JSON.parse(cached) : [];
+  });
 
   useEffect(() => {
     if (!userId) return;
@@ -30,7 +36,9 @@ const Profile = ({ userId, tgUser, balance }: any) => {
     };
     
     fetch(`${API_URL}/admin/purchases`, { headers }).then(r => r.json()).then(data => {
-      setPurchases(data.purchases?.filter((p: any) => p.telegram_id === userId) || []);
+      const userPurchases = data.purchases?.filter((p: any) => p.telegram_id === userId) || [];
+      setPurchases(userPurchases);
+      localStorage.setItem(`cached_purchases_${userId}`, JSON.stringify(userPurchases));
     });
     fetch(`${API_URL}/nft/my/${userId}`, { headers }).then(r => r.json()).then(data => {
       const aggregated: Record<string, any> = {};
@@ -38,7 +46,9 @@ const Profile = ({ userId, tgUser, balance }: any) => {
         if (!aggregated[n.nft_id]) aggregated[n.nft_id] = { id: n.nft_id, qty: 0, price: n.purchase_price, img: BRAND_IMAGES[n.nft_id] || `/nfts/${n.nft_id}.png` };
         aggregated[n.nft_id].qty += n.quantity;
       });
-      setMyNfts(Object.values(aggregated));
+      const nftList = Object.values(aggregated);
+      setMyNfts(nftList);
+      localStorage.setItem(`cached_nfts_${userId}`, JSON.stringify(nftList));
     });
   }, [userId]);
 

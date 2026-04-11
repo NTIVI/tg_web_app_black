@@ -3,22 +3,28 @@ import { API_URL } from '../config';
 import { Trophy, Medal, Crown, Star } from 'lucide-react';
 
 const Top = () => {
-  const [topUsers, setTopUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [topUsers, setTopUsers] = useState<any[]>(() => {
+    const cached = localStorage.getItem('cached_top');
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [loading, setLoading] = useState(() => !localStorage.getItem('cached_top'));
 
   useEffect(() => {
-    fetch(`${API_URL}/top`, {
-      headers: {
-        'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
-      }
-    })
+    const headers = {
+      'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+    };
+
+    fetch(`${API_URL}/top`, { headers })
       .then(res => res.json())
       .then(data => {
-        setTopUsers(data.users || []);
-        setLoading(false);
+        const users = data.users || [];
+        setTopUsers(users);
+        localStorage.setItem('cached_top', JSON.stringify(users));
       })
       .catch(err => {
         console.error("Error fetching top users:", err);
+      })
+      .finally(() => {
         setLoading(false);
       });
   }, []);

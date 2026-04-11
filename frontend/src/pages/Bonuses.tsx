@@ -45,12 +45,15 @@ const SOCIAL_CONFIG: any = {
 const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDaily, setTgUser }: any) => {
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
   const [claiming, setClaiming] = useState<string | null>(null);
-  const [socialStats, setSocialStats] = useState<any>({
-    tiktok: { current: 0, target: 10000 },
-    instagram: { current: 0, target: 5000 },
-    telegram: { current: 0, target: 3000 },
-    facebook: { current: 0, target: 2000 },
-    youtube: { current: 0, target: 10000 }
+  const [socialStats, setSocialStats] = useState<any>(() => {
+    const cached = localStorage.getItem('cached_social_stats');
+    return cached ? JSON.parse(cached) : {
+      tiktok: { current: 0, target: 10000 },
+      instagram: { current: 0, target: 5000 },
+      telegram: { current: 0, target: 3000 },
+      facebook: { current: 0, target: 2000 },
+      youtube: { current: 0, target: 10000 }
+    };
   });
 
   const streak = dailyStatus?.currentStreak || 0;
@@ -75,7 +78,10 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
       try {
         const res = await fetch(`${API_URL}/social-stats`);
         const data = await res.json();
-        if (data.stats) setSocialStats(data.stats);
+        if (data.stats) {
+          setSocialStats(data.stats);
+          localStorage.setItem('cached_social_stats', JSON.stringify(data.stats));
+        }
       } catch (e) {}
     };
     fetchStats();

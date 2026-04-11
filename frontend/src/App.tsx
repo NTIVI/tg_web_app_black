@@ -12,33 +12,25 @@ import DailyBonusModal from './components/DailyBonusModal';
 import { API_URL } from './config';
 
 function App() {
-  const [tgUser, setTgUser] = useState<any>(null);
-  const [balance, setBalance] = useState<number>(0);
+  // Initial state from cache or Telegram
+  const tg = (window as any).Telegram?.WebApp;
+  const initialUser = tg?.initDataUnsafe?.user || { id: "12345", username: "MockUser", first_name: "Mock", last_name: "Account" };
+  
+  const [tgUser, setTgUser] = useState<any>(() => {
+    const cached = localStorage.getItem('cached_user');
+    return cached ? JSON.parse(cached) : initialUser;
+  });
+  const [balance, setBalance] = useState<number>(() => {
+    const cached = localStorage.getItem('cached_balance');
+    return cached ? parseInt(cached) : 0;
+  });
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !localStorage.getItem('cached_user'));
   const [showDailyModal, setShowDailyModal] = useState(false);
   const [dailyStatus, setDailyStatus] = useState<any>(null);
   const [claimingDaily, setClaimingDaily] = useState(false);
   const [isBot, setIsBot] = useState(false);
-  const [countdown, setCountdown] = useState(10);
-  const [simTimerDone, setSimTimerDone] = useState(false);
   const [pendingDailyModal, setPendingDailyModal] = useState(false);
-
-  useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setSimTimerDone(true);
-    }
-  }, [countdown]);
-
-  useEffect(() => {
-    if (simTimerDone && pendingDailyModal) {
-      setShowDailyModal(true);
-      setPendingDailyModal(false);
-    }
-  }, [simTimerDone, pendingDailyModal]);
   
   useEffect(() => {
     // Basic Client-Side Bot Check
@@ -113,8 +105,13 @@ function App() {
       }
       if (data.user) {
         // Merge server data (balance, etc) with TG user data
-        setTgUser((prev: any) => ({ ...prev, ...data.user }));
+        const updatedUser = { ...user, ...data.user };
+        setTgUser(updatedUser);
         setBalance(data.user.balance);
+        
+        // Caching for instant load next time
+        localStorage.setItem('cached_user', JSON.stringify(updatedUser));
+        localStorage.setItem('cached_balance', data.user.balance.toString());
         
         // Restore auto check
         checkDailyBonus(user.id);
@@ -156,7 +153,11 @@ function App() {
       });
       const data = await res.json();
       if (data.success) {
-        setBalance((prev: number) => prev + data.reward);
+        setBalance((prev: number) => {
+          const newVal = prev + data.reward;
+          localStorage.setItem('cached_balance', newVal.toString());
+          return newVal;
+        });
         setShowDailyModal(false);
       }
     } catch (e) {
@@ -166,41 +167,42 @@ function App() {
     }
   };
 
+  const updateBalance = (newVal: number | ((prev: number) => number)) => {
+    setBalance(prev => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
+      localStorage.setItem('cached_balance', updated.toString());
+      return updated;
+    });
+  };
+
+  const updateTgUser = (newVal: any | ((prev: any) => any)) => {
+    setTgUser(prev => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
+      localStorage.setItem('cached_user', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const props = { 
     userId: tgUser?.telegram_id || tgUser?.id, 
     balance, 
-    setBalance, 
+    setBalance: updateBalance, 
     tgUser,
-    setTgUser,
+    setTgUser: updateTgUser,
     dailyStatus,
     handleClaimDaily,
     claimingDaily
   };
 
-  // Only show error or blocking loader if we have NO user data at all (not even from initDataUnsafe)
-  // Also show while simulating the 10-second loader.
-  const isInitialLoading = !simTimerDone || (loading && !tgUser);
+  // Only show loader if we have NO user data at all (not even from cache)
+  const isInitialLoading = loading && !tgUser;
 
   if (isInitialLoading) return (
     <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px', textAlign: 'center' }}>
-      {countdown > 0 ? (
-        <div style={{ position: 'relative', width: '90px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-           <svg width="90" height="90" style={{ position: 'absolute', transform: 'rotate(-90deg)' }}>
-              <circle cx="45" cy="45" r="40" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="6" />
-              <circle cx="45" cy="45" r="40" fill="none" stroke="var(--primary-color)" strokeWidth="6" 
-                 strokeDasharray="251.2" strokeDashoffset={251.2 - (251.2 * (10 - countdown) / 10)}
-                 style={{ transition: 'stroke-dashoffset 1s linear' }} />
-           </svg>
-           <span style={{ fontSize: '28px', fontWeight: 'bold', color: 'white' }}>{countdown}</span>
-        </div>
-      ) : (
-        <div className="spinner" style={{ width: '40px', height: '40px' }}></div>
-      )}
+      <div className="spinner" style={{ width: '40px', height: '40px' }}></div>
       <div>
-        <h2 style={{ color: 'var(--primary-color)', margin: '0 0 8px 0' }}>Вход...</h2>
-        <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
-          {countdown > 0 ? 'Синхронизация данных' : 'Завершение загрузки'}
-        </p>
+        <h2 style={{ color: 'var(--primary-color)', margin: '0 0 8px 0' }}>Синхронизация...</h2>
+        <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Загружаем ваш профиль</p>
       </div>
     </div>
   );

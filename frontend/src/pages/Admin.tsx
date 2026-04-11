@@ -169,11 +169,14 @@ const Admin = () => {
     setNftRates(prev => ({ ...prev, [id]: val as any }));
   };
 
-  const filteredUsers = users.filter(u => 
-    (u.first_name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (u.username && u.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (u.telegram_id || '').includes(searchTerm)
-  );
+  const filteredUsers = users.filter(u => {
+    const search = searchTerm.toLowerCase();
+    const firstName = (u.first_name || '').toLowerCase();
+    const username = (u.username || '').toLowerCase();
+    const telegramId = String(u.telegram_id || '').toLowerCase();
+    
+    return firstName.includes(search) || username.includes(search) || telegramId.includes(search);
+  });
 
   if (!isAuthenticated) return (
     <div className="page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: '20px' }}>
@@ -402,7 +405,7 @@ const Admin = () => {
                     />
                     <div>
                       <div style={{ fontWeight: '700', fontSize: '16px' }}>
-                        {u.first_name}
+                        {u.first_name || 'No Name'}
                         <span style={{ 
                           marginLeft: '8px', 
                           background: 'linear-gradient(135deg, var(--gold-color), #ff9900)', 
@@ -421,9 +424,9 @@ const Admin = () => {
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ color: 'var(--gold-color)', fontWeight: '800', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <DollarSign size={16} />
-                      {(u.balance / 100).toFixed(2)}
+                      {((u.balance || 0) / 100).toFixed(2)}
                     </div>
-                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase' }}>ID: {u.telegram_id.slice(-8)}</div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase' }}>ID: {String(u.telegram_id || '').slice(-8)}</div>
                   </div>
                 </div>
                 

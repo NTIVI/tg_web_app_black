@@ -71,49 +71,101 @@ const News = () => {
 
       {/* Banners Carousel */}
       {banners.length > 0 && (
-        <div style={{ position: 'relative', width: '100%', height: '220px', marginBottom: '32px', overflow: 'hidden' }}>
-          {banners.map((banner, idx) => (
-            <div 
-              key={banner.id}
-              onClick={() => { if (banner.link_url) window.location.href = banner.link_url; }}
-              style={{
-                position: 'absolute',
-                top: 0, left: 0, width: '100%', height: '100%',
-                opacity: idx === currentBanner ? 1 : 0,
-                transform: `translateX(${(idx - currentBanner) * 100}%)`,
-                transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                cursor: banner.link_url ? 'pointer' : 'default',
-                backgroundImage: `url(${banner.image_url})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                boxShadow: 'inset 0 -50px 50px -20px rgba(0,0,0,0.8)'
-              }}
-            >
-              {banner.link_url && (
-                <div style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(0,0,0,0.5)', padding: '6px', borderRadius: '50%', backdropFilter: 'blur(4px)' }}>
-                   <ExternalLink size={16} color="white" />
+        <div style={{ padding: '0 20px', marginBottom: '40px' }}>
+          <div style={{ 
+            position: 'relative', 
+            width: '100%', 
+            height: '420px', 
+            overflow: 'hidden', 
+            borderRadius: '28px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+            border: '1px solid rgba(255,255,255,0.08)'
+          }}>
+            {banners.map((banner, idx) => (
+              <div 
+                key={banner.id}
+                onClick={() => { if (banner.link_url) window.location.href = banner.link_url; }}
+                style={{
+                  position: 'absolute',
+                  top: 0, 
+                  left: 0, 
+                  width: '100%', 
+                  height: '100%',
+                  opacity: idx === currentBanner ? 1 : 0,
+                  transform: `translateY(${(idx - currentBanner) * 100}%)`,
+                  transition: 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+                  cursor: banner.link_url ? 'pointer' : 'default',
+                  backgroundImage: `url(${banner.image_url})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              >
+                {/* Gradient Overlay for visibility */}
+                <div style={{ 
+                  position: 'absolute', 
+                  bottom: 0, 
+                  left: 0, 
+                  right: 0, 
+                  height: '50%', 
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)',
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  padding: '30px'
+                }}>
+                  {banner.link_url && (
+                    <div style={{ 
+                      background: 'var(--primary-color)', 
+                      padding: '10px 20px', 
+                      borderRadius: '14px', 
+                      fontSize: '13px', 
+                      fontWeight: '800',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      boxShadow: '0 10px 20px rgba(0,0,0,0.3)'
+                    }}>
+                      Подробнее <ExternalLink size={14} />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
-          
-          {/* Carousel dots */}
-          {banners.length > 1 && (
-            <div style={{ position: 'absolute', bottom: '12px', left: '0', right: '0', display: 'flex', justifyContent: 'center', gap: '6px' }}>
-              {banners.map((_, idx) => (
-                <div 
-                  key={idx}
-                  style={{
-                    width: idx === currentBanner ? '16px' : '6px',
-                    height: '6px',
-                    borderRadius: '3px',
-                    background: idx === currentBanner ? 'var(--primary-color)' : 'rgba(255,255,255,0.4)',
-                    transition: 'all 0.3s'
-                  }}
-                />
-              ))}
-            </div>
-          )}
+
+                {banner.link_url && (
+                  <div style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(0,0,0,0.5)', padding: '8px', borderRadius: '50%', backdropFilter: 'blur(10px)' }}>
+                     <ExternalLink size={18} color="white" />
+                  </div>
+                )}
+              </div>
+            ))}
+            
+            {/* Vertical Dots Indicators */}
+            {banners.length > 1 && (
+              <div style={{ 
+                position: 'absolute', 
+                right: '20px', 
+                top: '50%', 
+                transform: 'translateY(-50%)', 
+                display: 'flex', 
+                flexDirection: 'column',
+                gap: '8px',
+                zIndex: 10
+              }}>
+                {banners.map((_, idx) => (
+                  <div 
+                    key={idx}
+                    onClick={(e) => { e.stopPropagation(); setCurrentBanner(idx); }}
+                    style={{
+                      width: '6px',
+                      height: idx === currentBanner ? '20px' : '6px',
+                      borderRadius: '3px',
+                      background: idx === currentBanner ? 'var(--primary-color)' : 'rgba(255,255,255,0.4)',
+                      transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                      cursor: 'pointer'
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

@@ -28,50 +28,133 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
   const canAfford = balance >= currentPrice;
 
   return (
-    <div className={`nft-card-premium ${isPositive ? 'trend-up' : 'trend-down'}`}>
-      <div className="card-glass-content">
-        {/* Trend Indicator Badge */}
-        <div className="trend-badge">
-          {isPositive ? <TrendingUp size={12} strokeWidth={3} /> : <TrendingDown size={12} strokeWidth={3} />}
-          <span>{isPositive ? '+' : ''}{changeVal.toFixed(1)}%</span>
+    <div className="glass-panel" style={{ 
+      padding: '16px', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      position: 'relative',
+      overflow: 'hidden',
+      borderRadius: '24px',
+      border: `1px solid ${isPositive ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+      background: 'rgba(15, 15, 20, 0.8)',
+      backdropFilter: 'blur(10px)',
+      boxShadow: isPositive ? '0 10px 30px rgba(34, 197, 94, 0.05)' : '0 10px 30px rgba(239, 68, 68, 0.05)',
+      transition: 'all 0.3s ease'
+    }}>
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <span style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(255,255,255,0.4)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>{nft.id}</span>
+          <div style={{ 
+            background: isPositive ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
+            padding: '4px 8px', 
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}>
+             {isPositive ? <TrendingUp size={10} color="#22c55e" /> : <TrendingDown size={10} color="#ef4444" />}
+             <span style={{ fontSize: '10px', fontWeight: '900', color: isPositive ? '#22c55e' : '#ef4444' }}>
+               {isPositive ? '+' : ''}{changeVal.toFixed(1)}%
+             </span>
+          </div>
         </div>
 
-        {/* Logo Section */}
-        <div className="logo-container-wrapper">
-          <div className="logo-container">
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          margin: '8px 0 20px 0',
+          position: 'relative'
+        }}>
+          {/* PREMIUM WHITE LOGO CONTAINER */}
+          <div style={{ 
+            width: '100px', 
+            height: '100px', 
+            background: '#ffffff', 
+            borderRadius: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            boxShadow: '0 12px 24px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.1)',
+            zIndex: 1,
+            position: 'relative'
+          }}>
             <img 
               src={nft.image} 
               alt={nft.name} 
-              className="brand-logo-img-premium"
+              style={{ 
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'contain'
+              }} 
             />
           </div>
-          <div className="logo-glow-effect"></div>
+          <div style={{ 
+            position: 'absolute', 
+            width: '80px', 
+            height: '80px', 
+            background: isPositive ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)', 
+            filter: 'blur(40px)', 
+            borderRadius: '50%',
+            bottom: '0',
+            zIndex: 0
+          }}></div>
         </div>
 
-        {/* Content Section */}
-        <div className="card-details">
-          <div className="brand-name">{nft.name}</div>
-          <div className="asset-id">{nft.id.toUpperCase()}</div>
-          <div className="price-tag">
-            <span className="currency-symbol">$</span>
-            <span className="price-value">{displayCurrentPrice}</span>
+        <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+          <div style={{ fontSize: '15px', fontWeight: '700', color: 'white', marginBottom: '4px' }}>{nft.name}</div>
+          <div 
+            style={{ 
+              fontSize: '22px', 
+              fontWeight: '900', 
+              color: 'white', 
+              textShadow: '0 0 15px rgba(255,255,255,0.1)'
+            }}
+          >
+            ${displayCurrentPrice}
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="action-footer">
+        <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
           <button 
+            id={`buy-${nft.id}`}
             onClick={() => onBuy({ ...nft, price: currentPrice })}
             disabled={buying === nft.id || !userId || !canAfford}
-            className={`btn-buy-premium ${!canAfford ? 'disabled' : ''}`}
+            style={{ 
+              flex: 1, 
+              height: '38px', 
+              borderRadius: '12px', 
+              background: canAfford ? 'white' : 'rgba(255,255,255,0.05)', 
+              border: 'none',
+              color: canAfford ? 'black' : 'rgba(255,255,255,0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              fontSize: '11px',
+              fontWeight: '900',
+              cursor: canAfford ? 'pointer' : 'not-allowed',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: canAfford ? '0 4px 12px rgba(255,255,255,0.2)' : 'none'
+            }}
           >
-            {buying === nft.id ? '...' : <><ShoppingCart size={14} />КУПИТЬ</>}
+            {buying === nft.id ? '...' : <><ShoppingCart size={13} />КУПИТЬ</>}
           </button>
-          <button 
-            className="btn-sell-minimal"
-            onClick={() => onSell({ ...nft, price: currentPrice })} 
-            disabled={selling === nft.id}
-          >
+          <button style={{ 
+            width: '44px',
+            height: '38px', 
+            borderRadius: '12px', 
+            background: 'rgba(255,255,255,0.05)', 
+            border: '1px solid rgba(255,255,255,0.1)', 
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: selling === nft.id ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s'
+          }} onClick={() => onSell({ ...nft, price: currentPrice })} disabled={selling === nft.id}>
             {selling === nft.id ? '...' : <Tag size={16} />}
           </button>
         </div>
@@ -208,53 +291,62 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
   };
 
   return (
-    <div className="page promotions-page">
+    <div className="page">
       {/* Toast */}
       {toast && (
-        <div className={`toast-premium ${toast.type}`}>
+        <div style={{
+          position: 'fixed', top: '16px', left: '50%', transform: 'translateX(-50%)',
+          zIndex: 9999, display: 'flex', alignItems: 'center', gap: '8px',
+          background: toast.type === 'success' ? 'rgba(16, 185, 129, 0.95)' : 'rgba(239, 68, 68, 0.95)',
+          color: 'white', padding: '12px 20px', borderRadius: '14px', fontSize: '13px',
+          fontWeight: '700', boxShadow: '0 4px 20px rgba(0,0,0,0.4)', maxWidth: '320px',
+          animation: 'slideDown 0.3s ease'
+        }}>
           {toast.type === 'success' ? <Check size={16} /> : <X size={16} />}
-          <span>{toast.msg}</span>
+          {toast.msg}
         </div>
       )}
 
-      {/* Market Header */}
-      <div className="market-header-premium">
-        <div className="header-info">
-          <h1>Финансовый Рынок</h1>
-          <p>Инвестируйте в акции мировых брендов в реальном времени</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <div>
+          <h1>Акции</h1>
         </div>
-        <div className="market-status-badge">
-          <Zap size={18} />
-          <div className="status-text">
-            <span className="live-dot"></span>
-            <span className="live-label">LIVE MARKET</span>
-          </div>
+        <div style={{ 
+          background: 'var(--primary-glow)', 
+          padding: '10px', 
+          borderRadius: '15px', 
+          border: '1px solid var(--primary-color)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <Zap size={18} color="var(--primary-color)" />
+          <span style={{ fontWeight: '900', fontSize: '14px' }}>LIVE</span>
+          <div style={{ 
+            width: '8px', height: '8px', borderRadius: '50%', 
+            background: 'var(--success-color)',
+            boxShadow: '0 0 8px var(--success-color)',
+            animation: 'livePulse 1.2s ease-in-out infinite'
+          }} />
         </div>
       </div>
 
-      {/* Stats Quick View */}
+
+
+      {/* Balance info */}
       {userId && (
-        <div className="market-summary-card">
-          <div className="summary-item">
-            <DollarSign size={20} className="icon-gold" />
-            <div className="summary-details">
-              <span className="label">Доступно для инвест</span>
-              <span className="value">${((balance || 0) / 100).toFixed(2)}</span>
-            </div>
-          </div>
-          <div className="summary-divider"></div>
-          <div className="summary-item">
-            <TrendingUp size={20} className="icon-success" />
-            <div className="summary-details">
-              <span className="label">Индекс рынка</span>
-              <span className="value">{(stockMultiplier * 100).toFixed(1)}%</span>
-            </div>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '15px', fontWeight: '800' }}>
+          <DollarSign size={14} color="var(--gold-color)" />
+          <span>Ваш баланс: <strong style={{ color: 'var(--gold-color)' }}>${((balance || 0) / 100).toFixed(2)}</strong></span>
         </div>
       )}
 
-      {/* Brands Grid */}
-      <div className="brands-grid-premium">
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(2, 1fr)', 
+        gap: '12px',
+        paddingBottom: '40px'
+      }}>
         {BRAND_LIST.map((nft, i) => {
           const ch = getChange(i);
           return (
@@ -275,378 +367,38 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
       </div>
 
       <style>{`
-        .promotions-page {
-          padding-top: 20px;
-          animation: fadeIn 0.8s ease-out;
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+          to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
-
-        .market-header-premium {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 32px;
-        }
-
-        .market-header-premium h1 {
-          font-size: 28px;
-          margin-bottom: 4px;
-        }
-
-        .market-header-premium p {
-          font-size: 13px;
-          opacity: 0.6;
-          margin: 0;
-        }
-
-        .market-status-badge {
-          background: rgba(30, 64, 175, 0.15);
-          border: 1px solid rgba(30, 64, 175, 0.3);
-          padding: 8px 12px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          color: var(--primary-color);
-        }
-
-        .status-text {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .live-dot {
-          width: 8px;
-          height: 8px;
-          background: #22c55e;
-          border-radius: 50%;
-          box-shadow: 0 0 8px #22c55e;
-          animation: livePulse 2s infinite;
-        }
-
-        .live-label {
-          font-size: 10px;
-          font-weight: 900;
-          letter-spacing: 1px;
-        }
-
-        .market-summary-card {
-          background: rgba(255, 255, 255, 0.03);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 20px;
-          padding: 16px 24px;
-          display: flex;
-          align-items: center;
-          justify-content: space-around;
-          margin-bottom: 32px;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        .summary-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .summary-details {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .summary-details .label {
-          font-size: 10px;
-          text-transform: uppercase;
-          opacity: 0.5;
-          letter-spacing: 0.5px;
-        }
-
-        .summary-details .value {
-          font-size: 16px;
-          font-weight: 800;
-        }
-
-        .summary-divider {
-          width: 1px;
-          height: 30px;
-          background: rgba(255, 255, 255, 0.1);
-        }
-
-        .brands-grid-premium {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 16px;
-          padding-bottom: 100px;
-        }
-
-        /* PREMIUM CARD STYLES */
-        .nft-card-premium {
-          position: relative;
-          background: rgba(30, 30, 38, 0.7);
-          backdrop-filter: blur(20px);
-          border-radius: 28px;
-          padding: 1px;
-          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          overflow: hidden;
-        }
-
-        .card-glass-content {
-          background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
-          border-radius: 27px;
-          padding: 16px;
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          z-index: 2;
-          position: relative;
-        }
-
-        .nft-card-premium::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          padding: 1.5px;
-          border-radius: 28px;
-          background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent, rgba(255,255,255,0.05));
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
-        }
-
-        .nft-card-premium.trend-up::after {
-          content: "";
-          position: absolute;
-          bottom: -20px;
-          right: -20px;
-          width: 80px;
-          height: 80px;
-          background: radial-gradient(circle, rgba(34, 197, 94, 0.15) 0%, transparent 70%);
-          pointer-events: none;
-        }
-
-        .nft-card-premium.trend-down::after {
-          content: "";
-          position: absolute;
-          bottom: -20px;
-          right: -20px;
-          width: 80px;
-          height: 80px;
-          background: radial-gradient(circle, rgba(239, 68, 68, 0.15) 0%, transparent 70%);
-          pointer-events: none;
-        }
-
-        .trend-badge {
-          position: absolute;
-          top: 12px;
-          right: 12px;
-          padding: 4px 8px;
-          border-radius: 8px;
-          font-size: 10px;
-          font-weight: 900;
-          display: flex;
-          align-items: center;
-          gap: 3px;
-          z-index: 10;
-        }
-
-        .trend-up .trend-badge {
-          background: rgba(34, 197, 94, 0.15);
-          color: #4ade80;
-        }
-
-        .trend-down .trend-badge {
-          background: rgba(239, 68, 68, 0.15);
-          color: #f87171;
-        }
-
-        .logo-container-wrapper {
-          width: 100%;
-          padding: 10px 0;
-          display: flex;
-          justify-content: center;
-          position: relative;
-          margin-bottom: 12px;
-        }
-
-        .logo-container {
-          width: 100px;
-          height: 100px;
-          background: #ffffff;
-          border-radius: 22px;
-          padding: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-          z-index: 2;
-          transition: transform 0.4s ease;
-        }
-
-        .brand-logo-img-premium {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-        }
-
-        .logo-glow-effect {
-          position: absolute;
-          width: 60px;
-          height: 60px;
-          background: var(--primary-color);
-          filter: blur(35px);
-          opacity: 0.15;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          z-index: 1;
-        }
-
-        .card-details {
-          text-align: center;
-          margin-bottom: 14px;
-        }
-
-        .brand-name {
-          font-size: 15px;
-          font-weight: 800;
-          color: white;
-          margin-bottom: 2px;
-        }
-
-        .asset-id {
-          font-size: 9px;
-          font-weight: 700;
-          color: rgba(255,255,255,0.3);
-          letter-spacing: 1px;
-          margin-bottom: 8px;
-        }
-
-        .price-tag {
-          display: flex;
-          align-items: baseline;
-          justify-content: center;
-          gap: 2px;
-        }
-
-        .currency-symbol {
-          font-size: 14px;
-          font-weight: 600;
-          color: var(--gold-color);
-        }
-
-        .price-value {
-          font-size: 20px;
-          font-weight: 900;
-          color: white;
-        }
-
-        .action-footer {
-          display: flex;
-          gap: 8px;
-          margin-top: auto;
-        }
-
-        .btn-buy-premium {
-          flex: 1;
-          height: 42px;
-          border-radius: 12px;
-          background: white;
-          color: black;
-          border: none;
-          font-size: 11px;
-          font-weight: 900;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          box-shadow: 0 6px 15px rgba(255,255,255,0.15);
-        }
-
-        .btn-buy-premium:active { transform: scale(0.95); }
-
-        .btn-buy-premium.disabled {
-          background: rgba(255,255,255,0.05);
-          color: rgba(255,255,255,0.2);
-          box-shadow: none;
-          cursor: not-allowed;
-        }
-
-        .btn-sell-minimal {
-          width: 44px;
-          height: 42px;
-          border-radius: 12px;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .btn-sell-minimal:hover { background: rgba(255,255,255,0.1); }
-
-        /* HOVER STATES */
-        .nft-card-premium:hover {
-          transform: translateY(-5px);
-          background: rgba(35, 35, 45, 0.8);
-        }
-
-        .nft-card-premium:hover .logo-container {
-          transform: scale(1.05) translateY(-2px);
-        }
-
-        /* UTILS */
-        .toast-premium {
-          position: fixed;
-          top: 24px;
-          left: 50%;
-          transform: translateX(-50%);
-          z-index: 10000;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 14px 24px;
-          border-radius: 16px;
-          font-size: 13px;
-          font-weight: 800;
-          box-shadow: 0 15px 40px rgba(0,0,0,0.4);
-          animation: toastSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          min-width: 280px;
-        }
-
-        .toast-premium.success {
-          background: rgba(34, 197, 94, 0.95);
-          color: white;
-        }
-
-        .toast-premium.error {
-          background: rgba(239, 68, 68, 0.95);
-          color: white;
-        }
-
-        @keyframes toastSlideIn {
-          from { opacity: 0; transform: translate(-50%, -30px); }
-          to { opacity: 1; transform: translate(-50%, 0); }
-        }
-
         @keyframes livePulse {
-          0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.3); opacity: 0.5; }
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.4; transform: scale(0.8); }
         }
-
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
+        .price-flash {
+          animation: priceFlash 0.6s ease;
         }
-
-        .icon-gold { color: var(--gold-color); }
-        .icon-success { color: #22c55e; }
+        .pct-flash-green {
+          animation: pctFlashGreen 0.6s ease;
+        }
+        .pct-flash-red {
+          animation: pctFlashRed 0.6s ease;
+        }
+        @keyframes priceFlash {
+          0% { color: white; }
+          30% { color: #facc15; text-shadow: 0 0 14px #facc15; }
+          100% { color: white; }
+        }
+        @keyframes pctFlashGreen {
+          0% { opacity: 1; }
+          30% { opacity: 0.4; transform: scale(1.15); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes pctFlashRed {
+          0% { opacity: 1; }
+          30% { opacity: 0.4; transform: scale(1.15); }
+          100% { opacity: 1; transform: scale(1); }
+        }
       `}</style>
     </div>
   );

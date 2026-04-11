@@ -382,13 +382,13 @@ app.post('/api/admin/settings/ads', requireAuth, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Admin settings error' }); }
 });
 
-app.get('/api/admin/nft/status', requireAuth, async (req, res) => {
+app.get('/api/nft/rates', async (req, res) => {
     try {
         const rows = await DB.all('SELECT key, value FROM settings WHERE key LIKE "brand%"');
         const rates = {};
-        rows.forEach(r => rates[r.key] = r.value);
+        rows.forEach(r => rates[r.key] = parseFloat(r.value) || 0);
         res.json({ rates });
-    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+    } catch (err) { res.status(500).json({ error: 'Failed to fetch rates' }); }
 });
 
 app.post('/api/admin/nft/rates', requireAuth, async (req, res) => {
@@ -525,7 +525,9 @@ app.post('/api/nft/buy', requireAuth, async (req, res) => {
         
         await DB.run('UPDATE users SET balance = balance - ? WHERE telegram_id = ?', [price, telegramId]);
         await DB.run('INSERT INTO user_nfts (telegram_id, nft_id, purchase_price) VALUES (?,?,?)', [telegramId, nftId, price]);
-        res.json({ success: true, newBalance: user.balance - price });
+        
+        const nfts = await DB.all('SELECT * FROM user_nfts WHERE telegram_id = ?', [telegramId]);
+        res.json({ success: true, newBalance: user.balance - price, nfts });
     } catch { res.status(500).json({ error: 'Purchase error' }); }
 });
 
@@ -540,7 +542,8 @@ app.post('/api/nft/sell', requireAuth, async (req, res) => {
         await DB.run('UPDATE users SET balance = balance + ? WHERE telegram_id = ?', [price, telegramId]);
         
         const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-        res.json({ success: true, newBalance: user.balance });
+        const nfts = await DB.all('SELECT * FROM user_nfts WHERE telegram_id = ?', [telegramId]);
+        res.json({ success: true, newBalance: user.balance, nfts });
     } catch { res.status(500).json({ error: 'Sell error' }); }
 });
 

@@ -166,9 +166,9 @@ const Admin = () => {
   };
 
   const filteredUsers = users.filter(u => 
-    u.first_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (u.first_name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
     (u.username && u.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    u.telegram_id.includes(searchTerm)
+    (u.telegram_id || '').includes(searchTerm)
   );
 
   if (!isAuthenticated) return (

@@ -178,13 +178,14 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
   );
 };
 
-const Promotions = ({ userId, balance, setBalance }: any) => {
+const Promotions = ({ userId, balance, setBalance, setMyNfts }: any) => {
   const [stockMultiplier, setStockMultiplier] = useState(1.0);
   const [variance, setVariance] = useState<Record<string, number>>({});
 
   const [buying, setBuying] = useState<string | null>(null);
   const [selling, setSelling] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+  const [adminRates, setAdminRates] = useState<Record<string, number>>({});
 
   useEffect(() => {
     // Initial random variance
@@ -198,6 +199,15 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
         brand7: (Math.random() - 0.5) * 2,
         brand8: (Math.random() - 0.5) * 2,
     });
+
+    const fetchAdminRates = async () => {
+      try {
+        const res = await fetch(`${API_URL}/nft/rates`);
+        const data = await res.json();
+        if (data.rates) setAdminRates(data.rates);
+      } catch (err) { console.error('Error fetching admin rates:', err); }
+    };
+    fetchAdminRates();
 
     const fetchStatus = async () => {
       if (!userId) return;
@@ -261,6 +271,7 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
       const data = await res.json();
       if (res.ok && data.success) {
         setBalance(data.newBalance);
+        if (data.nfts) setMyNfts(data.nfts);
         showToast('success', `${nft.name} куплено! -$${(nft.price / 100).toFixed(2)}`);
       } else {
         showToast('error', data.error || 'Ошибка при покупке');
@@ -287,6 +298,7 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
       const data = await res.json();
       if (res.ok && data.success) {
         setBalance(data.newBalance);
+        if (data.nfts) setMyNfts(data.nfts);
         showToast('success', `${nft.name} продано! +$${(nft.price / 100).toFixed(2)}`);
       } else {
         showToast('error', data.error || 'Ошибка при продаже');
@@ -301,7 +313,8 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
   const getChange = (index: number) => {
     const nftId = `brand${index + 1}`;
     const baseVal = (stockMultiplier - 1.0) * 100;
-    const val = baseVal + (variance[nftId] || 0);
+    const adminOffset = adminRates[nftId] || 0;
+    const val = baseVal + adminOffset + (variance[nftId] || 0);
     return { val, isPositive: val >= 0 };
   };
 

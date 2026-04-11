@@ -1,7 +1,38 @@
 import { useEffect } from 'react';
 import { Wallet, Trophy, Package, Calendar, ShieldCheck, Layers } from 'lucide-react';
 
+const BRAND_DATA: Record<string, { name: string, img: string }> = {
+  brand1: { name: 'Apple', img: '/brands/apple.png?v=3' },
+  brand2: { name: 'Nvidia', img: '/brands/nvidia.png?v=3' },
+  brand3: { name: 'Samsung', img: '/brands/samsung.png?v=3' },
+  brand4: { name: 'Xiaomi', img: '/brands/xiaomi.png?v=3' },
+  brand5: { name: 'Netflix', img: '/brands/netflix.png?v=3' },
+  brand6: { name: 'Epic Games', img: '/brands/epicgames.png?v=3' },
+  brand7: { name: 'Steam', img: '/brands/steam.png?v=3' },
+  brand8: { name: 'Xbox', img: '/brands/xbox.png?v=3' },
+};
+
 const Profile = ({ balance, tgUser, purchases, myNfts }: any) => {
+  // Group raw NFTs by nft_id
+  const groupedNfts = (myNfts || []).reduce((acc: any, curr: any) => {
+    const brand = BRAND_DATA[curr.nft_id];
+    if (!brand) return acc;
+    
+    if (!acc[curr.nft_id]) {
+      acc[curr.nft_id] = {
+        name: brand.name,
+        img: brand.img,
+        qty: 0,
+        totalInvested: 0
+      };
+    }
+    acc[curr.nft_id].qty += 1;
+    acc[curr.nft_id].totalInvested += Number(curr.purchase_price || 0);
+    return acc;
+  }, {});
+
+  const nftsToDisplay = Object.values(groupedNfts);
+
   useEffect(() => {
     // Synchronized via global App.tsx init
   }, [tgUser?.telegram_id]);
@@ -86,7 +117,7 @@ const Profile = ({ balance, tgUser, purchases, myNfts }: any) => {
         aspectRatio: '3/1'
       }}>
         <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
-          {myNfts.length > 0 ? myNfts.map((nft: any, i: number) => (
+          {nftsToDisplay.length > 0 ? nftsToDisplay.map((nft: any, i: number) => (
             <div key={i} style={{ 
               minWidth: '100px', 
               background: 'rgba(0,0,0,0.3)', 
@@ -96,8 +127,8 @@ const Profile = ({ balance, tgUser, purchases, myNfts }: any) => {
               textAlign: 'center'
             }}>
               <img src={nft.img} style={{ width: '40px', height: '40px', borderRadius: '8px', marginBottom: '4px' }} alt="NFT" />
-              <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--gold-color)' }}>${(nft.price / 100).toFixed(2)}</div>
-              <div style={{ fontSize: '9px', opacity: 0.5 }}>x{nft.qty}</div>
+              <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--gold-color)' }}>{nft.name}</div>
+              <div style={{ fontSize: '9px', opacity: 0.5 }}>x{nft.qty} шт</div>
             </div>
           )) : (
             <div style={{ fontSize: '13px', opacity: 0.5, padding: '10px' }}>У вас пока нет акций</div>

@@ -222,10 +222,11 @@ function App() {
     <div className="luxury-loader-wrap">
       <div className="luxury-loader-bg" />
       <div className="luxury-loader-content">
-        <div className="luxury-logo-pulse">
-           <div className="logo-text-gradient">YourTurn</div>
+        <div className="luxury-core">
+           <div className="luxury-core-orbit" />
+           <div className="luxury-core-inner" />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
           <div className="luxury-text">Синхронизация</div>
           <div className="luxury-progress-bar">
             <div className="luxury-progress-fill" />

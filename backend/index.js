@@ -126,10 +126,19 @@ app.post('/api/auth', authLimiter, async (req, res) => {
 
         const user = await DB.get('SELECT * FROM users WHERE telegram_id = ?', [tid]);
         
+        // Fetch additional user data for bundling
+        const purchases = await DB.all('SELECT * FROM purchases WHERE telegram_id = ? ORDER BY purchased_at DESC', [tid]);
+        const nfts = await DB.all('SELECT * FROM user_nfts WHERE telegram_id = ? ORDER BY purchased_at DESC', [tid]);
+        
         // Generate Token
         const token = jwt.sign({ id: user.telegram_id, username: user.username }, jwtSecret, { expiresIn: '7d' });
         
-        res.json({ user, token });
+        res.json({ 
+            user, 
+            token,
+            purchases: purchases || [],
+            nfts: nfts || []
+        });
     } catch (err) { console.error('Auth error:', err); res.status(500).json({ error: 'DB error' }); }
 });
 

@@ -24,13 +24,24 @@ function App() {
     const cached = localStorage.getItem('cached_balance');
     return cached ? parseInt(cached) : 0;
   });
+  const [purchases, setPurchases] = useState<any[]>(() => {
+    const cached = localStorage.getItem('cached_purchases');
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [myNfts, setMyNfts] = useState<any[]>(() => {
+    const cached = localStorage.getItem('cached_nfts');
+    return cached ? JSON.parse(cached) : [];
+  });
+
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(() => !localStorage.getItem('cached_user'));
+  const [showLuxuryLoader, setShowLuxuryLoader] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(!localStorage.getItem('onboarding_completed'));
+  const [onboardingStep, setOnboardingStep] = useState(1);
+
   const [showDailyModal, setShowDailyModal] = useState(false);
   const [dailyStatus, setDailyStatus] = useState<any>(null);
   const [claimingDaily, setClaimingDaily] = useState(false);
   const [isBot, setIsBot] = useState(false);
-  const [pendingDailyModal, setPendingDailyModal] = useState(false);
   
   useEffect(() => {
     // Basic Client-Side Bot Check
@@ -49,22 +60,16 @@ function App() {
         });
       }
     }
-  }, []);
 
-  useEffect(() => {
-    const tg = (window as any).Telegram?.WebApp;
-    if (tg) {
-      tg.ready();
-      tg.expand();
-      if (tg.themeParams) {
-        Object.entries(tg.themeParams).forEach(([key, val]: [string, any]) => {
-          document.documentElement.style.setProperty(`--tg-${key.replace(/_/g, '-')}`, val);
-        });
-      }
-    }
-    
+    // Minimum 3.5s Luxury Loader (only if onboarded)
+    const loaderTimer = setTimeout(() => {
+        setShowLuxuryLoader(false);
+    }, 3500);
+
     // Initial load: Auth once on mount
     init(true);
+
+    return () => clearTimeout(loaderTimer);
   }, []);
 
   const location = useLocation();
@@ -73,21 +78,21 @@ function App() {
     init(false);
   }, [location.pathname]);
 
-  const init = async (showLoading = true) => {
+  const init = async (isStartup = false) => {
     const tg = (window as any).Telegram?.WebApp;
     const user = tg?.initDataUnsafe?.user || { id: "12345", username: "MockUser", first_name: "Mock", last_name: "Account" };
     const initData = tg?.initData || "";
 
-    // Optimistically set user data from TG immediately if not already set
-    if (!tgUser) {
+    // Optimistically set user from TG if cache is empty
+    if (!localStorage.getItem('cached_user')) {
         setTgUser(user);
     }
 
-    if (showLoading && !tgUser) setLoading(true);
+    // isStartup loading handled by LuxuryLoader logic
     setError(null);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 7000); // 7s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
     try {
       const res = await fetch(`${API_URL}/auth`, {
@@ -100,29 +105,33 @@ function App() {
 
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
+      
       if (data.token) {
         sessionStorage.setItem('auth_token', data.token);
       }
+      
       if (data.user) {
-        // Merge server data (balance, etc) with TG user data
         const updatedUser = { ...user, ...data.user };
         setTgUser(updatedUser);
         setBalance(data.user.balance);
+        setPurchases(data.purchases || []);
+        setMyNfts(data.nfts || []);
         
-        // Caching for instant load next time
+        // Cache everything
         localStorage.setItem('cached_user', JSON.stringify(updatedUser));
         localStorage.setItem('cached_balance', data.user.balance.toString());
+        localStorage.setItem('cached_purchases', JSON.stringify(data.purchases || []));
+        localStorage.setItem('cached_nfts', JSON.stringify(data.nfts || []));
         
-        // Restore auto check
         checkDailyBonus(user.id);
       }
     } catch (e: any) {
       console.error('Init error:', e);
-      if (showLoading) {
-        setError(e.name === 'AbortError' ? 'Сервер долго не отвечает. Проверяйте интернет.' : e.message);
+      if (isStartup) {
+        setError(e.name === 'AbortError' ? 'Сервер не отвечает. Проверьте интернет.' : e.message);
       }
     } finally {
-      setLoading(false);
+      // isStartup loading handled by LuxuryLoader logic
     }
   };
 
@@ -132,7 +141,7 @@ function App() {
       const data = await res.json();
       if (data.canClaim) {
         setDailyStatus(data);
-        setPendingDailyModal(true);
+        setShowDailyModal(true); // Direct show daily if needed, or rely on other logic
       }
     } catch (e) {
       console.error('Check daily error:', e);
@@ -176,11 +185,16 @@ function App() {
   };
 
   const updateTgUser = (newVal: any | ((prev: any) => any)) => {
-    setTgUser(prev => {
+    setTgUser((prev: any) => {
       const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
       localStorage.setItem('cached_user', JSON.stringify(updated));
       return updated;
     });
+  };
+
+  const completeOnboarding = () => {
+    localStorage.setItem('onboarding_completed', 'true');
+    setShowOnboarding(false);
   };
 
   const props = { 
@@ -189,23 +203,96 @@ function App() {
     setBalance: updateBalance, 
     tgUser,
     setTgUser: updateTgUser,
+    purchases,
+    setPurchases,
+    myNfts,
+    setMyNfts,
     dailyStatus,
     handleClaimDaily,
     claimingDaily
   };
 
-  // Only show loader if we have NO user data at all (not even from cache)
-  const isInitialLoading = loading && !tgUser;
-
-  if (isInitialLoading) return (
-    <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px', textAlign: 'center' }}>
-      <div className="spinner" style={{ width: '40px', height: '40px' }}></div>
-      <div>
-        <h2 style={{ color: 'var(--primary-color)', margin: '0 0 8px 0' }}>Синхронизация...</h2>
-        <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Загружаем ваш профиль</p>
+  // Luxury Loader Component
+  const LuxuryLoader = () => (
+    <div className="luxury-loader-wrap">
+      <div className="luxury-loader-bg" />
+      <div className="luxury-loader-content">
+        <div className="luxury-logo-pulse">
+           <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+             <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white" />
+           </svg>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+          <div className="luxury-text">Synchronizing</div>
+          <div className="luxury-progress-bar">
+            <div className="luxury-progress-fill" />
+          </div>
+        </div>
       </div>
     </div>
   );
+
+  // Onboarding Component
+  const Onboarding = () => (
+    <div className="onboarding-overlay">
+      <div className="onboarding-bg" />
+      
+      {onboardingStep === 1 ? (
+        <div className="onboarding-card">
+          <div className="onboarding-logo-wrap">
+            <div className="onboarding-logo">
+              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white" />
+              </svg>
+            </div>
+            <h1 className="onboarding-title">LuckyTurn</h1>
+            <p className="onboarding-bio">
+              Ваш путь в мир цифровых инвестиций и бонусов. Зарабатывайте бонусы, покупайте акции мировых брендов и развивайте свой профиль.
+            </p>
+          </div>
+          
+          <div className="onboarding-actions">
+            <button className="btn-primary" style={{ width: '100%', height: '60px' }} onClick={completeOnboarding}>
+              Продолжить
+            </button>
+            <button className="btn-secondary-luxury" onClick={() => setOnboardingStep(2)}>
+              Прочитать про приложение
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="onboarding-card">
+          <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '24px', textAlign: 'center' }}>О приложении</h2>
+          <div className="onboarding-info-scroll">
+            <h3>Что это за приложение?</h3>
+            <p>LuckyTurn — это инновационная платформа, которая превращает ваше время в реальные бонусы и цифровые активы.</p>
+            
+            <h3>Как оно работает?</h3>
+            <p>Вы выполняете простые действия: смотрите рекламные ролики или посещаете сайты партнеров. За это вы мгновенно получаете виртуальные доллары и XP (опыт).</p>
+            
+            <h3>В чем смысл?</h3>
+            <p>Мы создали простую экономику, где ваше внимание имеет ценность. Чем больше вы активны, тем выше ваш уровень и тем больше возможностей открывается в магазине.</p>
+            
+            <h3>Основные возможности:</h3>
+            <ul>
+              <li>Заработок $ на просмотре рекламы — до $0.35 за ролик.</li>
+              <li>Сёрфинг сайтов — быстрый заработок и опыт.</li>
+              <li>Магазин предметов — покупайте уникальные товары за свой баланс.</li>
+              <li>Акции брендов — инвестируйте в доли крупнейших компаний.</li>
+              <li>Глобальный рейтинг — соревнуйтесь с другими игроками за топ.</li>
+            </ul>
+          </div>
+          
+          <button className="btn-primary" style={{ width: '100%', height: '60px' }} onClick={completeOnboarding}>
+            Понятно, начать игру
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  if (showOnboarding) return <Onboarding />;
+  if (showLuxuryLoader) return <LuxuryLoader />;
 
   if (isBot) return (
     <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px', textAlign: 'center', padding: '20px' }}>

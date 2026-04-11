@@ -8,6 +8,10 @@ interface StartProps {
   setBalance: (newBalance: number) => void;
   tgUser: any;
   setTgUser: (newUser: any) => void;
+  purchases: any[];
+  setPurchases: (p: any[]) => void;
+  myNfts: any[];
+  setMyNfts: (n: any[]) => void;
 }
 
 const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) => {

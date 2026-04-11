@@ -1,56 +1,10 @@
-import { useState, useEffect } from 'react';
-import { API_URL } from '../config';
+import { useEffect } from 'react';
 import { Wallet, Trophy, Package, Calendar, ShieldCheck, Layers } from 'lucide-react';
 
-const BRAND_IMAGES: Record<string, string> = {
-  'brand1': '/brands/apple.png?v=2',
-  'brand2': '/brands/nvidia.png?v=2',
-  'brand3': '/brands/samsung.png?v=2',
-  'brand4': '/brands/xiaomi.png?v=2',
-  'brand5': '/brands/netflix.png?v=2',
-  'brand6': '/brands/epicgames.png?v=2',
-  'brand7': '/brands/steam.png?v=2',
-  'brand8': '/brands/xbox.png?v=2',
-  'nft1': '/nfts/nft1.png',
-  'nft2': '/nfts/nft2.png',
-  'nft3': '/nfts/nft3.png',
-  'nft4': '/nfts/nft4.png',
-  'nft5': '/nfts/nft5.png',
-  'nft6': '/nfts/nft6.png',
-};
-
-const Profile = ({ userId, tgUser, balance }: any) => {
-  const [purchases, setPurchases] = useState<any[]>(() => {
-    const cached = localStorage.getItem(`cached_purchases_${userId}`);
-    return cached ? JSON.parse(cached) : [];
-  });
-  const [myNfts, setMyNfts] = useState<any[]>(() => {
-    const cached = localStorage.getItem(`cached_nfts_${userId}`);
-    return cached ? JSON.parse(cached) : [];
-  });
-
+const Profile = ({ balance, tgUser, purchases, myNfts }: any) => {
   useEffect(() => {
-    if (!userId) return;
-    const headers = {
-      'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
-    };
-    
-    fetch(`${API_URL}/admin/purchases`, { headers }).then(r => r.json()).then(data => {
-      const userPurchases = data.purchases?.filter((p: any) => p.telegram_id === userId) || [];
-      setPurchases(userPurchases);
-      localStorage.setItem(`cached_purchases_${userId}`, JSON.stringify(userPurchases));
-    });
-    fetch(`${API_URL}/nft/my/${userId}`, { headers }).then(r => r.json()).then(data => {
-      const aggregated: Record<string, any> = {};
-      (data.nfts || []).forEach((n: any) => {
-        if (!aggregated[n.nft_id]) aggregated[n.nft_id] = { id: n.nft_id, qty: 0, price: n.purchase_price, img: BRAND_IMAGES[n.nft_id] || `/nfts/${n.nft_id}.png` };
-        aggregated[n.nft_id].qty += n.quantity;
-      });
-      const nftList = Object.values(aggregated);
-      setMyNfts(nftList);
-      localStorage.setItem(`cached_nfts_${userId}`, JSON.stringify(nftList));
-    });
-  }, [userId]);
+    // Synchronized via global App.tsx init
+  }, [tgUser?.telegram_id]);
 
   return (
     <div className="page" style={{ background: 'var(--background-color)' }}>
@@ -132,7 +86,7 @@ const Profile = ({ userId, tgUser, balance }: any) => {
         aspectRatio: '3/1'
       }}>
         <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
-          {myNfts.length > 0 ? myNfts.map((nft, i) => (
+          {myNfts.length > 0 ? myNfts.map((nft: any, i: number) => (
             <div key={i} style={{ 
               minWidth: '100px', 
               background: 'rgba(0,0,0,0.3)', 
@@ -157,7 +111,7 @@ const Profile = ({ userId, tgUser, balance }: any) => {
           alignItems: 'center'
         }}>
           <span style={{ fontSize: '12px', opacity: 0.5, fontWeight: '600' }}>Статус коллекции</span>
-          <span style={{ fontSize: '13px', fontWeight: '900', color: 'var(--primary-color)' }}>Всего: {myNfts.reduce((acc, n) => acc + n.qty, 0)} шт</span>
+          <span style={{ fontSize: '13px', fontWeight: '900', color: 'var(--primary-color)' }}>Всего: {myNfts.reduce((acc: number, n: any) => acc + n.qty, 0)} шт</span>
         </div>
       </div>
 
@@ -168,7 +122,7 @@ const Profile = ({ userId, tgUser, balance }: any) => {
 
       <div className="glass-panel" style={{ padding: '0 20px' }}>
         {purchases.length > 0 ? (
-          purchases.map((p, i) => (
+          purchases.map((p: any, i: number) => (
             <div key={i} style={{ padding: '20px 0', borderBottom: i === purchases.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '16px' }}>
               <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'linear-gradient(135deg, var(--surface-color-light), #1a1a1a)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-color)', position: 'relative' }}>
                 <img src={p.photo_url || tgUser?.photo_url || ''} style={{ width: '100%', height: '100%', borderRadius: '14px', opacity: 0.8, objectFit: 'cover' }} alt="User" />

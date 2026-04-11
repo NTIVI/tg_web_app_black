@@ -221,7 +221,7 @@ function App() {
            <img src="/logo_main.png" alt="YourTurn Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-          <div className="luxury-text">Synchronizing</div>
+          <div className="luxury-text">Загрузка</div>
           <div className="luxury-progress-bar">
             <div className="luxury-progress-fill" />
           </div>

@@ -30,59 +30,57 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
 
   return (
     <div className="glass-panel" style={{ 
-      padding: '12px', 
+      padding: '16px', 
       display: 'flex', 
       flexDirection: 'column', 
-      justifyContent: 'space-between',
       position: 'relative',
       overflow: 'hidden',
-      borderRadius: '20px',
-      border: `1px solid ${isPositive ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-      background: 'linear-gradient(145deg, rgba(20, 20, 25, 0.9), rgba(10, 10, 15, 0.95))'
+      borderRadius: '24px',
+      border: `1px solid ${isPositive ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+      background: 'rgba(15, 15, 20, 0.8)',
+      backdropFilter: 'blur(10px)',
+      boxShadow: isPositive ? '0 10px 30px rgba(34, 197, 94, 0.05)' : '0 10px 30px rgba(239, 68, 68, 0.05)',
+      transition: 'all 0.3s ease'
     }}>
-      {/* Background Geometric Lines */}
-      <div style={{ 
-        position: 'absolute', 
-        top: 0, 
-        left: 0, 
-        width: '100%', 
-        height: '100%', 
-        zIndex: 0, 
-        opacity: 0.1,
-        pointerEvents: 'none',
-        background: 'linear-gradient(45deg, transparent 48%, var(--primary-color) 50%, transparent 52%), linear-gradient(-45deg, transparent 48%, var(--primary-color) 50%, transparent 52%)',
-        backgroundSize: '20px 20px'
-      }}></div>
-
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '1px' }}>{nft.name}</span>
-          <Layers size={14} color="var(--primary-color)" />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <span style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(255,255,255,0.4)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>{nft.id}</span>
+          <div style={{ 
+            background: isPositive ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
+            padding: '4px 8px', 
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}>
+             {isPositive ? <TrendingUp size={10} color="#22c55e" /> : <TrendingDown size={10} color="#ef4444" />}
+             <span style={{ fontSize: '10px', fontWeight: '900', color: isPositive ? '#22c55e' : '#ef4444' }}>
+               {isPositive ? '+' : ''}{changeVal.toFixed(1)}%
+             </span>
+          </div>
         </div>
 
         <div style={{ 
-          flex: 1, 
           display: 'flex', 
+          flexDirection: 'column',
           alignItems: 'center', 
           justifyContent: 'center', 
-          margin: '12px 0',
+          margin: '8px 0 20px 0',
           position: 'relative'
         }}>
-          {/* Logo Container Design */}
+          {/* PREMIUM WHITE LOGO CONTAINER */}
           <div style={{ 
-            width: '80px', 
-            height: '80px', 
-            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.03) 100%)', 
-            borderRadius: '18px',
+            width: '100px', 
+            height: '100px', 
+            background: '#ffffff', 
+            borderRadius: '24px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '12px',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            padding: '16px',
+            boxShadow: '0 12px 24px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.1)',
             zIndex: 1,
-            position: 'relative',
-            overflow: 'hidden'
+            position: 'relative'
           }}>
             <img 
               src={nft.image} 
@@ -90,87 +88,75 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
               style={{ 
                 width: '100%', 
                 height: '100%', 
-                objectFit: 'contain',
-                filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.1))'
+                objectFit: 'contain'
               }} 
             />
           </div>
-          {/* Decorative Glow behind the logo */}
           <div style={{ 
             position: 'absolute', 
-            width: '100px', 
-            height: '100px', 
-            background: 'var(--primary-glow)', 
-            filter: 'blur(30px)', 
+            width: '80px', 
+            height: '80px', 
+            background: isPositive ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)', 
+            filter: 'blur(40px)', 
             borderRadius: '50%',
-            opacity: 0.4
+            bottom: '0',
+            zIndex: 0
           }}></div>
         </div>
 
-        <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+          <div style={{ fontSize: '15px', fontWeight: '700', color: 'white', marginBottom: '4px' }}>{nft.name}</div>
           <div 
             style={{ 
-              fontSize: '20px', 
+              fontSize: '22px', 
               fontWeight: '900', 
               color: 'white', 
-              marginBottom: '2px', 
-              textShadow: '0 0 10px rgba(255,255,255,0.2)',
-              transition: 'color 0.3s'
+              textShadow: '0 0 15px rgba(255,255,255,0.1)'
             }}
           >
             ${displayCurrentPrice}
           </div>
-          <div 
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
-          >
-            {isPositive ? <TrendingUp size={12} color="var(--success-color)" /> : <TrendingDown size={12} color="var(--danger-color)" />}
-            <span style={{ fontSize: '12px', fontWeight: '700', color: isPositive ? 'var(--success-color)' : 'var(--danger-color)' }}>
-              {isPositive ? '+' : ''}{changeVal.toFixed(1)}%
-            </span>
-          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '6px' }}>
+        <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
           <button 
             id={`buy-${nft.id}`}
             onClick={() => onBuy({ ...nft, price: currentPrice })}
             disabled={buying === nft.id || !userId || !canAfford}
             style={{ 
               flex: 1, 
-              height: '32px', 
-              borderRadius: '8px', 
-              background: canAfford ? 'rgba(16, 185, 129, 0.2)' : 'rgba(100,100,100,0.1)', 
-              border: `1px solid ${canAfford ? 'var(--success-color)' : 'rgba(100,100,100,0.3)'}`, 
-              color: canAfford ? 'var(--success-color)' : 'rgba(255,255,255,0.2)',
+              height: '38px', 
+              borderRadius: '12px', 
+              background: canAfford ? 'white' : 'rgba(255,255,255,0.05)', 
+              border: 'none',
+              color: canAfford ? 'black' : 'rgba(255,255,255,0.2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '4px',
+              gap: '6px',
               fontSize: '11px',
-              fontWeight: '800',
+              fontWeight: '900',
               cursor: canAfford ? 'pointer' : 'not-allowed',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: canAfford ? '0 4px 12px rgba(255,255,255,0.2)' : 'none'
             }}
           >
-            {buying === nft.id ? '...' : <><ShoppingCart size={12} />КУПИТЬ</>}
+            {buying === nft.id ? '...' : <><ShoppingCart size={13} />КУПИТЬ</>}
           </button>
           <button style={{ 
-            flex: 1, 
-            height: '32px', 
-            borderRadius: '8px', 
-            background: 'rgba(239, 68, 68, 0.2)', 
-            border: '1px solid var(--danger-color)', 
-            color: 'var(--danger-color)',
+            width: '44px',
+            height: '38px', 
+            borderRadius: '12px', 
+            background: 'rgba(255,255,255,0.05)', 
+            border: '1px solid rgba(255,255,255,0.1)', 
+            color: 'white',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '4px',
-            fontSize: '11px',
-            fontWeight: '800',
             cursor: selling === nft.id ? 'not-allowed' : 'pointer',
-            opacity: selling === nft.id ? 0.7 : 1
+            transition: 'all 0.2s'
           }} onClick={() => onSell({ ...nft, price: currentPrice })} disabled={selling === nft.id}>
-            {selling === nft.id ? '...' : <><Tag size={12} />ПРОДАТЬ</>}
+            {selling === nft.id ? '...' : <Tag size={16} />}
           </button>
         </div>
       </div>

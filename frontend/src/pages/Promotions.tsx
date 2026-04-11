@@ -69,17 +69,18 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
         }}>
           {/* PREMIUM WHITE LOGO CONTAINER */}
           <div style={{ 
-            width: '100px', 
-            height: '100px', 
+            width: '110px', 
+            height: '110px', 
             background: '#ffffff', 
             borderRadius: '24px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '16px',
+            padding: '8px',
             boxShadow: '0 12px 24px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.1)',
             zIndex: 1,
-            position: 'relative'
+            position: 'relative',
+            overflow: 'hidden'
           }}>
             <img 
               src={nft.image} 
@@ -87,8 +88,10 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
               style={{ 
                 width: '100%', 
                 height: '100%', 
-                objectFit: 'contain'
+                objectFit: 'contain',
+                transition: 'transform 0.3s ease'
               }} 
+              className="brand-logo-img"
             />
           </div>
           <div style={{ 
@@ -398,6 +401,14 @@ const Promotions = ({ userId, balance, setBalance }: any) => {
           0% { opacity: 1; }
           30% { opacity: 0.4; transform: scale(1.15); }
           100% { opacity: 1; transform: scale(1); }
+        }
+        .brand-logo-img:hover {
+          transform: scale(1.1);
+        }
+        .glass-panel:hover {
+          border-color: rgba(255, 255, 255, 0.2) !important;
+          transform: translateY(-4px);
+          box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
         }
       `}</style>
     </div>

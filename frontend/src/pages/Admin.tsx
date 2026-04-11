@@ -28,7 +28,7 @@ const Admin = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [purchases, setPurchases] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'users' | 'ads' | 'purchases' | 'nft' | 'nft_stats' | 'social'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'ads' | 'purchases' | 'nft' | 'nft_stats' | 'social' | 'news'>('users');
   
   // Ads settings
   const [adsEnabled, setAdsEnabled] = useState(false);
@@ -791,7 +791,7 @@ const Admin = () => {
                     <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                       <td style={{ padding: '12px 8px', fontWeight: '700' }}>{row.username ? `@${row.username}` : row.first_name || 'user'}</td>
                       <td style={{ padding: '12px 8px' }}>
-                        {{
+                        ({
                           brand1: 'Apple',
                           brand2: 'Nvidia',
                           brand3: 'Samsung',
@@ -800,7 +800,7 @@ const Admin = () => {
                           brand6: 'Epic Games',
                           brand7: 'Steam',
                           brand8: 'Xbox'
-                        }[row.nft_id] || row.nft_id}
+                        } as Record<string, string>)[row.nft_id] || row.nft_id}
                       </td>
                       <td style={{ padding: '12px 8px', color: 'var(--gold-color)', fontWeight: '800' }}>{row.total_qty} шт</td>
                       <td style={{ padding: '12px 8px', textAlign: 'right', opacity: 0.5 }}>{new Date(row.last_purchase).toLocaleDateString()}</td>

@@ -49,6 +49,11 @@ const Admin = () => {
   useEffect(() => {
     if (!isAuthenticated) return;
     fetchData();
+    let interval: any;
+    if (activeTab === 'users') {
+      interval = setInterval(fetchData, 5000);
+    }
+    return () => clearInterval(interval);
   }, [isAuthenticated, activeTab]);
 
   const fetchData = async () => {
@@ -76,7 +81,7 @@ const Admin = () => {
           setTadsWidgetId(data.settings.monetag_zone_id || '');
         }
       } else if (activeTab === 'nft') {
-        const res = await fetch(`${API_URL}/admin/nft/status`, { headers });
+        const res = await fetch(`${API_URL}/nft/rates`, { headers });
         const data = await res.json();
         if (data.rates) setNftRates(data.rates);
       } else if (activeTab === 'nft_stats') {
@@ -650,7 +655,18 @@ const Admin = () => {
                   {nftStats.length > 0 ? nftStats.map((row, i) => (
                     <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                       <td style={{ padding: '12px 8px', fontWeight: '700' }}>{row.username ? `@${row.username}` : row.first_name || 'user'}</td>
-                      <td style={{ padding: '12px 8px' }}>{row.nft_id}</td>
+                      <td style={{ padding: '12px 8px' }}>
+                        {{
+                          brand1: 'Apple',
+                          brand2: 'Nvidia',
+                          brand3: 'Samsung',
+                          brand4: 'Xiaomi',
+                          brand5: 'Netflix',
+                          brand6: 'Epic Games',
+                          brand7: 'Steam',
+                          brand8: 'Xbox'
+                        }[row.nft_id] || row.nft_id}
+                      </td>
                       <td style={{ padding: '12px 8px', color: 'var(--gold-color)', fontWeight: '800' }}>{row.total_qty} шт</td>
                       <td style={{ padding: '12px 8px', textAlign: 'right', opacity: 0.5 }}>{new Date(row.last_purchase).toLocaleDateString()}</td>
                     </tr>

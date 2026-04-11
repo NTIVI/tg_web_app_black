@@ -178,7 +178,7 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
   );
 };
 
-const Promotions = ({ userId, balance, setBalance, setMyNfts }: any) => {
+const Promotions = ({ userId, balance, setBalance, setMyNfts, tgUser, setTgUser }: any) => {
   const [stockMultiplier, setStockMultiplier] = useState(1.0);
   const [variance, setVariance] = useState<Record<string, number>>({});
 

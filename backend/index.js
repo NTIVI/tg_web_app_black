@@ -288,22 +288,31 @@ app.post('/api/bonus/claim', requireAuth, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Claim error' }); }
 });
 
+const DAILY_REWARDS = [10, 20, 50, 100, 150, 200, 500];
+
 app.get('/api/bonus/daily-check/:id', requireAuth, async (req, res) => {
-    const telegramId = req.params.id;
+    const telegramId = req.user.id;
     try {
         const user = await DB.get('SELECT last_daily_claim, daily_streak FROM users WHERE telegram_id = ?', [telegramId]);
         if (!user) return res.status(404).json({ error: 'User not found' });
         
         const now = new Date();
-        const lastClaimVal = user.last_daily_claim; const lastClaimStr = lastClaimVal ? (typeof lastClaimVal === "string" ? lastClaimVal : lastClaimVal.toISOString()) : null; const lastClaim = lastClaimStr ? new Date(lastClaimStr + (lastClaimStr.endsWith('Z') ? '' : 'Z')) : null;
+        const lastClaimVal = user.last_daily_claim; 
+        const lastClaimStr = lastClaimVal ? (typeof lastClaimVal === "string" ? lastClaimVal : lastClaimVal.toISOString()) : null; 
+        const lastClaim = lastClaimStr ? new Date(lastClaimStr + (lastClaimStr.endsWith('Z') ? '' : 'Z')) : null;
+        
         let canClaim = true;
+        let diffHours = 48; // default to reset if no last claim
         
         if (lastClaim) {
-            const diffHours = (now - lastClaim) / (1000 * 60 * 60);
+            diffHours = (now - lastClaim) / (1000 * 60 * 60);
             canClaim = diffHours >= 24;
         }
         
-        res.json({ canClaim, currentStreak: user.daily_streak || 0 });
+        const nextStreak = diffHours < 48 ? (user.daily_streak || 0) + 1 : 1;
+        const nextReward = DAILY_REWARDS[Math.min(nextStreak - 1, DAILY_REWARDS.length - 1)];
+        
+        res.json({ canClaim, currentStreak: user.daily_streak || 0, nextReward });
     } catch (err) { res.status(500).json({ error: 'Daily check error' }); }
 });
 
@@ -314,25 +323,21 @@ app.post('/api/bonus/daily-claim', requireAuth, async (req, res) => {
         if (!user) return res.status(404).json({ error: 'User not found' });
         
         const now = new Date();
-        const lastClaimVal = user.last_daily_claim; const lastClaimStr = lastClaimVal ? (typeof lastClaimVal === "string" ? lastClaimVal : lastClaimVal.toISOString()) : null; const lastClaim = lastClaimStr ? new Date(lastClaimStr + (lastClaimStr.endsWith('Z') ? '' : 'Z')) : null;
+        const lastClaimVal = user.last_daily_claim; 
+        const lastClaimStr = lastClaimVal ? (typeof lastClaimVal === "string" ? lastClaimVal : lastClaimVal.toISOString()) : null; 
+        const lastClaim = lastClaimStr ? new Date(lastClaimStr + (lastClaimStr.endsWith('Z') ? '' : 'Z')) : null;
         
+        let diffHours = 48;
         if (lastClaim) {
-            const diffHours = (now - lastClaim) / (1000 * 60 * 60);
+            diffHours = (now - lastClaim) / (1000 * 60 * 60);
             if (diffHours < 24) return res.status(400).json({ error: 'Too early' });
-            
-            // Increment streak if within 48h, else reset to 1
-            const newStreak = diffHours < 48 ? (user.daily_streak || 0) + 1 : 1;
-            const rewards = [5000, 10, 30, 50, 70, 100, 150];
-            const reward = rewards[Math.min(newStreak - 1, rewards.length - 1)];
-            
-            await DB.run('UPDATE users SET balance = balance + ?, daily_streak = ?, last_daily_claim = CURRENT_TIMESTAMP WHERE telegram_id = ?', [reward, newStreak, telegramId]);
-            res.json({ success: true, reward, newStreak });
-        } else {
-            // First time claim
-            const reward = 5000;
-            await DB.run('UPDATE users SET balance = balance + ?, daily_streak = 1, last_daily_claim = CURRENT_TIMESTAMP WHERE telegram_id = ?', [reward, telegramId]);
-            res.json({ success: true, reward, newStreak: 1 });
         }
+        
+        const newStreak = diffHours < 48 ? (user.daily_streak || 0) + 1 : 1;
+        const reward = DAILY_REWARDS[Math.min(newStreak - 1, DAILY_REWARDS.length - 1)];
+        
+        await DB.run('UPDATE users SET balance = balance + ?, daily_streak = ?, last_daily_claim = CURRENT_TIMESTAMP WHERE telegram_id = ?', [reward, newStreak, telegramId]);
+        res.json({ success: true, reward, newStreak });
     } catch (err) { res.status(500).json({ error: 'Daily claim error' }); }
 });
 

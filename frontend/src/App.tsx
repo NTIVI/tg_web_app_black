@@ -137,7 +137,11 @@ function App() {
 
   const checkDailyBonus = async (userId: string) => {
     try {
-      const res = await fetch(`${API_URL}/bonus/daily-check/${userId}`);
+      const res = await fetch(`${API_URL}/bonus/daily-check/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+        }
+      });
       const data = await res.json();
       if (data.canClaim) {
         setDailyStatus(data);

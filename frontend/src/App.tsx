@@ -8,6 +8,7 @@ import Top from './pages/Top';
 import Bonuses from './pages/Bonuses';
 import Admin from './pages/Admin';
 import Promotions from './pages/Promotions';
+import News from './pages/News';
 import DailyBonusModal from './components/DailyBonusModal';
 import { API_URL } from './config';
 
@@ -318,6 +319,7 @@ function App() {
           <Route path="bonuses" element={<Bonuses {...props} />} />
           <Route path="profile" element={<Profile {...props} />} />
           <Route path="promotions" element={<Promotions {...props} />} />
+          <Route path="news" element={<News />} />
           <Route path="admin" element={<Admin />} />
         </Route>
       </Routes>

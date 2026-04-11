@@ -15,7 +15,10 @@ import {
   DollarSign,
   Calendar,
   Zap,
-  ShoppingCart
+  ShoppingCart,
+  Newspaper,
+  Trash2,
+  Image as ImageIcon
 } from 'lucide-react';
 
 const Admin = () => {
@@ -37,6 +40,7 @@ const Admin = () => {
   // NFT Admin
   const [nftStats, setNftStats] = useState<any[]>([]);
   const [nftRates, setNftRates] = useState<Record<string, number>>({});
+  const [globalNftRate, setGlobalNftRate] = useState<string>('');
 
   // Social Stats Admin
   const [socialStats, setSocialStats] = useState<any>({
@@ -45,6 +49,12 @@ const Admin = () => {
     telegram: { current: 2310, target: 3000 },
     facebook: { current: 1540, target: 2000 }
   });
+
+  // News Admin
+  const [newsBanners, setNewsBanners] = useState<any[]>([]);
+  const [newsPosts, setNewsPosts] = useState<any[]>([]);
+  const [bannerForm, setBannerForm] = useState({ imageUrl: '', linkUrl: '' });
+  const [postForm, setPostForm] = useState({ title: '', content: '', imageUrl: '' });
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -92,6 +102,14 @@ const Admin = () => {
         const res = await fetch(`${API_URL}/social-stats`, { headers });
         const data = await res.json();
         if (data.stats) setSocialStats(data.stats);
+      } else if (activeTab === 'news') {
+        const res1 = await fetch(`${API_URL}/news/banners`, { headers });
+        const data1 = await res1.json();
+        if (data1.banners) setNewsBanners(data1.banners);
+        
+        const res2 = await fetch(`${API_URL}/news/posts`, { headers });
+        const data2 = await res2.json();
+        if (data2.posts) setNewsPosts(data2.posts);
       }
     } catch (err) { 
       console.error('Fetch error in Admin:', err); 
@@ -136,6 +154,18 @@ const Admin = () => {
     if (res.ok) { setSaveMessage('Settings saved successfully!'); setTimeout(() => setSaveMessage(''), 3000); }
   };
 
+  const applyGlobalRate = () => {
+    const parsed = parseFloat(globalNftRate);
+    if (isNaN(parsed)) return;
+    setNftRates(prev => {
+      const next = { ...prev };
+      ['brand1', 'brand2', 'brand3', 'brand4', 'brand5', 'brand6', 'brand7', 'brand8'].forEach(k => {
+        next[k] = parsed;
+      });
+      return next;
+    });
+  };
+
   const saveNftRates = async () => {
     const parsedRates: Record<string, number> = {};
     Object.keys(nftRates).forEach(k => {
@@ -168,6 +198,70 @@ const Admin = () => {
     if (res.ok) {
       setSaveMessage('Social stats saved!');
       setTimeout(() => setSaveMessage(''), 3000);
+    }
+  };
+
+  const handleAddBanner = async () => {
+    if (!bannerForm.imageUrl) return alert('Укажите URL картинки');
+    const res = await fetch(`${API_URL}/admin/news/banners`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionStorage.getItem('admin_token') || sessionStorage.getItem('auth_token')}`
+      },
+      body: JSON.stringify(bannerForm)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setNewsBanners(data.banners);
+      setBannerForm({ imageUrl: '', linkUrl: '' });
+      setSaveMessage('Баннер добавлен');
+      setTimeout(() => setSaveMessage(''), 3000);
+    }
+  };
+
+  const handleDeleteBanner = async (id: number) => {
+    if (!confirm('Удалить баннер?')) return;
+    const res = await fetch(`${API_URL}/admin/news/banners/${id}`, {
+      method: 'DELETE',
+      headers: { 
+        'Authorization': `Bearer ${sessionStorage.getItem('admin_token') || sessionStorage.getItem('auth_token')}`
+      }
+    });
+    if (res.ok) {
+      setNewsBanners(prev => prev.filter(b => b.id !== id));
+    }
+  };
+
+  const handleAddPost = async () => {
+    if (!postForm.title) return alert('Укажите заголовок');
+    const res = await fetch(`${API_URL}/admin/news/posts`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionStorage.getItem('admin_token') || sessionStorage.getItem('auth_token')}`
+      },
+      body: JSON.stringify(postForm)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setNewsPosts(data.posts);
+      setPostForm({ title: '', content: '', imageUrl: '' });
+      setSaveMessage('Пост добавлен');
+      setTimeout(() => setSaveMessage(''), 3000);
+    }
+  };
+
+  const handleDeletePost = async (id: number) => {
+    if (!confirm('Удалить пост?')) return;
+    const res = await fetch(`${API_URL}/admin/news/posts/${id}`, {
+      method: 'DELETE',
+      headers: { 
+        'Authorization': `Bearer ${sessionStorage.getItem('admin_token') || sessionStorage.getItem('auth_token')}`
+      }
+    });
+    if (res.ok) {
+      setNewsPosts(prev => prev.filter(p => p.id !== id));
     }
   };
 
@@ -400,6 +494,31 @@ const Admin = () => {
           <Users size={18} />
           <span style={{ fontWeight: '800', fontSize: '13px' }}>Соцсети</span>
         </button>
+
+        <button 
+          className={`tab-btn ${activeTab === 'news' ? 'active' : ''}`} 
+          style={{ 
+            flex: 1, 
+            padding: '12px 16px', 
+            borderRadius: '18px', 
+            background: activeTab === 'news' ? 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))' : 'transparent', 
+            color: activeTab === 'news' ? 'white' : 'var(--text-secondary)', 
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            minWidth: '100px',
+            boxShadow: activeTab === 'news' ? '0 10px 20px rgba(30, 64, 175, 0.3)' : 'none',
+            transform: activeTab === 'news' ? 'scale(1.02)' : 'scale(1)'
+          }}
+          onClick={() => setActiveTab('news')}
+        >
+          <Newspaper size={18} />
+          <span style={{ fontWeight: '800', fontSize: '13px' }}>Новости</span>
+        </button>
       </div>
 
       {activeTab === 'users' && (
@@ -589,6 +708,22 @@ const Admin = () => {
           <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', padding: '32px' }}>
             <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px', textAlign: 'center' }}>Индивидуальное Управление Акциями (%)</h3>
             
+            <div style={{ marginBottom: '24px', padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ fontSize: '14px', fontWeight: '800', marginBottom: '12px', textAlign: 'center' }}>Массовое управление</div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input 
+                  className="input-field" 
+                  value={globalNftRate} 
+                  onChange={(e) => setGlobalNftRate(e.target.value)} 
+                  placeholder="Задать % для всех (пр. +10)"
+                  style={{ flex: 1, textAlign: 'center' }}
+                />
+                <button onClick={applyGlobalRate} className="btn-primary" style={{ padding: '0 20px', borderRadius: '12px', fontSize: '14px' }}>
+                  Применить ко всем
+                </button>
+              </div>
+            </div>
+            
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               {[
                   { id: 'brand1', name: 'Apple' },
@@ -748,6 +883,110 @@ const Admin = () => {
               <div style={{ textAlign: 'center', color: 'var(--success-color)', fontSize: '14px', fontWeight: 'bold', marginTop: '16px' }}>{saveMessage}</div>
             )}
           </div>
+        </div>
+      )}
+
+      {activeTab === 'news' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          
+          {/* Banners Section */}
+          <div className="glass-panel" style={{ padding: '32px' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ImageIcon size={24} color="var(--primary-color)" /> Управление Баннерами
+            </h3>
+
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+              <input 
+                className="input-field" 
+                placeholder="URL картинки..." 
+                value={bannerForm.imageUrl} 
+                onChange={e => setBannerForm(p => ({ ...p, imageUrl: e.target.value }))}
+                style={{ flex: 2 }}
+              />
+              <input 
+                className="input-field" 
+                placeholder="Ссылка (необязательно)..." 
+                value={bannerForm.linkUrl} 
+                onChange={e => setBannerForm(p => ({ ...p, linkUrl: e.target.value }))}
+                style={{ flex: 1 }}
+              />
+              <button className="btn-primary" onClick={handleAddBanner} style={{ padding: '0 24px', borderRadius: '14px' }}>
+                Добавить
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+              {newsBanners.map(b => (
+                <div key={b.id} style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', height: '120px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <img src={b.image_url} alt="banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button 
+                    onClick={() => handleDeleteBanner(b.id)}
+                    style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(255,0,0,0.8)', border: 'none', width: '32px', height: '32px', borderRadius: '50%', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+              {newsBanners.length === 0 && <span style={{ opacity: 0.5 }}>Нет баннеров</span>}
+            </div>
+          </div>
+
+          {/* Posts Section */}
+          <div className="glass-panel" style={{ padding: '32px' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Newspaper size={24} color="var(--primary-color)" /> Новостные Посты
+            </h3>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px', background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <input 
+                className="input-field" 
+                placeholder="Заголовок поста..." 
+                value={postForm.title} 
+                onChange={e => setPostForm(p => ({ ...p, title: e.target.value }))}
+              />
+              <input 
+                className="input-field" 
+                placeholder="URL картинки (необязательно)..." 
+                value={postForm.imageUrl} 
+                onChange={e => setPostForm(p => ({ ...p, imageUrl: e.target.value }))}
+              />
+              <textarea 
+                className="input-field" 
+                placeholder="Текст поста..." 
+                value={postForm.content} 
+                onChange={e => setPostForm(p => ({ ...p, content: e.target.value }))}
+                style={{ height: '100px', resize: 'vertical' }}
+              />
+              <button className="btn-primary" onClick={handleAddPost} style={{ height: '48px', borderRadius: '14px' }}>
+                Опубликовать Пост
+              </button>
+
+              {saveMessage && (
+                <div style={{ textAlign: 'center', color: 'var(--success-color)', fontSize: '14px', fontWeight: 'bold' }}>{saveMessage}</div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {newsPosts.map(p => (
+                <div key={p.id} style={{ display: 'flex', gap: '16px', background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  {p.image_url && <img src={p.image_url} alt="post" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '10px' }} />}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: '800', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</div>
+                    <div style={{ fontSize: '12px', opacity: 0.5, marginBottom: '8px' }}>{new Date(p.created_at).toLocaleDateString()}</div>
+                    <div style={{ fontSize: '13px', opacity: 0.8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.content}</div>
+                  </div>
+                  <button 
+                    onClick={() => handleDeletePost(p.id)}
+                    style={{ background: 'rgba(255,0,0,0.1)', border: 'none', color: '#ff4444', width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                </div>
+              ))}
+              {newsPosts.length === 0 && <div style={{ textAlign: 'center', opacity: 0.5, padding: '20px' }}>Нет постов</div>}
+            </div>
+          </div>
+
         </div>
       )}
     </div>

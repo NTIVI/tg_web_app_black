@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { Play, ShoppingBag, User, Trophy, Gift, Smartphone } from 'lucide-react';
+import { Play, ShoppingBag, User, Trophy, Gift, Smartphone, Newspaper } from 'lucide-react';
 const Layout = () => {
   const location = useLocation();
   return (
@@ -25,6 +25,14 @@ const Layout = () => {
           >
             <Smartphone size={24} />
             <span>Акции</span>
+          </NavLink>
+
+          <NavLink 
+            to="/news" 
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+          >
+            <Newspaper size={24} />
+            <span>Новости</span>
           </NavLink>
           
           <NavLink 

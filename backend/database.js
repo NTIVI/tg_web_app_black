@@ -81,6 +81,23 @@ const initDB = async () => {
             purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`);
 
+        // News Banners
+        await client.query(`CREATE TABLE IF NOT EXISTS news_banners (
+            id SERIAL PRIMARY KEY,
+            image_url TEXT NOT NULL,
+            link_url TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`);
+
+        // News Posts
+        await client.query(`CREATE TABLE IF NOT EXISTS news_posts (
+            id SERIAL PRIMARY KEY,
+            title TEXT NOT NULL,
+            content TEXT,
+            image_url TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`);
+
         // Default Ads & NFT Settings
         const defaults = [
             ['ads_enabled', 'true'],

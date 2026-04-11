@@ -374,7 +374,7 @@ app.get('/api/settings/:key', async (req, res) => {
 
 app.get('/api/settings/ads', async (req, res) => {
     try {
-        const rows = await DB.all('SELECT key, value FROM settings WHERE key LIKE "ads_%" OR key = "monetag_zone_id"');
+        const rows = await DB.all("SELECT key, value FROM settings WHERE key LIKE 'ads_%' OR key = 'monetag_zone_id'");
         const settings = {};
         rows.forEach(r => settings[r.key] = r.value);
         res.json({ settings });
@@ -384,17 +384,17 @@ app.get('/api/settings/ads', async (req, res) => {
 app.post('/api/admin/settings/ads', requireAuth, async (req, res) => {
     const { ads_enabled, ads_client_id, ads_slot_id, monetag_zone_id } = req.body;
     try {
-        await DB.run('INSERT INTO settings (key, value) VALUES ("ads_enabled", ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [ads_enabled.toString()]);
-        await DB.run('INSERT INTO settings (key, value) VALUES ("ads_client_id", ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [ads_client_id]);
-        await DB.run('INSERT INTO settings (key, value) VALUES ("ads_slot_id", ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [ads_slot_id]);
-        await DB.run('INSERT INTO settings (key, value) VALUES ("monetag_zone_id", ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [monetag_zone_id]);
+        await DB.run("INSERT INTO settings (key, value) VALUES ('ads_enabled', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [ads_enabled.toString()]);
+        await DB.run("INSERT INTO settings (key, value) VALUES ('ads_client_id', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [ads_client_id]);
+        await DB.run("INSERT INTO settings (key, value) VALUES ('ads_slot_id', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [ads_slot_id]);
+        await DB.run("INSERT INTO settings (key, value) VALUES ('monetag_zone_id', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [monetag_zone_id]);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Admin settings error' }); }
 });
 
 app.get('/api/nft/rates', async (req, res) => {
     try {
-        const rows = await DB.all('SELECT key, value FROM settings WHERE key LIKE "brand%"');
+        const rows = await DB.all("SELECT key, value FROM settings WHERE key LIKE 'brand%'");
         const rates = {};
         rows.forEach(r => rates[r.key] = parseFloat(r.value) || 0);
         res.json({ rates });
@@ -426,7 +426,7 @@ app.get('/api/admin/nft/stats', requireAuth, async (req, res) => {
 
 app.get('/api/social-stats', async (req, res) => {
     try {
-        const settings = await DB.all('SELECT key, value FROM settings WHERE key LIKE "social_%"');
+        const settings = await DB.all("SELECT key, value FROM settings WHERE key LIKE 'social_%'");
         const stats = {
             tiktok: { current: 0, target: 10000, url: '' },
             instagram: { current: 0, target: 5000, url: '' },
@@ -454,7 +454,7 @@ app.get('/api/social-stats', async (req, res) => {
 
 const scrapeSocialStats = async () => {
     console.log('Starting social stats scraping...');
-    const settings = await DB.all('SELECT key, value FROM settings WHERE key LIKE "social_%_url"');
+    const settings = await DB.all("SELECT key, value FROM settings WHERE key LIKE 'social_%_url'");
     const urls = {};
     settings.forEach(s => {
         const net = s.key.split('_')[1];
@@ -471,7 +471,7 @@ const scrapeSocialStats = async () => {
             const match = html.match(/<div class="tgme_page_extra">([\d\s,]+)\s+members<\/div>/) || html.match(/<div class="tgme_page_extra">([\d\s,]+)\s+subscriber/);
             if (match) {
                 const count = parseInt(match[1].replace(/[\s,]/g, ''));
-                await DB.run('INSERT INTO settings (key, value) VALUES ("social_telegram_current", ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [count.toString()]);
+                await DB.run("INSERT INTO settings (key, value) VALUES ('social_telegram_current', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [count.toString()]);
             }
         } catch (e) { console.error('Telegram scrape error:', e.message); }
     }
@@ -488,7 +488,7 @@ const scrapeSocialStats = async () => {
                 if (text.includes('K')) count *= 1000;
                 else if (text.includes('M')) count *= 1000000;
                 else if (text.includes('B')) count *= 1000000000;
-                await DB.run('INSERT INTO settings (key, value) VALUES ("social_youtube_current", ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [Math.round(count).toString()]);
+                await DB.run("INSERT INTO settings (key, value) VALUES ('social_youtube_current', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [Math.round(count).toString()]);
             }
         } catch (e) { console.error('YouTube scrape error:', e.message); }
     }
@@ -500,7 +500,7 @@ const scrapeSocialStats = async () => {
             const html = await res.text();
             const match = html.match(/"followerCount":(\d+)/);
             if (match) {
-                await DB.run('INSERT INTO settings (key, value) VALUES ("social_tiktok_current", ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [match[1]]);
+                await DB.run("INSERT INTO settings (key, value) VALUES ('social_tiktok_current', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [match[1]]);
             }
         } catch (e) { console.error('TikTok scrape error:', e.message); }
     }

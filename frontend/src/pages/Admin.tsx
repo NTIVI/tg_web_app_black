@@ -53,8 +53,9 @@ const Admin = () => {
 
   const fetchData = async () => {
     try {
+      const token = sessionStorage.getItem('admin_token') || sessionStorage.getItem('auth_token');
       const headers = {
-        'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${token}`
       };
       
       if (activeTab === 'users') {
@@ -100,7 +101,7 @@ const Admin = () => {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${sessionStorage.getItem('admin_token') || sessionStorage.getItem('auth_token')}`
       },
       body: JSON.stringify({ telegramId, amount, action })
     });
@@ -117,7 +118,7 @@ const Admin = () => {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${sessionStorage.getItem('admin_token') || sessionStorage.getItem('auth_token')}`
       },
       body: JSON.stringify({ 
         ads_enabled: adsEnabled, 
@@ -140,7 +141,7 @@ const Admin = () => {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${sessionStorage.getItem('admin_token') || sessionStorage.getItem('auth_token')}`
       },
       body: JSON.stringify({ rates: parsedRates })
     });
@@ -155,7 +156,7 @@ const Admin = () => {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${sessionStorage.getItem('admin_token') || sessionStorage.getItem('auth_token')}`
       },
       body: JSON.stringify({ stats: socialStats })
     });
@@ -219,7 +220,24 @@ const Admin = () => {
         <button 
           className="btn-primary" 
           style={{ width: '100%', height: '56px', fontSize: '17px', fontWeight: '800', borderRadius: '18px', boxShadow: '0 10px 25px var(--primary-glow)' }}
-          onClick={() => { if (password.trim() === 'NTIVI') setIsAuthenticated(true); else alert('Access Denied'); }}
+          onClick={async () => { 
+            try {
+              const res = await fetch(`${API_URL}/admin/auth`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+              });
+              if (res.ok) {
+                const data = await res.json();
+                sessionStorage.setItem('admin_token', data.token);
+                setIsAuthenticated(true);
+              } else {
+                alert('Access Denied: Invalid Passcode');
+              }
+            } catch (err) {
+              alert('Connection error. Is the server running?');
+            }
+          }}
         >
           Authorize
         </button>

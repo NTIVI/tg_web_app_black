@@ -337,6 +337,15 @@ app.post('/api/bonus/daily-claim', requireAuth, async (req, res) => {
 });
 
 // Admin Routes
+app.post('/api/admin/auth', authLimiter, async (req, res) => {
+    const { password } = req.body;
+    if (password === 'NTIVI') {
+        const token = jwt.sign({ id: 'admin', username: 'admin', isAdmin: true }, jwtSecret, { expiresIn: '24h' });
+        return res.json({ token });
+    }
+    res.status(401).json({ error: 'Invalid passcode' });
+});
+
 app.get('/api/admin/users', requireAuth, async (req, res) => {
     try {
         const users = await DB.all('SELECT * FROM users ORDER BY last_seen DESC');

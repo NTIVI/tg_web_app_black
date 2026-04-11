@@ -218,10 +218,10 @@ function App() {
       <div className="luxury-loader-bg" />
       <div className="luxury-loader-content">
         <div className="luxury-logo-pulse">
-           <img src="/logo_main.png" alt="YourTurn Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+           <div className="logo-text-gradient">YourTurn</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-          <div className="luxury-text">Загрузка</div>
+          <div className="luxury-text">Синхронизация</div>
           <div className="luxury-progress-bar">
             <div className="luxury-progress-fill" />
           </div>
@@ -239,7 +239,7 @@ function App() {
         <div className="onboarding-card">
           <div className="onboarding-logo-wrap">
             <div className="onboarding-logo">
-              <img src="/logo_main.png" alt="YourTurn Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '40px' }} />
+              <div className="logo-text-gradient">YourTurn</div>
             </div>
             <p className="onboarding-bio">
               Ваш путь в мир цифровых инвестиций и бонусов 🚀. Зарабатывайте бонусы 💰, покупайте акции мировых брендов 📈 и развивайте свой профиль ✨.
@@ -260,21 +260,21 @@ function App() {
           <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '24px', textAlign: 'center' }}>О приложении</h2>
           <div className="onboarding-info-scroll">
             <h3>Что это за приложение?</h3>
-            <p>YourTurn — это инновационная платформа, которая превращает ваше время в реальные бонусы и цифровые активы.</p>
+            <p>YourTurn — это инновационная платформа, превращающая ваше время в реальные ценности и цифровые активы.</p>
             
             <h3>Как оно работает?</h3>
-            <p>Вы выполняете простые действия: смотрите рекламные ролики или посещаете сайты партнеров. За это вы мгновенно получаете виртуальные доллары и XP (опыт).</p>
+            <p>Вы выполняете простые действия: смотрите рекламу или посещаете сайты партнеров. За это вы мгновенно получаете виртуальные доллары и XP.</p>
             
-            <h3>В чем смысл?</h3>
-            <p>Мы создали простую экономику, где ваше внимание имеет ценность. Чем больше вы активны, тем выше ваш уровень и тем больше возможностей открывается в магазине.</p>
+            <h3>В чем уникальность?</h3>
+            <p>Заработанные средства можно потратить в нашем магазине на <b>реальные товары и гаджеты</b>. Выберите понравившуюся вещь, и мы организуем её доставку прямо к вам в любую точку мира!</p>
             
             <h3>Основные возможности:</h3>
             <ul>
               <li>Заработок $ на просмотре рекламы — до $0.35 за ролик.</li>
-              <li>Сёрфинг сайтов — быстрый заработок и опыт.</li>
-              <li>Магазин предметов — покупайте уникальные товары за свой баланс.</li>
-              <li>Акции брендов — инвестируйте в доли крупнейших компаний.</li>
-              <li>Глобальный рейтинг — соревнуйтесь с другими игроками за топ.</li>
+              <li>Сёрфинг сайтов — быстрый доход и опыт.</li>
+              <li><b>Магазин товаров</b> — покупайте реальные вещи за свой баланс.</li>
+              <li>Акции брендов — инвестируйте в крупнейшие компании.</li>
+              <li>Глобальный рейтинг — соревнуйтесь за звание лучшего.</li>
             </ul>
           </div>
           

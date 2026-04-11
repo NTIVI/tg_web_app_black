@@ -6,7 +6,6 @@ import {
   ShoppingCart, 
   Tag, 
   DollarSign, 
-  Layers,
   Zap,
   Check,
   X

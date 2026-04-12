@@ -333,14 +333,29 @@ app.post('/api/buy', requireAuth, async (req, res) => {
     const telegramId = req.user.id;
     try {
         const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-        if (!user || user.balance < price) return res.status(400).json({ error: 'No funds' });
+        if (!user) return res.status(404).json({ error: 'User not found' });
         
-        await DB.run('UPDATE users SET balance = balance - ? WHERE telegram_id = ?', [price, telegramId]);
-        await DB.run('INSERT INTO purchases (telegram_id, item_name, price) VALUES (?,?,?)', [telegramId, itemName, price]);
+        const currentBalance = Number(user.balance);
+        const itemPrice = Number(price);
+        
+        if (isNaN(currentBalance) || isNaN(itemPrice)) {
+            return res.status(500).json({ error: 'Invalid balance or price format' });
+        }
+
+        if (currentBalance < itemPrice) {
+            console.log(`Purchase failed: User ${telegramId} has ${currentBalance}, needs ${itemPrice}`);
+            return res.status(400).json({ error: 'Недостаточно средств на балансе' });
+        }
+        
+        await DB.run('UPDATE users SET balance = balance - ? WHERE telegram_id = ?', [itemPrice, telegramId]);
+        await DB.run('INSERT INTO purchases (telegram_id, item_name, price) VALUES (?,?,?)', [telegramId, itemName, itemPrice]);
         
         const purchases = await DB.all('SELECT * FROM purchases WHERE telegram_id = ? ORDER BY purchased_at DESC', [telegramId]);
-        res.json({ success: true, newBalance: user.balance - price, purchases });
-    } catch { res.status(500).json({ error: 'Buy error' }); }
+        res.json({ success: true, newBalance: currentBalance - itemPrice, purchases });
+    } catch (err) { 
+        console.error('Buy error:', err);
+        res.status(500).json({ error: 'Ошибка при обработке покупки' }); 
+    }
 });
 
 app.get('/api/top', requireAuth, async (req, res) => {
@@ -600,14 +615,17 @@ const scrapeSocialStats = async () => {
         urls[net] = s.value;
     });
 
-    const headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' };
+    const headers = { 
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9'
+    };
 
     // Scrape Telegram
     if (urls.telegram) {
         try {
             const res = await fetch(urls.telegram, { headers });
             const html = await res.text();
-            const match = html.match(/<div class="tgme_page_extra">([\d\s,]+)\s+members<\/div>/) || html.match(/<div class="tgme_page_extra">([\d\s,]+)\s+subscriber/);
+            const match = html.match(/<div class="tgme_page_extra">([\d\s,]+)\s+/);
             if (match) {
                 const count = parseInt(match[1].replace(/[\s,]/g, ''));
                 await DB.run("INSERT INTO settings (key, value) VALUES ('social_telegram_current', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [count.toString()]);
@@ -620,14 +638,20 @@ const scrapeSocialStats = async () => {
         try {
             const res = await fetch(urls.youtube, { headers });
             const html = await res.text();
-            const match = html.match(/"subscriberCountText":\{"simpleText":"([\d.KMB]+)\s+subscriber/i);
+            // Broader regex for subscriberCountText or accessibility label
+            const match = html.match(/"subscriberCountText":\s*\{\s*"simpleText":\s*"([^"]+)"/i) || 
+                          html.match(/"label":\s*"([^"]+)\s+(subscribers|подписчиков)/i) ||
+                          html.match(/([\d.]+[KMBТМ]?)\s+(subscribers|подписчиков|отметки)/i);
             if (match) {
-                let text = match[1].toUpperCase();
-                let count = parseFloat(text);
-                if (text.includes('K')) count *= 1000;
-                else if (text.includes('M')) count *= 1000000;
-                else if (text.includes('B')) count *= 1000000000;
-                await DB.run("INSERT INTO settings (key, value) VALUES ('social_youtube_current', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [Math.round(count).toString()]);
+                const text = (match[1]).toUpperCase().replace(/,/g, '');
+                let countMatch = text.match(/[\d.]+/);
+                if (countMatch) {
+                    let count = parseFloat(countMatch[0]);
+                    if (text.includes('K') || text.includes('ТЫС')) count *= 1000;
+                    else if (text.includes('M') || text.includes('МЛН')) count *= 1000000;
+                    else if (text.includes('B') || text.includes('МЛРД')) count *= 1000000000;
+                    await DB.run("INSERT INTO settings (key, value) VALUES ('social_youtube_current', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [Math.round(count).toString()]);
+                }
             }
         } catch (e) { console.error('YouTube scrape error:', e.message); }
     }
@@ -643,9 +667,46 @@ const scrapeSocialStats = async () => {
             }
         } catch (e) { console.error('TikTok scrape error:', e.message); }
     }
-    
-    // Instagram and Facebook are significantly harder without specialized scrapers/proxies
-    // but we have placeholders for them.
+
+    // Scrape Instagram
+    if (urls.instagram) {
+        try {
+            const res = await fetch(urls.instagram, { headers });
+            const html = await res.text();
+            const ogDesc = html.match(/<meta property="og:description" content="([^"]+)"/i);
+            if (ogDesc) {
+                const content = ogDesc[1].toUpperCase();
+                const match = content.match(/([\d.,KMBТМ]+)\s*(FOLLOWERS|ПОДПИСЧИКОВ)/i);
+                if (match) {
+                    let countText = match[1].replace(/[\s,]/g, '').replace('ТЫС', 'K').replace('МЛН', 'M');
+                    let count = parseFloat(countText);
+                    if (countText.includes('K')) count *= 1000;
+                    else if (countText.includes('M')) count *= 1000000;
+                    await DB.run("INSERT INTO settings (key, value) VALUES ('social_instagram_current', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [Math.round(count).toString()]);
+                }
+            }
+        } catch (e) { console.error('Instagram scrape error:', e.message); }
+    }
+
+    // Scrape Facebook
+    if (urls.facebook) {
+        try {
+            const res = await fetch(urls.facebook, { headers });
+            const html = await res.text();
+            const ogDesc = html.match(/<meta property="og:description" content="([^"]+)"/i);
+            if (ogDesc) {
+                const content = ogDesc[1].toUpperCase();
+                const match = content.match(/([\d.,KMBТМ]+)\s*(FOLLOWERS|ПОДПИСЧИКОВ|ОТМЕТКИ)/i);
+                if (match) {
+                    let countText = match[1].replace(/[\s,]/g, '').replace('ТЫС', 'K').replace('МЛН', 'M');
+                    let count = parseFloat(countText);
+                    if (countText.includes('K')) count *= 1000;
+                    else if (countText.includes('M')) count *= 1000000;
+                    await DB.run("INSERT INTO settings (key, value) VALUES ('social_facebook_current', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [Math.round(count).toString()]);
+                }
+            }
+        } catch (e) { console.error('Facebook scrape error:', e.message); }
+    }
     
     console.log('Social stats scraping completed.');
 };
@@ -654,7 +715,7 @@ const scrapeSocialStats = async () => {
 setTimeout(scrapeSocialStats, 5000); 
 setInterval(scrapeSocialStats, 60 * 60 * 1000);
 
-app.post('/api/admin/social-stats', requireAuth, async (req, res) => {
+app.post('/api/admin/social-stats', requireAdmin, async (req, res) => {
     const { stats } = req.body;
     try {
         for (const net of Object.keys(stats)) {
@@ -663,6 +724,15 @@ app.post('/api/admin/social-stats', requireAuth, async (req, res) => {
         }
         res.json({ success: true });
     } catch { res.status(500).json({ error: 'Stats update error' }); }
+});
+
+app.post('/api/admin/social-stats/refresh', requireAdmin, async (req, res) => {
+    try {
+        await scrapeSocialStats();
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Refresh failed' });
+    }
 });
 
 app.post('/api/nft/buy', requireAuth, async (req, res) => {

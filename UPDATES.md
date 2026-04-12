@@ -108,3 +108,17 @@ The repository has been updated with the following final changes:
 - **Updated Channels**: Switched official YouTube and Instagram links to `yourturn_arm` profiles.
 - **New Tasks**: Added new reward-based tasks for Instagram and Facebook subscriptions in the "Bonuses" section.
 - **Real-time Stats**: Re-configured the community goals scraper to track the new social media profiles.
+
+## 31. Social Stats Scraper Fix
+- **Robustness**: Refined the scrapers for YouTube and Instagram with broader regex patterns to handle multi-lingual profile pages and metadata changes.
+- **Manual Refresh**: Added a ⚡ button in the Admin Panel to manually trigger a re-scrape of social media metrics at any time.
+
+## 32. Shop UI Refinement & Logic Fix
+- **Card Sizing**: Reduced shop card width from 180px to **160px** for better visual balance on mobile devices.
+- **Improved Scrolling**: Adjusted the magnification factor and centering offsets for a smoother, magnetic scrolling experience.
+- **Purchase Logic Fix**: Resolved a critical issue where large purchase amounts were failing due to BigInt/String comparison mismatches in the backend. All amounts are now correctly parsed as Numbers.
+- **Local Assets**: Updated the Samsung promotion with the user's provided official photo, served locally for reliability.
+
+## 33. Repository Cleanup
+- **Testing Scripts**: Cleaned up the environment by verifying fixes with dedicated node scripts against the production database.
+- **Final Sync**: All changes pushed and verified.

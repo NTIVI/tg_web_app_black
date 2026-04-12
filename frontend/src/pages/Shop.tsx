@@ -106,7 +106,7 @@ const CategorySection = ({ category, items, balance, onBuy }: {
         }}
       >
         {/* Padding for center first item */}
-        <div style={{ flexShrink: 0, width: 'calc(50% - 100px)' }} />
+        <div style={{ flexShrink: 0, width: 'calc(50% - 80px)' }} />
 
         {items.map(item => (
           <div 
@@ -114,7 +114,7 @@ const CategorySection = ({ category, items, balance, onBuy }: {
             className="glass-panel shop-item-card" 
             style={{ 
               flexShrink: 0, 
-              width: '180px', 
+              width: '160px', 
               padding: '16px', 
               display: 'flex', 
               flexDirection: 'column', 
@@ -137,15 +137,15 @@ const CategorySection = ({ category, items, balance, onBuy }: {
             </div>
             
             <div style={{ flexGrow: 1, textAlign: 'center' }}>
-              <div style={{ fontWeight: '700', fontSize: '15px', color: '#fff', marginBottom: '4px', lineClamp: 1 }}>{item.name}</div>
-              <div style={{ color: 'var(--gold-color)', fontWeight: '900', fontSize: '18px' }}>
+              <div style={{ fontWeight: '700', fontSize: '14px', color: '#fff', marginBottom: '4px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.name}</div>
+              <div style={{ color: 'var(--gold-color)', fontWeight: '900', fontSize: '17px' }}>
                 ${(item.price / 100).toFixed(2)}
               </div>
             </div>
 
             <button 
               className="btn-primary buy-btn" 
-              style={{ width: '100%', padding: '12px', fontSize: '13px', borderRadius: '14px', fontWeight: '800' }}
+              style={{ width: '100%', padding: '10px', fontSize: '13px', borderRadius: '14px', fontWeight: '800' }}
               onClick={() => onBuy(item)}
               disabled={balance < item.price}
             >
@@ -156,7 +156,7 @@ const CategorySection = ({ category, items, balance, onBuy }: {
         ))}
 
         {/* Padding for center last item */}
-        <div style={{ flexShrink: 0, width: 'calc(50% - 100px)' }} />
+        <div style={{ flexShrink: 0, width: 'calc(50% - 80px)' }} />
       </div>
     </div>
   );

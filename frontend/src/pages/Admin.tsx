@@ -60,6 +60,7 @@ const Admin = () => {
   const [bannerForm, setBannerForm] = useState({ imageUrl: '', linkUrl: '' });
   const [postForm, setPostForm] = useState({ title: '', content: '', imageUrl: '' });
   const [shopForm, setShopForm] = useState({ id: null, category: '', name: '', price: '', imageUrl: '' });
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -242,6 +243,30 @@ const Admin = () => {
     });
     if (res.ok) {
       setSaveMessage('Social stats saved!');
+      setTimeout(() => setSaveMessage(''), 3000);
+    }
+  };
+
+  const handleRefreshStats = async () => {
+    setIsRefreshing(true);
+    setSaveMessage('Обновление статистики...');
+    try {
+      const res = await fetch(`${API_URL}/admin/social-stats/refresh`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${sessionStorage.getItem('admin_token') || sessionStorage.getItem('auth_token')}`
+        }
+      });
+      if (res.ok) {
+        setSaveMessage('Статистика обновлена!');
+        fetchData();
+      } else {
+        setSaveMessage('Ошибка обновления');
+      }
+    } catch (err) {
+      setSaveMessage('Ошибка сети');
+    } finally {
+      setIsRefreshing(false);
       setTimeout(() => setSaveMessage(''), 3000);
     }
   };
@@ -998,10 +1023,25 @@ const Admin = () => {
               ))}
             </div>
 
-            <button onClick={saveSocialStats} className="btn-primary" style={{ width: '100%', height: '56px', borderRadius: '18px', marginTop: '24px' }}>
-              <Check size={20} />
-              Сохранить значения
-            </button>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+              <button 
+                onClick={saveSocialStats} 
+                className="btn-primary" 
+                style={{ flex: 2, height: '56px', borderRadius: '18px' }}
+              >
+                <Check size={20} />
+                Сохранить настройки
+              </button>
+              
+              <button 
+                onClick={handleRefreshStats} 
+                disabled={isRefreshing}
+                className="btn-primary" 
+                style={{ flex: 1, height: '56px', borderRadius: '18px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+              >
+                {isRefreshing ? <div className="spinner" style={{ width: '20px', height: '20px' }}></div> : <Zap size={20} />}
+              </button>
+            </div>
 
             {saveMessage && (
               <div style={{ textAlign: 'center', color: 'var(--success-color)', fontSize: '14px', fontWeight: 'bold', marginTop: '16px' }}>{saveMessage}</div>

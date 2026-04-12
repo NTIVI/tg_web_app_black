@@ -15,7 +15,7 @@ import {
 const BRAND_LIST = [
   { id: 'brand4', name: 'Xiaomi', price: 1500, image: '/brands/xiaomi.png?v=3' },
   { id: 'brand8', name: 'Xbox', price: 4200, image: '/brands/xbox.png?v=3' },
-  { id: 'brand3', name: 'Samsung', price: 5800, image: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500&q=80' },
+  { id: 'brand3', name: 'Samsung', price: 5800, image: '/brands/samsung.png?v=1' },
   { id: 'brand6', name: 'Epic Games', price: 7900, image: '/brands/epicgames.png?v=3' },
   { id: 'brand5', name: 'Netflix', price: 9800, image: '/brands/netflix.png?v=3' },
   { id: 'brand7', name: 'Steam', price: 12400, image: '/brands/steam.png?v=3' },

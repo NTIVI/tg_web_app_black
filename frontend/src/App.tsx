@@ -73,11 +73,11 @@ function App() {
     return () => clearTimeout(loaderTimer);
   }, []);
 
-  const location = useLocation();
-  useEffect(() => {
-    // Refresh data on every navigation transition
-    init(false);
-  }, [location.pathname]);
+  // const location = useLocation();
+  // useEffect(() => {
+  //   // Refresh data on every navigation transition (removed to avoid rate limits)
+  //   // init(false);
+  // }, [location.pathname]);
 
   const init = async (isStartup = false) => {
     const tg = (window as any).Telegram?.WebApp;

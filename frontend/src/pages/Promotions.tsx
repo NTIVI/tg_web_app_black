@@ -72,26 +72,23 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
           <div style={{ 
             width: '100%', 
             height: '90px', 
-            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)', 
+            background: 'none', 
             borderRadius: '16px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '4px',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            boxShadow: 'inset 0 0 20px rgba(0,0,0,0.2)',
+            padding: '2px',
             zIndex: 1,
-            position: 'relative',
-            overflow: 'hidden'
+            position: 'relative'
           }}>
             <img 
               src={nft.image} 
               alt={nft.name} 
               style={{ 
-                width: '90%', 
-                height: '90%', 
+                width: '100%', 
+                height: '100%', 
                 objectFit: 'contain',
-                filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.5))'
+                filter: 'brightness(1.1) contrast(1.05) saturate(1.15) drop-shadow(0 0 10px rgba(255,255,255,0.1)) drop-shadow(0 0 1px rgba(255,255,255,0.3))'
               }} 
             />
           </div>

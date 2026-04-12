@@ -119,14 +119,17 @@ const Profile = ({ balance, tgUser, purchases, myNfts }: any) => {
         <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
           {nftsToDisplay.length > 0 ? nftsToDisplay.map((nft: any, i: number) => (
             <div key={i} style={{ 
-              minWidth: '100px', 
-              background: 'rgba(0,0,0,0.3)', 
-              padding: '8px', 
-              borderRadius: '16px', 
-              border: '1px solid rgba(255,255,255,0.05)',
+              minWidth: '90px', 
+              background: 'none', 
+              padding: '6px', 
               textAlign: 'center'
             }}>
-              <img src={nft.img} style={{ width: '40px', height: '40px', borderRadius: '8px', marginBottom: '4px' }} alt="NFT" />
+              <img src={nft.img} style={{ 
+                width: '48px', 
+                height: '48px', 
+                marginBottom: '4px',
+                filter: 'brightness(1.15) contrast(1.1) saturate(1.1) drop-shadow(0 0 6px rgba(255,255,255,0.1))'
+              }} alt="NFT" />
               <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--gold-color)' }}>{nft.name}</div>
               <div style={{ fontSize: '9px', opacity: 0.5 }}>x{nft.qty} шт</div>
             </div>

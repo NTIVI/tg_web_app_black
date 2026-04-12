@@ -1,44 +1,24 @@
 import TelegramBot from 'node-telegram-bot-api';
 import dotenv from 'dotenv';
-import path from 'path';
-
 dotenv.config();
 
-const token = process.env.BOT_TOKEN;
-const webAppUrl = process.env.WEB_APP_URL;
+const { BOT_TOKEN: token, WEB_APP_URL: url } = process.env;
 
-if (!token || !webAppUrl) {
-    console.error('Error: BOT_TOKEN or WEB_APP_URL not found in .env');
+if (!token || !url) {
+    console.error('Missing BOT_TOKEN or WEB_APP_URL');
     process.exit(1);
 }
 
 const bot = new TelegramBot(token);
 
-async function updateBot() {
+(async () => {
     try {
-        console.log(`Updating bot configuration...`);
-        console.log(`Token: ${token.substring(0, 5)}...`);
-        console.log(`URL: ${webAppUrl}`);
-
-        // Set Menu Button
+        console.log(`Setting Menu Button to: ${url}`);
         await bot.setChatMenuButton({
-            menu_button: {
-                type: 'web_app',
-                text: 'YourTurn',
-                web_app: { url: webAppUrl }
-            }
+            menu_button: { type: 'web_app', text: 'YourTurn', web_app: { url } }
         });
-        console.log('✅ Menu Button update command sent.');
-        const currentMenu = await bot.getChatMenuButton();
-        console.log('Current Menu Status:', JSON.stringify(currentMenu, null, 2));
-
-        // Optional: Send a test message to the developer (if chatId was known)
-        // For now, we just update the global settings.
-
-        console.log('🚀 Bot is now pointing to the correct URL.');
+        console.log('✅ Success! Bot Menu Button updated.');
     } catch (e) {
-        console.error('❌ Error updating bot:', e.message);
+        console.error('❌ Failed:', e.message);
     }
-}
-
-updateBot();
+})();

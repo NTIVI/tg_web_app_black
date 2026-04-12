@@ -64,3 +64,11 @@ The repository has been updated with the following final changes:
 - **Repository Sync**: Performed a full `git fetch`, `pull`, and `push` cycle to ensure local and remote environments are 100% synchronized.
 - **Production Ready**: Verified the frontend build with `npm run build` to guarantee the application is stable and ready for deployment.
 - **Status Check**: Confirmed everything is up to date with `origin/main`.
+
+## 21. UI Refinement: Clean Logo Display
+- **Visuals**: Removed the grey square backgrounds, borders, and shadows from all brand logos and shop items.
+- **Transparency**: Logos now appear seamlessly integrated into the glassmorphic panels without obstructive containers.
+- **Consistency**: Applied the change globally to the Shop and Promotions sections.
+
+## 22. Repository Maintenance
+- **Sync Status**: Updated the remote repository with the latest UI refinements and styling fixes.

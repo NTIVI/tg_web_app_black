@@ -363,12 +363,6 @@ const Promotions = ({ userId, balance, setBalance, setMyNfts }: any) => {
             <span>Ваш баланс: <strong style={{ color: 'var(--gold-color)' }}>${((balance || 0) / 100).toFixed(2)}</strong></span>
           </div>
         )}
-        <div className="glass-panel" style={{ padding: '12px 16px', background: 'rgba(56, 189, 248, 0.05)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '14px' }}>
-          <p style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.7)', lineHeight: '1.4' }}>
-            <Zap size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} color="var(--primary-color)" />
-            Каждый ваш просмотр рекламы или сёрфинг сайта не только приносит доход, но и стимулирует рост акций в приложении, меняя ваше развитие в экосистеме YourTurn!
-          </p>
-        </div>
       </div>
 
       <div style={{ 

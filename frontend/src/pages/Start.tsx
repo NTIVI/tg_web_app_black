@@ -281,6 +281,10 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
             <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'rgba(30, 64, 175, 0.2)', border: '1px solid var(--primary-color)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)', fontWeight: 'bold' }}>3</div>
             <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Тратьте баланс в Магазине и на Акции брендов!</div>
           </div>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'rgba(30, 64, 175, 0.2)', border: '1px solid var(--primary-color)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)', fontWeight: 'bold' }}>4</div>
+            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Ваша активность не только приносит доход, но и стимулирует рост акций в приложении, меняя ваше развитие в экосистеме YourTurn!</div>
+          </div>
         </div>
       </div>
 

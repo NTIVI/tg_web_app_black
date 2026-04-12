@@ -269,6 +269,8 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
       <div style={{ padding: '20px', marginTop: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
         <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '16px', color: 'var(--primary-color)' }}>Как это работает?</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'rgba(30, 64, 175, 0.2)', border: '1px solid var(--primary-color)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)', fontWeight: 'bold' }}>1</div>
             <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Смотрите рекламу или сёрфите сайты спонсоров. За каждый просмотр вы получаете опыт (XP)!</div>
           </div>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>

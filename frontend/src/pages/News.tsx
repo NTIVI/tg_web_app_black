@@ -66,7 +66,6 @@ const News = () => {
           <Newspaper size={32} color="var(--primary-color)" />
           Новости
         </h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '15px' }}>Будьте в курсе последних событий</p>
       </div>
 
       {/* Banners Carousel */}
@@ -114,7 +113,7 @@ const News = () => {
                 }}>
                   {banner.link_url && (
                     <div style={{ 
-                      background: 'var(--primary-color)', 
+                      background: 'linear-gradient(135deg, #1e40af, #a855f7)', 
                       padding: '10px 20px', 
                       borderRadius: '14px', 
                       fontSize: '13px', 

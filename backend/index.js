@@ -150,6 +150,54 @@ app.post('/api/auth', authLimiter, async (req, res) => {
     } catch (err) { console.error('Auth error:', err); res.status(500).json({ error: 'DB error' }); }
 });
 
+// NEWS ROUTES
+app.get('/api/news/banners', async (req, res) => {
+    try {
+        const banners = await DB.all('SELECT * FROM news_banners ORDER BY created_at DESC');
+        res.json({ banners });
+    } catch (err) { 
+        console.error('Banners fetch error:', err);
+        res.status(500).json({ error: 'DB error' }); 
+    }
+});
+app.get('/api/news/posts', async (req, res) => {
+    try {
+        const posts = await DB.all('SELECT * FROM news_posts ORDER BY created_at DESC');
+        res.json({ posts });
+    } catch (err) { 
+        console.error('Posts fetch error:', err);
+        res.status(500).json({ error: 'DB error' }); 
+    }
+});
+app.post('/api/admin/news/banners', requireAuth, async (req, res) => {
+    const { imageUrl, linkUrl } = req.body;
+    try {
+        await DB.run('INSERT INTO news_banners (image_url, link_url) VALUES (?, ?)', [imageUrl, linkUrl || '']);
+        const banners = await DB.all('SELECT * FROM news_banners ORDER BY created_at DESC');
+        res.json({ success: true, banners });
+    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+});
+app.delete('/api/admin/news/banners/:id', requireAuth, async (req, res) => {
+    try {
+        await DB.run('DELETE FROM news_banners WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+});
+app.post('/api/admin/news/posts', requireAuth, async (req, res) => {
+    const { title, content, imageUrl } = req.body;
+    try {
+        await DB.run('INSERT INTO news_posts (title, content, image_url) VALUES (?, ?, ?)', [title, content || '', imageUrl || '']);
+        const posts = await DB.all('SELECT * FROM news_posts ORDER BY created_at DESC');
+        res.json({ success: true, posts });
+    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+});
+app.delete('/api/admin/news/posts/:id', requireAuth, async (req, res) => {
+    try {
+        await DB.run('DELETE FROM news_posts WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+});
+
 app.post('/api/watch-ad', requireAuth, limiter, async (req, res) => {
     const telegramId = req.user.id;
     try {
@@ -580,46 +628,5 @@ app.get('/api/nft/my/:telegramId', requireAuth, async (req, res) => {
     } catch { res.status(500).json({ error: 'My NFTs error' }); }
 });
 
-// NEWS ROUTES
-app.get('/api/news/banners', async (req, res) => {
-    try {
-        const banners = await DB.all('SELECT * FROM news_banners ORDER BY created_at DESC');
-        res.json({ banners });
-    } catch { res.status(500).json({ error: 'DB error' }); }
-});
-app.get('/api/news/posts', async (req, res) => {
-    try {
-        const posts = await DB.all('SELECT * FROM news_posts ORDER BY created_at DESC');
-        res.json({ posts });
-    } catch { res.status(500).json({ error: 'DB error' }); }
-});
-app.post('/api/admin/news/banners', requireAuth, async (req, res) => {
-    const { imageUrl, linkUrl } = req.body;
-    try {
-        await DB.run('INSERT INTO news_banners (image_url, link_url) VALUES (?, ?)', [imageUrl, linkUrl || '']);
-        const banners = await DB.all('SELECT * FROM news_banners ORDER BY created_at DESC');
-        res.json({ success: true, banners });
-    } catch { res.status(500).json({ error: 'Admin error' }); }
-});
-app.delete('/api/admin/news/banners/:id', requireAuth, async (req, res) => {
-    try {
-        await DB.run('DELETE FROM news_banners WHERE id = ?', [req.params.id]);
-        res.json({ success: true });
-    } catch { res.status(500).json({ error: 'Admin error' }); }
-});
-app.post('/api/admin/news/posts', requireAuth, async (req, res) => {
-    const { title, content, imageUrl } = req.body;
-    try {
-        await DB.run('INSERT INTO news_posts (title, content, image_url) VALUES (?, ?, ?)', [title, content || '', imageUrl || '']);
-        const posts = await DB.all('SELECT * FROM news_posts ORDER BY created_at DESC');
-        res.json({ success: true, posts });
-    } catch { res.status(500).json({ error: 'Admin error' }); }
-});
-app.delete('/api/admin/news/posts/:id', requireAuth, async (req, res) => {
-    try {
-        await DB.run('DELETE FROM news_posts WHERE id = ?', [req.params.id]);
-        res.json({ success: true });
-    } catch { res.status(500).json({ error: 'Admin error' }); }
-});
 
 app.listen(port, () => console.log(`PostgreSQL Server on ${port}`));

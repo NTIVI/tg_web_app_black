@@ -25,14 +25,33 @@ const News = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log('Fetching news from:', API_URL);
         const [bannersRes, postsRes] = await Promise.all([
           fetch(`${API_URL}/news/banners`),
           fetch(`${API_URL}/news/posts`)
         ]);
+        
+        if (!bannersRes.ok) console.warn('Banners fetch failed:', bannersRes.status);
+        if (!postsRes.ok) console.warn('Posts fetch failed:', postsRes.status);
+
         const bannersData = await bannersRes.json();
         const postsData = await postsRes.json();
-        if (bannersData.banners) setBanners(bannersData.banners);
-        if (postsData.posts) setPosts(postsData.posts);
+        
+        console.log('News data received:', { 
+          bannersCount: bannersData.banners?.length, 
+          postsCount: postsData.posts?.length 
+        });
+
+        if (bannersData && bannersData.banners) {
+          setBanners(bannersData.banners);
+        }
+        
+        if (postsData && postsData.posts) {
+          setPosts(postsData.posts);
+        } else if (Array.isArray(postsData)) {
+          // Fallback if backend returns array directly
+          setPosts(postsData);
+        }
       } catch (err) {
         console.error('Error fetching news:', err);
       } finally {

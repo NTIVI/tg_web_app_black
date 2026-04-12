@@ -68,18 +68,18 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
           margin: '12px 0',
           position: 'relative'
         }}>
-          {/* Logo Container Design */}
+          {/* Logo Container Design - Enlarged for better visibility */}
           <div style={{ 
-            width: '80px', 
-            height: '80px', 
-            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.03) 100%)', 
-            borderRadius: '18px',
+            width: '100%', 
+            height: '90px', 
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)', 
+            borderRadius: '16px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '12px',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            padding: '4px',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            boxShadow: 'inset 0 0 20px rgba(0,0,0,0.2)',
             zIndex: 1,
             position: 'relative',
             overflow: 'hidden'
@@ -88,10 +88,10 @@ const NFTCard = ({ nft, changeVal, isPositive, onBuy, onSell, buying, selling, u
               src={nft.image} 
               alt={nft.name} 
               style={{ 
-                width: '100%', 
-                height: '100%', 
+                width: '90%', 
+                height: '90%', 
                 objectFit: 'contain',
-                filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.1))'
+                filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.5))'
               }} 
             />
           </div>
@@ -358,16 +358,21 @@ const Promotions = ({ userId, balance, setBalance, setMyNfts }: any) => {
           }} />
         </div>
       </div>
-
-
-
-      {/* Balance info */}
-      {userId && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '15px', fontWeight: '800' }}>
-          <DollarSign size={14} color="var(--gold-color)" />
-          <span>Ваш баланс: <strong style={{ color: 'var(--gold-color)' }}>${((balance || 0) / 100).toFixed(2)}</strong></span>
+      {/* Balance info and growth info */}
+      <div style={{ marginBottom: '24px' }}>
+        {userId && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '15px', fontWeight: '800' }}>
+            <DollarSign size={14} color="var(--gold-color)" />
+            <span>Ваш баланс: <strong style={{ color: 'var(--gold-color)' }}>${((balance || 0) / 100).toFixed(2)}</strong></span>
+          </div>
+        )}
+        <div className="glass-panel" style={{ padding: '12px 16px', background: 'rgba(56, 189, 248, 0.05)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '14px' }}>
+          <p style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.7)', lineHeight: '1.4' }}>
+            <Zap size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} color="var(--primary-color)" />
+            Каждый ваш просмотр рекламы или сёрфинг сайта не только приносит доход, но и стимулирует рост акций в приложении, меняя ваше развитие в экосистеме YourTurn!
+          </p>
         </div>
-      )}
+      </div>
 
       <div style={{ 
         display: 'grid', 

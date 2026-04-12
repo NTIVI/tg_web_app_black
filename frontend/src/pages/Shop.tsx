@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ShoppingCart, Smartphone, Watch, Tv, Laptop, Gamepad2, Package } from 'lucide-react';
 import { API_URL } from '../config';
 
@@ -25,6 +25,132 @@ const CategoryIcon = ({ category }: { category: string }) => {
   if (c.includes('пк') || c.includes('ноутбук') || c.includes('компьютер')) return <Laptop size={20} />;
   if (c.includes('приставк') || c.includes('гейм')) return <Gamepad2 size={20} />;
   return <Package size={20} />;
+};
+
+const CategorySection = ({ category, items, balance, onBuy }: { 
+  category: string, 
+  items: ShopItem[], 
+  balance: number,
+  onBuy: (item: ShopItem) => void 
+}) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const cards = container.getElementsByClassName('shop-item-card');
+      const containerRect = container.getBoundingClientRect();
+      const centerX = containerRect.left + containerRect.width / 2;
+
+      for (let i = 0; i < cards.length; i++) {
+        const card = cards[i] as HTMLElement;
+        const rect = card.getBoundingClientRect();
+        const cardCenterX = rect.left + rect.width / 2;
+        const distance = Math.abs(centerX - cardCenterX);
+        
+        // Scale based on distance from center
+        // Max scale 1.15 at distance 0, min scale 0.9 at distance > 200
+        const scale = Math.max(0.9, 1.15 - (distance / 400));
+        const opacity = Math.max(0.6, 1 - (distance / 600));
+        
+        card.style.transform = `scale(${scale})`;
+        card.style.opacity = opacity.toString();
+        
+        // Add glow to focused item
+        if (distance < rect.width / 2) {
+          card.classList.add('focused-item');
+        } else {
+          card.classList.remove('focused-item');
+        }
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    // Initial call to set scales
+    setTimeout(handleScroll, 100);
+    
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [items]);
+
+  return (
+    <div style={{ marginBottom: '48px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', padding: '0 20px' }}>
+        <div style={{ color: 'var(--primary-color)' }}>
+          <CategoryIcon category={category} />
+        </div>
+        <h2 style={{ fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px' }}>{category}</h2>
+      </div>
+
+      <div 
+        ref={scrollRef}
+        className="horizontal-scroll"
+        style={{ 
+          display: 'flex', 
+          gap: '12px', 
+          overflowX: 'auto', 
+          padding: '24px 20px 40px 20px',
+          scrollSnapType: 'x mandatory',
+          msOverflowStyle: 'none',
+          scrollbarWidth: 'none',
+          perspective: '1000px'
+        }}
+      >
+        {/* Padding for center first item */}
+        <div style={{ flexShrink: 0, width: 'calc(50% - 100px)' }} />
+
+        {items.map(item => (
+          <div 
+            key={item.id} 
+            className="glass-panel shop-item-card" 
+            style={{ 
+              flexShrink: 0, 
+              width: '180px', 
+              padding: '16px', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '12px',
+              borderRadius: '28px',
+              background: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              transition: 'transform 0.25s cubic-bezier(0.2, 0, 0.2, 1), opacity 0.25s ease, box-shadow 0.3s ease',
+              scrollSnapAlign: 'center',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+            }}
+          >
+            <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '20px', overflow: 'hidden', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px' }}>
+              <img 
+                src={item.image_url} 
+                alt={item.name} 
+                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+              />
+            </div>
+            
+            <div style={{ flexGrow: 1, textAlign: 'center' }}>
+              <div style={{ fontWeight: '700', fontSize: '15px', color: '#fff', marginBottom: '4px', lineClamp: 1 }}>{item.name}</div>
+              <div style={{ color: 'var(--gold-color)', fontWeight: '900', fontSize: '18px' }}>
+                ${(item.price / 100).toFixed(2)}
+              </div>
+            </div>
+
+            <button 
+              className="btn-primary buy-btn" 
+              style={{ width: '100%', padding: '12px', fontSize: '13px', borderRadius: '14px', fontWeight: '800' }}
+              onClick={() => onBuy(item)}
+              disabled={balance < item.price}
+            >
+              <ShoppingCart size={14} />
+              Купить
+            </button>
+          </div>
+        ))}
+
+        {/* Padding for center last item */}
+        <div style={{ flexShrink: 0, width: 'calc(50% - 100px)' }} />
+      </div>
+    </div>
+  );
 };
 
 const Shop = ({ userId, balance, setBalance, setPurchases }: ShopProps) => {
@@ -93,93 +219,40 @@ const Shop = ({ userId, balance, setBalance, setPurchases }: ShopProps) => {
   );
 
   return (
-    <div className="page" style={{ paddingBottom: '120px' }}>
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ marginBottom: '8px' }}>Магазин YourTurn</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Обменяй свой прогресс на реальные гаджеты.</p>
+    <div className="page" style={{ paddingBottom: '120px', paddingLeft: 0, paddingRight: 0 }}>
+      <div style={{ marginBottom: '32px', padding: '0 20px' }}>
+        <h1 style={{ marginBottom: '8px', fontSize: '32px', fontWeight: '900' }}>Магазин</h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '15px' }}>Выбирай лучшее за свои достижения.</p>
       </div>
 
       {message && (
-        <div className="glass-panel" style={{ 
-          padding: '16px', 
-          borderRadius: '16px', 
-          marginBottom: '24px', 
-          border: '1px solid var(--primary-color)',
-          background: 'rgba(56, 189, 248, 0.1)',
-          color: 'white',
-          textAlign: 'center',
-          animation: 'slideUp 0.3s ease-out'
-        }}>
-          {message}
+        <div style={{ padding: '0 20px' }}>
+            <div className="glass-panel" style={{ 
+            padding: '16px', 
+            borderRadius: '20px', 
+            marginBottom: '24px', 
+            border: '1px solid var(--primary-color)',
+            background: 'rgba(56, 189, 248, 0.15)',
+            color: 'white',
+            textAlign: 'center',
+            fontSize: '14px',
+            fontWeight: '700',
+            animation: 'slideUp 0.3s ease-out',
+            boxShadow: '0 0 20px rgba(56, 189, 248, 0.2)'
+            }}>
+            {message}
+            </div>
         </div>
       )}
 
       {Object.entries(groupedItems).map(([category, catItems]) => (
-        <div key={category} style={{ marginBottom: '40px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', padding: '0 4px' }}>
-            <div style={{ color: 'var(--primary-color)' }}>
-              <CategoryIcon category={category} />
-            </div>
-            <h2 style={{ fontSize: '20px', fontWeight: '800' }}>{category}</h2>
-          </div>
-
-          <div 
-            className="horizontal-scroll"
-            style={{ 
-              display: 'flex', 
-              gap: '16px', 
-              overflowX: 'auto', 
-              paddingBottom: '20px',
-              paddingRight: '20px',
-              msOverflowStyle: 'none',
-              scrollbarWidth: 'none'
-            }}
-          >
-            {catItems.map(item => (
-              <div 
-                key={item.id} 
-                className="glass-panel shop-item" 
-                style={{ 
-                  flexShrink: 0, 
-                  width: '180px', 
-                  padding: '16px', 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  gap: '12px',
-                  borderRadius: '24px',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  transition: 'transform 0.2s'
-                }}
-              >
-                <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', overflow: 'hidden', background: '#fff' }}>
-                  <img 
-                    src={item.image_url} 
-                    alt={item.name} 
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
-                  />
-                </div>
-                
-                <div style={{ flexGrow: 1 }}>
-                  <div style={{ fontWeight: '700', fontSize: '15px', color: '#fff', marginBottom: '4px' }}>{item.name}</div>
-                  <div style={{ color: 'var(--gold-color)', fontWeight: '800', fontSize: '16px' }}>
-                    ${(item.price / 100).toFixed(2)}
-                  </div>
-                </div>
-
-                <button 
-                  className="btn-primary" 
-                  style={{ width: '100%', padding: '12px', fontSize: '13px', borderRadius: '12px' }}
-                  onClick={() => handleBuy(item)}
-                  disabled={balance < item.price}
-                >
-                  <ShoppingCart size={14} />
-                  Купить
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
+        <CategorySection 
+          key={category} 
+          category={category} 
+          items={catItems} 
+          balance={balance} 
+          onBuy={handleBuy} 
+        />
       ))}
 
       {items.length === 0 && (
@@ -193,7 +266,16 @@ const Shop = ({ userId, balance, setBalance, setPurchases }: ShopProps) => {
         .horizontal-scroll::-webkit-scrollbar {
           display: none;
         }
-        .shop-item:active {
+        .focused-item {
+          border-color: var(--primary-color) !important;
+          background: rgba(255, 255, 255, 0.08) !important;
+          box-shadow: 0 0 30px rgba(56, 189, 248, 0.25) !important;
+        }
+        .focused-item img {
+          transform: scale(1.05);
+          transition: transform 0.4s ease;
+        }
+        .buy-btn:active {
           transform: scale(0.95);
         }
         @keyframes slideUp {

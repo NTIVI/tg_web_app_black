@@ -94,3 +94,8 @@ The repository has been updated with the following final changes:
 ## 27. Expanded Product Catalog
 - **Variety**: Added more diverse products including high-end smartphones (S24 Ultra), gaming desktops (RTX 4090), and premium displays (Samsung Odyssey G9).
 - **New Categories**: Introduced "Планшеты" and "Мониторы" to the shop structure.
+
+## 28. Shop Item Magnification
+- **Focus Effect**: Implemented a dynamic scaling effect where items enlarge smoothly (1.15x) as they approach the center of the screen during scrolling.
+- **Magnetic Scrolling**: Added `scroll-snap` behavior to ensure products always stop perfectly centered for optimal focus.
+- **Glassmorphism Glow**: The centered item gains a subtle neon glow and increased opacity to highlight it as the primary interactive element.

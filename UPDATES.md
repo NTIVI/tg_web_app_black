@@ -76,3 +76,6 @@ The repository has been updated with the following final changes:
 ## 23. Content Reorganization
 - **Start Page**: Added a 4th step to the "Как это работает?" section, explaining how user activity (ads/surfing) drives the stock market.
 - **Promotions Page**: Removed the redundant informational banner to provide more space for the stock cards.
+
+## 24. News UI Cleanup
+- **Banners**: Removed the "External Link" icons from the banner carousel to simplify the visual design and focus on the image content.

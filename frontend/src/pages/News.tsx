@@ -142,16 +142,11 @@ const News = () => {
                       gap: '8px',
                       boxShadow: '0 10px 20px rgba(0,0,0,0.3)'
                     }}>
-                      Подробнее <ExternalLink size={14} />
+                      Подробнее
                     </div>
                   )}
                 </div>
 
-                {banner.link_url && (
-                  <div style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(0,0,0,0.5)', padding: '8px', borderRadius: '50%', backdropFilter: 'blur(10px)' }}>
-                     <ExternalLink size={18} color="white" />
-                  </div>
-                )}
               </div>
             ))}
             

@@ -160,20 +160,36 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
       subs: `${formatSubs(socialStats.telegram?.current || 2310)} Подписчиков` 
     },
     { 
+      id: 'youtube', 
+      title: 'Подписаться на YouTube', 
+      reward: 1000, 
+      icon: <YoutubeIcon />, 
+      url: 'https://www.youtube.com/@YourTurn_Arm', 
+      subs: `${formatSubs(socialStats.youtube?.current || 15200)} Подписчиков`
+    },
+    { 
+      id: 'instagram', 
+      title: 'Подписаться на Instagram', 
+      reward: 500, 
+      icon: <InstagramIcon />, 
+      url: 'https://www.instagram.com/yourturn_arm/', 
+      subs: `${formatSubs(socialStats.instagram?.current || 5400)} Подписчиков`
+    },
+    { 
+      id: 'facebook', 
+      title: 'Подписаться на Facebook', 
+      reward: 300, 
+      icon: <FacebookIcon />, 
+      url: 'https://www.facebook.com/yourturn.arm/', 
+      subs: `${formatSubs(socialStats.facebook?.current || 1200)} Подписчиков`
+    },
+    { 
       id: 'tiktok', 
       title: 'Подписаться на TikTok', 
       reward: 500, 
       icon: <TikTokIcon />, 
       url: 'https://www.tiktok.com/@just___000', 
       subs: `${formatSubs(socialStats.tiktok?.current || 8450)} Подписчиков` 
-    },
-    { 
-      id: 'youtube', 
-      title: 'Подписаться на YouTube', 
-      reward: 1000, 
-      icon: <YoutubeIcon />, 
-      url: 'https://www.youtube.com/@Devki_keksi', 
-      subs: '15.2k Подписчиков' // No YouTube stat in admin yet, keep static or add later
     },
   ];
 

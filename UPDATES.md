@@ -103,3 +103,8 @@ The repository has been updated with the following final changes:
 ## 29. Scroll Animation Optimization
 - **Stability**: Fixed a jittering "pulsating" effect by eliminating CSS transition conflicts on scaling properties.
 - **Performance**: Integrated `requestAnimationFrame` and offset-based calculations for buttery smooth card transitions during horizontal browsing.
+
+## 30. Social Media Update
+- **Updated Channels**: Switched official YouTube and Instagram links to `yourturn_arm` profiles.
+- **New Tasks**: Added new reward-based tasks for Instagram and Facebook subscriptions in the "Bonuses" section.
+- **Real-time Stats**: Re-configured the community goals scraper to track the new social media profiles.

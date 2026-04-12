@@ -39,31 +39,39 @@ const CategorySection = ({ category, items, balance, onBuy }: {
     const container = scrollRef.current;
     if (!container) return;
 
-    const handleScroll = () => {
-      const cards = container.getElementsByClassName('shop-item-card');
-      const containerRect = container.getBoundingClientRect();
-      const centerX = containerRect.left + containerRect.width / 2;
+    let ticking = false;
 
-      for (let i = 0; i < cards.length; i++) {
-        const card = cards[i] as HTMLElement;
-        const rect = card.getBoundingClientRect();
-        const cardCenterX = rect.left + rect.width / 2;
-        const distance = Math.abs(centerX - cardCenterX);
-        
-        // Scale based on distance from center
-        // Max scale 1.15 at distance 0, min scale 0.9 at distance > 200
-        const scale = Math.max(0.9, 1.15 - (distance / 400));
-        const opacity = Math.max(0.6, 1 - (distance / 600));
-        
-        card.style.transform = `scale(${scale})`;
-        card.style.opacity = opacity.toString();
-        
-        // Add glow to focused item
-        if (distance < rect.width / 2) {
-          card.classList.add('focused-item');
-        } else {
-          card.classList.remove('focused-item');
-        }
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const cards = container.getElementsByClassName('shop-item-card');
+          const containerWidth = container.offsetWidth;
+          const containerCenter = container.scrollLeft + containerWidth / 2;
+
+          for (let i = 0; i < cards.length; i++) {
+            const card = cards[i] as HTMLElement;
+            const cardCenterX = card.offsetLeft + card.offsetWidth / 2;
+            const distance = Math.abs(containerCenter - cardCenterX);
+            
+            // Normalize distance based on container width
+            // This makes scaling consistent across different screen sizes
+            const scale = Math.max(0.9, 1.15 - (distance / 400));
+            const opacity = Math.max(0.6, 1 - (distance / 600));
+            
+            card.style.transform = `scale(${scale})`;
+            card.style.opacity = opacity.toString();
+            
+            if (distance < card.offsetWidth / 2) {
+              card.classList.add('focused-item');
+              card.style.zIndex = '10';
+            } else {
+              card.classList.remove('focused-item');
+              card.style.zIndex = '1';
+            }
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
@@ -114,9 +122,10 @@ const CategorySection = ({ category, items, balance, onBuy }: {
               borderRadius: '28px',
               background: 'rgba(255, 255, 255, 0.04)',
               border: '1px solid rgba(255, 255, 255, 0.08)',
-              transition: 'transform 0.25s cubic-bezier(0.2, 0, 0.2, 1), opacity 0.25s ease, box-shadow 0.3s ease',
+              transition: 'background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease',
               scrollSnapAlign: 'center',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+              boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+              willChange: 'transform, opacity'
             }}
           >
             <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '20px', overflow: 'hidden', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px' }}>

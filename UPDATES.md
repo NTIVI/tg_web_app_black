@@ -99,3 +99,7 @@ The repository has been updated with the following final changes:
 - **Focus Effect**: Implemented a dynamic scaling effect where items enlarge smoothly (1.15x) as they approach the center of the screen during scrolling.
 - **Magnetic Scrolling**: Added `scroll-snap` behavior to ensure products always stop perfectly centered for optimal focus.
 - **Glassmorphism Glow**: The centered item gains a subtle neon glow and increased opacity to highlight it as the primary interactive element.
+
+## 29. Scroll Animation Optimization
+- **Stability**: Fixed a jittering "pulsating" effect by eliminating CSS transition conflicts on scaling properties.
+- **Performance**: Integrated `requestAnimationFrame` and offset-based calculations for buttery smooth card transitions during horizontal browsing.

@@ -6,197 +6,627 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
-import { DB, initDB } from './database.js';
+import { DB } from './models.js';
 
 dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 const token = process.env.BOT_TOKEN;
-const jwtSecret = process.env.JWT_SECRET || 'fallback_secret';
 
-// Middleware
-app.use(cors());
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
-app.use(helmet({ contentSecurityPolicy: false }));
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 1000 });
-const authLimiter = rateLimit({ windowMs: 60 * 60 * 1000, limit: 200 });
+app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false
+}));
 
-// Auth Helpers
-let memoizedKey = null;
-const verifyTG = (data) => {
-    if (!token || !data) return process.env.NODE_ENV !== 'production';
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 1000, // Limit each IP to 1000 requests per window
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later.' }
+});
+
+const authLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    limit: 200, // 200 attempts
+    message: { error: 'Too many login attempts.' }
+});
+
+const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_donotuseinprod';
+
+let memoizedSecretKey = null;
+const verifyInitData = (initData) => {
+    if (!token) return true;
     try {
-        const params = new URLSearchParams(data);
-        const hash = params.get('hash');
-        params.delete('hash');
-        params.sort();
-        const checkString = Array.from(params.entries()).map(([k, v]) => `${k}=${v}`).join('\n');
-        if (!memoizedKey) memoizedKey = crypto.createHmac('sha256', 'WebAppData').update(token).digest();
-        return crypto.createHmac('sha256', memoizedKey).update(checkString).digest('hex') === hash;
+        const urlParams = new URLSearchParams(initData);
+        const hash = urlParams.get('hash');
+        urlParams.delete('hash');
+        urlParams.sort();
+        let dataCheckString = '';
+        for (const [key, value] of urlParams.entries()) dataCheckString += `${key}=${value}\n`;
+        dataCheckString = dataCheckString.slice(0, -1);
+        if (!memoizedSecretKey) {
+            memoizedSecretKey = crypto.createHmac('sha256', 'WebAppData').update(token).digest();
+        }
+        const isValid = crypto.createHmac('sha256', memoizedSecretKey).update(dataCheckString).digest('hex') === hash;
+        
+        if (isValid) {
+            // Check auth_date to prevent replay attacks (optional but good, e.g. within 24h)
+            const authDate = parseInt(urlParams.get('auth_date') || '0');
+            const now = Math.floor(Date.now() / 1000);
+            if (now - authDate > 86400) return false;
+        }
+        
+        return isValid;
     } catch { return false; }
 };
 
 const requireAuth = (req, res, next) => {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'No token' });
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+    
+    const token = authHeader.split(' ')[1];
     try {
-        req.user = jwt.verify(token, jwtSecret);
+        const decoded = jwt.verify(token, jwtSecret);
+        req.user = decoded;
         next();
-    } catch { res.status(401).json({ error: 'Auth failed' }); }
+    } catch (err) {
+        return res.status(401).json({ error: 'Invalid or expired token' });
+    }
 };
 
-// Bot
-const bot = token ? new TelegramBot(token, { polling: true }) : null;
+const bot = token ? new TelegramBot(token, { polling: { interval: 300, autoStart: true, params: { timeout: 10 } } }) : null;
 if (bot) {
+    console.log('Bot initialized successfully');
+    bot.on('message', (msg) => {
+        console.log('Received message:', msg.text, 'from', msg.from?.username);
+    });
     bot.onText(/\/start/, (msg) => {
+        console.log('Start command received from:', msg.from?.username);
         bot.sendMessage(msg.chat.id, 'Welcome to YourTurn! 🎮', {
             reply_markup: { inline_keyboard: [[{ text: 'Open App', web_app: { url: process.env.WEB_APP_URL || '' } }]] }
-        });
+        }).then(() => console.log('Start message sent')).catch(err => console.error('Error sending start message:', err));
     });
+    bot.on('polling_error', (error) => {
+        console.error('Polling error:', error.code, error.message);
+    });
+} else {
+    console.warn('Bot token not provided, bot disabled');
 }
 
-// Routes
-app.get('/api/health', (req, res) => res.json({ status: 'ok', bot: !!bot }));
+// Health check
+app.get('/api/health', (req, res) => res.json({ status: 'ok', botInitialized: !!bot, time: new Date() }));
 
+// API Routes
 app.post('/api/auth', authLimiter, async (req, res) => {
     const { initData, initDataUnsafe } = req.body;
-    if (!verifyTG(initData)) return res.status(403).json({ error: 'Auth failed' });
-
-    const tgUser = initDataUnsafe?.user || { id: 'mock', username: 'user' };
-    const tid = tgUser.id.toString();
-
-    const user = await DB.run(`
-        INSERT INTO users (telegram_id, username, first_name, last_name, photo_url)
-        VALUES (?, ?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET 
-        username=excluded.username, last_seen=CURRENT_TIMESTAMP RETURNING *
-    `, [tid, tgUser.username, tgUser.first_name, tgUser.last_name, tgUser.photo_url]);
-
-    const activeUser = await DB.get('SELECT * FROM users WHERE telegram_id = ?', [tid]);
-    const purchases = await DB.all('SELECT * FROM purchases WHERE telegram_id = ? ORDER BY purchased_at DESC', [tid]);
-    const nfts = await DB.all('SELECT * FROM user_nfts WHERE telegram_id = ?', [tid]);
     
-    res.json({ user: activeUser, nfts, purchases, token: jwt.sign({ id: tid, username: tgUser.username }, jwtSecret, { expiresIn: '7d' }) });
-});
-
-// Ads & Economy
-app.post('/api/:type-ad', requireAuth, limiter, async (req, res) => {
-    const { type } = req.params; // watch or surf
-    const reward = type === 'watch' ? 35 : 6;
-    const xp = type === 'watch' ? 50 : 10;
-    const mult = type === 'watch' ? 0.015 : 0.005;
-    const col = type === 'watch' ? 'last_ad_watch' : 'last_surf_watch';
-
-    const user = await DB.get(`SELECT ${col} FROM users WHERE telegram_id = ?`, [req.user.id]);
-    if (user?.[col]) {
-        const diff = (new Date() - new Date(user[col])) / 1000;
-        const cooldown = type === 'watch' ? 30 : 5;
-        if (diff < cooldown) return res.status(429).json({ error: 'Cooldown', wait: cooldown - diff });
+    // STRICT BOT CHECK: In production, initData MUST be present and valid
+    const isMock = !initData && process.env.NODE_ENV !== 'production';
+    if (!isMock && (!initData || !verifyInitData(initData))) {
+        console.warn('Bot attempt or invalid auth detected');
+        return res.status(403).json({ error: 'Access denied: Valid Telegram authentication required' });
     }
 
-    await DB.run(`
-        UPDATE users SET balance = balance + ?, xp = xp + ?, level = FLOOR((xp + ?) / 1000) + 1,
-        ${col} = CURRENT_TIMESTAMP, last_ad_watch = CURRENT_TIMESTAMP,
-        stock_multiplier = COALESCE(stock_multiplier, 1.0) + ? WHERE telegram_id = ?
-    `, [reward, xp, xp, mult, req.user.id]);
+    const tgUser = initDataUnsafe?.user || { id: 'mock_123', username: 'mock_user' };
+    const tid = tgUser.id.toString();
 
-    res.json({ success: true, ...(await DB.get('SELECT balance, xp, level FROM users WHERE telegram_id = ?', [req.user.id])) });
+    try {
+        console.log('Authenticating user:', tid);
+        await DB.run(`
+            INSERT INTO users (telegram_id, username, first_name, last_name, photo_url, last_seen)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(telegram_id) DO UPDATE SET
+                username=excluded.username,
+                first_name=excluded.first_name,
+                last_name=excluded.last_name,
+                photo_url=excluded.photo_url,
+                last_seen=excluded.last_seen
+        `, [tid, tgUser.username || '', tgUser.first_name || '', tgUser.last_name || '', tgUser.photo_url || '']);
+
+        const user = await DB.get('SELECT * FROM users WHERE telegram_id = ?', [tid]);
+        
+        // Fetch additional user data for bundling
+        const purchases = await DB.all('SELECT * FROM purchases WHERE telegram_id = ? ORDER BY purchased_at DESC', [tid]);
+        const nfts = await DB.all('SELECT * FROM user_nfts WHERE telegram_id = ? ORDER BY purchased_at DESC', [tid]);
+        
+        // Generate Token
+        const token = jwt.sign({ id: user.telegram_id, username: user.username }, jwtSecret, { expiresIn: '7d' });
+        
+        res.json({ 
+            user, 
+            token,
+            purchases: purchases || [],
+            nfts: nfts || []
+        });
+    } catch (err) { console.error('Auth error:', err); res.status(500).json({ error: 'DB error' }); }
+});
+
+// NEWS ROUTES
+app.get('/api/news/banners', async (req, res) => {
+    try {
+        const banners = await DB.all('SELECT * FROM news_banners ORDER BY created_at DESC');
+        res.json({ banners });
+    } catch (err) { 
+        console.error('Banners fetch error:', err);
+        res.status(500).json({ error: 'DB error' }); 
+    }
+});
+app.get('/api/news/posts', async (req, res) => {
+    try {
+        const posts = await DB.all('SELECT * FROM news_posts ORDER BY created_at DESC');
+        res.json({ posts });
+    } catch (err) { 
+        console.error('Posts fetch error:', err);
+        res.status(500).json({ error: 'DB error' }); 
+    }
+});
+app.post('/api/admin/news/banners', requireAuth, async (req, res) => {
+    const { imageUrl, linkUrl } = req.body;
+    try {
+        await DB.run('INSERT INTO news_banners (image_url, link_url) VALUES (?, ?)', [imageUrl, linkUrl || '']);
+        const banners = await DB.all('SELECT * FROM news_banners ORDER BY created_at DESC');
+        res.json({ success: true, banners });
+    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+});
+app.delete('/api/admin/news/banners/:id', requireAuth, async (req, res) => {
+    try {
+        await DB.run('DELETE FROM news_banners WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+});
+app.post('/api/admin/news/posts', requireAuth, async (req, res) => {
+    const { title, content, imageUrl } = req.body;
+    try {
+        await DB.run('INSERT INTO news_posts (title, content, image_url) VALUES (?, ?, ?)', [title, content || '', imageUrl || '']);
+        const posts = await DB.all('SELECT * FROM news_posts ORDER BY created_at DESC');
+        res.json({ success: true, posts });
+    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+});
+app.delete('/api/admin/news/posts/:id', requireAuth, async (req, res) => {
+    try {
+        await DB.run('DELETE FROM news_posts WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+});
+
+app.post('/api/watch-ad', requireAuth, limiter, async (req, res) => {
+    const telegramId = req.user.id;
+    try {
+        const user = await DB.get('SELECT last_ad_watch FROM users WHERE telegram_id = ?', [telegramId]);
+        if (user?.last_ad_watch) {
+            const lastWatchStr = typeof user.last_ad_watch === 'string' ? user.last_ad_watch : user.last_ad_watch.toISOString();
+            const lastWatch = new Date(lastWatchStr + (lastWatchStr.endsWith('Z') ? '' : 'Z'));
+            const diff = (new Date() - lastWatch) / 1000;
+            if (diff < 30) return res.status(429).json({ error: 'Cooldown active', timeLeft: 30 - diff });
+        }
+
+        await DB.run(`
+            UPDATE users 
+            SET balance = balance + 35, 
+                xp = xp + 50, 
+                level = FLOOR((xp + 50) / 1000) + 1,
+                last_ad_watch = CURRENT_TIMESTAMP,
+                stock_multiplier = COALESCE(stock_multiplier, 1.0) + 0.015,
+                last_stock_penalty = CURRENT_TIMESTAMP
+            WHERE telegram_id = ?
+        `, [telegramId]);
+        const updatedUser = await DB.get('SELECT balance, xp, level, last_ad_watch FROM users WHERE telegram_id = ?', [telegramId]);
+        res.json({ success: !!updatedUser, newBalance: updatedUser?.balance, xp: updatedUser?.xp, level: updatedUser?.level, last_ad_watch: updatedUser?.last_ad_watch });
+    } catch (err) { 
+        console.error('Watch ad error:', err);
+        res.status(500).json({ error: 'Error' }); 
+    }
+});
+
+app.post('/api/surf-ad', requireAuth, limiter, async (req, res) => {
+    const telegramId = req.user.id;
+    try {
+        // Cooldown mechanism for surf ad (5 seconds)
+        const user = await DB.get('SELECT last_surf_watch FROM users WHERE telegram_id = ?', [telegramId]);
+        if (user?.last_surf_watch) {
+            const lastSurfStr = typeof user.last_surf_watch === 'string' ? user.last_surf_watch : user.last_surf_watch.toISOString();
+            const lastWatch = new Date(lastSurfStr + (lastSurfStr.endsWith('Z') ? '' : 'Z'));
+            const diff = (new Date() - lastWatch) / 1000;
+            if (diff < 5) return res.status(429).json({ error: 'Cooldown active', timeLeft: 5 - diff });
+        }
+
+        await DB.run(`
+            UPDATE users 
+            SET balance = balance + 6, 
+                xp = xp + 10, 
+                level = FLOOR((xp + 10) / 1000) + 1,
+                last_surf_watch = CURRENT_TIMESTAMP,
+                last_ad_watch = CURRENT_TIMESTAMP,
+                stock_multiplier = COALESCE(stock_multiplier, 1.0) + 0.005
+            WHERE telegram_id = ?
+        `, [telegramId]);
+        const updatedUser = await DB.get('SELECT balance, xp, level, last_surf_watch FROM users WHERE telegram_id = ?', [telegramId]);
+        res.json({ success: !!updatedUser, newBalance: updatedUser?.balance, xp: updatedUser?.xp, level: updatedUser?.level, last_surf_watch: updatedUser?.last_surf_watch });
+    } catch (err) { 
+        console.error('Surf ad error:', err);
+        res.status(500).json({ error: 'Error' }); 
+    }
 });
 
 app.get('/api/user/stocks', requireAuth, async (req, res) => {
-    const user = await DB.get('SELECT stock_multiplier, last_ad_watch, registered_at FROM users WHERE telegram_id = ?', [req.user.id]);
-    let m = user?.stock_multiplier || 1.0;
-    const last = user?.last_ad_watch || user?.registered_at;
-    if (last && (new Date() - new Date(last)) / (1000 * 3600) >= 24) {
-        m = 1.0;
-        await DB.run('UPDATE users SET stock_multiplier = 1.0 WHERE telegram_id = ?', [req.user.id]);
+    const telegramId = req.user.id;
+    try {
+        const user = await DB.get('SELECT stock_multiplier, last_ad_watch, last_stock_penalty, registered_at FROM users WHERE telegram_id = ?', [telegramId]);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        let multiplier = user.stock_multiplier || 1.0;
+        
+        // Base time on last ad watch or registration 
+        const adTimeStr = user.last_ad_watch || user.registered_at;
+        const lastAdWatch = adTimeStr ? new Date(typeof adTimeStr === 'string' ? adTimeStr + (adTimeStr.endsWith('Z') ? '' : 'Z') : adTimeStr.toISOString()) : null;
+        
+        if (lastAdWatch) {
+            const now = new Date();
+            const hoursSinceAd = (now.getTime() - lastAdWatch.getTime()) / (1000 * 60 * 60);
+            
+            if (hoursSinceAd >= 24 && multiplier > 1.0) {
+                multiplier = 1.0;
+                await DB.run(`UPDATE users SET stock_multiplier = 1.0 WHERE telegram_id = ?`, [telegramId]);
+            }
+        }
+        
+        res.json({ multiplier });
+    } catch (err) { 
+        console.error('Stocks error:', err);
+        res.status(500).json({ error: 'Failed to fetch stocks' }); 
     }
-    res.json({ multiplier: m });
+});
+app.post('/api/buy', requireAuth, async (req, res) => {
+    const { itemName, price } = req.body;
+    const telegramId = req.user.id;
+    try {
+        const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+        if (!user || user.balance < price) return res.status(400).json({ error: 'No funds' });
+        
+        await DB.run('UPDATE users SET balance = balance - ? WHERE telegram_id = ?', [price, telegramId]);
+        await DB.run('INSERT INTO purchases (telegram_id, item_name, price) VALUES (?,?,?)', [telegramId, itemName, price]);
+        
+        const purchases = await DB.all('SELECT * FROM purchases WHERE telegram_id = ? ORDER BY purchased_at DESC', [telegramId]);
+        res.json({ success: true, newBalance: user.balance - price, purchases });
+    } catch { res.status(500).json({ error: 'Buy error' }); }
 });
 
-// Generic Data
-app.get('/api/:category', async (req, res) => {
-    const table = { banners: 'news_banners', posts: 'news_posts', top: 'users' }[req.params.category];
-    if (!table) return res.status(404).end();
-    const order = req.params.category === 'top' ? 'balance DESC LIMIT 100' : 'created_at DESC';
-    res.json({ [req.params.category]: await DB.all(`SELECT * FROM ${table} ORDER BY ${order}`) });
+app.get('/api/top', requireAuth, async (req, res) => {
+    try {
+        const users = await DB.all('SELECT telegram_id, username, first_name, photo_url, balance, level FROM users ORDER BY balance DESC LIMIT 100');
+        res.json({ users });
+    } catch (err) { res.status(500).json({ error: 'Top query error' }); }
 });
 
-// Bonuses & Daily
+app.get('/api/bonuses/:id', requireAuth, async (req, res) => {
+    try {
+        const rows = await DB.all('SELECT bonus_id FROM bonuses_claimed WHERE telegram_id = ?', [req.params.id]);
+        res.json({ claimed: rows.map(r => r.bonus_id) });
+    } catch (err) { res.status(500).json({ error: 'Bonuses fetch error' }); }
+});
+
+app.post('/api/bonus/claim', requireAuth, async (req, res) => {
+    const { bonusId, reward } = req.body;
+    const telegramId = req.user.id;
+    try {
+        const existing = await DB.get('SELECT id FROM bonuses_claimed WHERE telegram_id = ? AND bonus_id = ?', [telegramId, bonusId]);
+        if (existing) return res.status(400).json({ error: 'Already claimed' });
+        
+        await DB.run('INSERT INTO bonuses_claimed (telegram_id, bonus_id) VALUES (?, ?)', [telegramId, bonusId]);
+        const xpBoost = 100; // Fixed XP for bonus
+        await DB.run(`
+            UPDATE users SET 
+                balance = balance + ?, 
+                xp = xp + ?, 
+                level = FLOOR((xp + ?) / 1000) + 1 
+            WHERE telegram_id = ?
+        `, [reward, xpBoost, xpBoost, telegramId]);
+        
+        const updated = await DB.get('SELECT balance, xp, level FROM users WHERE telegram_id = ?', [telegramId]);
+        res.json({ success: true, balance: updated.balance, xp: updated.xp, level: updated.level });
+    } catch (err) { res.status(500).json({ error: 'Claim error' }); }
+});
+
+const DAILY_REWARDS = [10, 20, 50, 100, 150, 200, 500];
+
 app.get('/api/bonus/daily-check/:id', requireAuth, async (req, res) => {
-    const user = await DB.get('SELECT last_daily_claim, daily_streak FROM users WHERE telegram_id = ?', [req.user.id]);
-    const diff = (new Date() - (user?.last_daily_claim ? new Date(user.last_daily_claim) : 0)) / (1000 * 3600);
-    const rewards = [10, 20, 50, 100, 150, 200, 500];
-    res.json({ 
-        canClaim: diff >= 24, 
-        streak: user?.daily_streak || 0, 
-        next: rewards[Math.min(diff < 48 ? (user?.daily_streak || 0) : 0, rewards.length - 1)] 
-    });
+    const telegramId = req.user.id;
+    try {
+        const user = await DB.get('SELECT last_daily_claim, daily_streak FROM users WHERE telegram_id = ?', [telegramId]);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        const now = new Date();
+        const lastClaimVal = user.last_daily_claim; 
+        const lastClaimStr = lastClaimVal ? (typeof lastClaimVal === "string" ? lastClaimVal : lastClaimVal.toISOString()) : null; 
+        const lastClaim = lastClaimStr ? new Date(lastClaimStr + (lastClaimStr.endsWith('Z') ? '' : 'Z')) : null;
+        
+        let canClaim = true;
+        let diffHours = 48; // default to reset if no last claim
+        
+        if (lastClaim) {
+            diffHours = (now - lastClaim) / (1000 * 60 * 60);
+            canClaim = diffHours >= 24;
+        }
+        
+        const nextStreak = diffHours < 48 ? (user.daily_streak || 0) + 1 : 1;
+        const nextReward = DAILY_REWARDS[Math.min(nextStreak - 1, DAILY_REWARDS.length - 1)];
+        
+        res.json({ canClaim, currentStreak: user.daily_streak || 0, nextReward });
+    } catch (err) { res.status(500).json({ error: 'Daily check error' }); }
 });
 
 app.post('/api/bonus/daily-claim', requireAuth, async (req, res) => {
-    const user = await DB.get('SELECT last_daily_claim, daily_streak FROM users WHERE telegram_id = ?', [req.user.id]);
-    const diff = (new Date() - (user?.last_daily_claim ? new Date(user.last_daily_claim) : 0)) / (1000 * 3600);
-    if (diff < 24) return res.status(400).json({ error: 'Too early' });
-    const streak = diff < 48 ? (user?.daily_streak || 0) + 1 : 1;
-    const reward = [10, 20, 50, 100, 150, 200, 500][Math.min(streak - 1, 6)];
-    await DB.run('UPDATE users SET balance = balance + ?, daily_streak = ?, last_daily_claim = CURRENT_TIMESTAMP WHERE telegram_id = ?', [reward, streak, req.user.id]);
-    res.json({ success: true, reward, streak });
+    const telegramId = req.user.id;
+    try {
+        const user = await DB.get('SELECT last_daily_claim, daily_streak FROM users WHERE telegram_id = ?', [telegramId]);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        const now = new Date();
+        const lastClaimVal = user.last_daily_claim; 
+        const lastClaimStr = lastClaimVal ? (typeof lastClaimVal === "string" ? lastClaimVal : lastClaimVal.toISOString()) : null; 
+        const lastClaim = lastClaimStr ? new Date(lastClaimStr + (lastClaimStr.endsWith('Z') ? '' : 'Z')) : null;
+        
+        let diffHours = 48;
+        if (lastClaim) {
+            diffHours = (now - lastClaim) / (1000 * 60 * 60);
+            if (diffHours < 24) return res.status(400).json({ error: 'Too early' });
+        }
+        
+        const newStreak = diffHours < 48 ? (user.daily_streak || 0) + 1 : 1;
+        const reward = DAILY_REWARDS[Math.min(newStreak - 1, DAILY_REWARDS.length - 1)];
+        
+        await DB.run('UPDATE users SET balance = balance + ?, daily_streak = ?, last_daily_claim = CURRENT_TIMESTAMP WHERE telegram_id = ?', [reward, newStreak, telegramId]);
+        res.json({ success: true, reward, newStreak });
+    } catch (err) { res.status(500).json({ error: 'Daily claim error' }); }
 });
 
-// Admin
-app.post('/api/admin/auth', (req, res) => {
-    if (req.body.password === 'NTIVI') return res.json({ token: jwt.sign({ id: 'admin', role: 'admin' }, jwtSecret, { expiresIn: '24h' }) });
-    res.status(401).json({ error: 'Wrong password' });
+// Admin Routes
+app.post('/api/admin/auth', authLimiter, async (req, res) => {
+    const { password } = req.body;
+    if (password === 'NTIVI') {
+        const token = jwt.sign({ id: 'admin', username: 'admin', isAdmin: true }, jwtSecret, { expiresIn: '24h' });
+        return res.json({ token });
+    }
+    res.status(401).json({ error: 'Invalid passcode' });
 });
 
-app.get('/api/admin/:resource', requireAuth, async (req, res) => {
-    const map = { users: 'users ORDER BY last_seen DESC', purchases: 'purchases p JOIN users u ON p.telegram_id = u.telegram_id ORDER BY purchased_at DESC' };
-    if (!map[req.params.resource]) return res.status(404).end();
-    res.json({ [req.params.category]: await DB.all(`SELECT * FROM ${map[req.params.resource]}`) });
+app.get('/api/admin/users', requireAuth, async (req, res) => {
+    try {
+        const users = await DB.all('SELECT * FROM users ORDER BY last_seen DESC');
+        res.json({ users });
+    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
 });
 
-// Social Scraper
-const scrape = async () => {
-    const settings = await DB.all("SELECT key, value FROM settings WHERE key LIKE 'social_%_url'");
-    for (const s of settings) {
-        try {
-            const net = s.key.split('_')[1];
-            const html = await (await fetch(s.value, { headers: { 'User-Agent': 'Mozilla/5.0' } })).text();
-            let count = 0;
-            if (net === 'telegram') {
-                const m = html.match(/tgme_page_extra">([\d\s,]+)/);
-                if (m) count = parseInt(m[1].replace(/[\s,]/g, ''));
-            } else if (net === 'youtube') {
-                const m = html.match(/"subscriberCountText":\{"simpleText":"([\d.KMB]+)/);
-                if (m) {
-                    count = parseFloat(m[1]);
-                    if (m[1].includes('K')) count *= 1000;
-                    if (m[1].includes('M')) count *= 1000000;
+app.get('/api/admin/purchases', requireAuth, async (req, res) => {
+    try {
+        const purchases = await DB.all(`
+            SELECT p.*, u.username, u.first_name, u.photo_url 
+            FROM purchases p 
+            JOIN users u ON p.telegram_id = u.telegram_id 
+            ORDER BY p.purchased_at DESC
+        `);
+        res.json({ purchases });
+    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+});
+
+app.post('/api/admin/user/balance', requireAuth, async (req, res) => {
+    const { telegramId, amount, action } = req.body;
+    try {
+        const op = action === 'add' ? '+' : '-';
+        await DB.run(`UPDATE users SET balance = balance ${op} ? WHERE telegram_id = ?`, [amount * 100, telegramId]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+});
+
+app.get('/api/settings/:key', async (req, res) => {
+    try {
+        const row = await DB.get('SELECT value FROM settings WHERE key = ?', [req.params.key]);
+        res.json({ value: row?.value || null });
+    } catch (err) { res.status(500).json({ error: 'Settings error' }); }
+});
+
+app.get('/api/settings/ads', async (req, res) => {
+    try {
+        const rows = await DB.all("SELECT key, value FROM settings WHERE key LIKE 'ads_%' OR key = 'monetag_zone_id'");
+        const settings = {};
+        rows.forEach(r => settings[r.key] = r.value);
+        res.json({ settings });
+    } catch (err) { res.status(500).json({ error: 'Settings error' }); }
+});
+
+app.post('/api/admin/settings/ads', requireAuth, async (req, res) => {
+    const { ads_enabled, ads_client_id, ads_slot_id, monetag_zone_id } = req.body;
+    try {
+        await DB.run("INSERT INTO settings (key, value) VALUES ('ads_enabled', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [ads_enabled.toString()]);
+        await DB.run("INSERT INTO settings (key, value) VALUES ('ads_client_id', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [ads_client_id]);
+        await DB.run("INSERT INTO settings (key, value) VALUES ('ads_slot_id', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [ads_slot_id]);
+        await DB.run("INSERT INTO settings (key, value) VALUES ('monetag_zone_id', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [monetag_zone_id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: 'Admin settings error' }); }
+});
+
+app.get('/api/nft/rates', async (req, res) => {
+    try {
+        const rows = await DB.all("SELECT key, value FROM settings WHERE key LIKE 'brand%'");
+        const rates = {};
+        rows.forEach(r => rates[r.key] = parseFloat(r.value) || 0);
+        res.json({ rates });
+    } catch (err) { res.status(500).json({ error: 'Failed to fetch rates' }); }
+});
+
+app.post('/api/admin/nft/rates', requireAuth, async (req, res) => {
+    const { rates } = req.body;
+    try {
+        for (const k of Object.keys(rates)) {
+            await DB.run('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [k, rates[k].toString()]);
+        }
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+});
+
+app.get('/api/admin/nft/stats', requireAuth, async (req, res) => {
+    try {
+        const stats = await DB.all(`
+            SELECT u.telegram_id, u.username, u.first_name, un.nft_id, COUNT(*) as total_qty, MAX(un.purchased_at) as last_purchase
+            FROM user_nfts un
+            JOIN users u ON un.telegram_id = u.telegram_id
+            GROUP BY u.telegram_id, un.nft_id
+            ORDER BY last_purchase DESC
+        `);
+        res.json({ stats });
+    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+});
+
+app.get('/api/social-stats', async (req, res) => {
+    try {
+        const settings = await DB.all("SELECT key, value FROM settings WHERE key LIKE 'social_%'");
+        const stats = {
+            tiktok: { current: 0, target: 10000, url: '' },
+            instagram: { current: 0, target: 5000, url: '' },
+            telegram: { current: 0, target: 3000, url: '' },
+            facebook: { current: 0, target: 2000, url: '' },
+            youtube: { current: 0, target: 10000, url: '' }
+        };
+        settings.forEach(s => {
+            const parts = s.key.split('_'); // social_network_type
+            if (parts.length === 3) {
+                const network = parts[1];
+                const type = parts[2];
+                if (stats[network]) {
+                    if (type === 'current' || type === 'target') {
+                        stats[network][type] = parseInt(s.value) || 0;
+                    } else if (type === 'url') {
+                        stats[network][type] = s.value;
+                    }
                 }
             }
-            if (count) await DB.run(`INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, [`social_${net}_current`, count.toString()]);
-        } catch {}
-    }
-};
-setInterval(scrape, 3600000);
-setTimeout(scrape, 5000);
-
-// Basic Actions
-app.post('/api/nft/:action', requireAuth, async (req, res) => {
-    const { action } = req.params;
-    const { nftId, price } = req.body;
-    if (action === 'buy') {
-        const u = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [req.user.id]);
-        if (u.balance < price) return res.status(400).json({ error: 'No funds' });
-        await DB.run('UPDATE users SET balance = balance - ? WHERE telegram_id = ?', [price, req.user.id]);
-        await DB.run('INSERT INTO user_nfts (telegram_id, nft_id, purchase_price) VALUES (?,?,?)', [req.user.id, nftId, price]);
-    } else {
-        const item = await DB.get('SELECT id FROM user_nfts WHERE telegram_id = ? AND nft_id = ? LIMIT 1', [req.user.id, nftId]);
-        if (!item) return res.status(400).json({ error: 'Not owned' });
-        await DB.run('DELETE FROM user_nfts WHERE id = ?', [item.id]);
-        await DB.run('UPDATE users SET balance = balance + ? WHERE telegram_id = ?', [price, req.user.id]);
-    }
-    res.json({ success: true, balance: (await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [req.user.id])).balance, nfts: await DB.all('SELECT * FROM user_nfts WHERE telegram_id = ?', [req.user.id]) });
+        });
+        res.json({ stats });
+    } catch (err) { res.status(500).json({ error: 'Stats error' }); }
 });
 
-initDB().then(() => app.listen(port, () => console.log(`Server running on ${port}`)));
+const scrapeSocialStats = async () => {
+    console.log('Starting social stats scraping...');
+    const settings = await DB.all("SELECT key, value FROM settings WHERE key LIKE 'social_%_url'");
+    const urls = {};
+    settings.forEach(s => {
+        const net = s.key.split('_')[1];
+        urls[net] = s.value;
+    });
+
+    const headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' };
+
+    // Scrape Telegram
+    if (urls.telegram) {
+        try {
+            const res = await fetch(urls.telegram, { headers });
+            const html = await res.text();
+            const match = html.match(/<div class="tgme_page_extra">([\d\s,]+)\s+members<\/div>/) || html.match(/<div class="tgme_page_extra">([\d\s,]+)\s+subscriber/);
+            if (match) {
+                const count = parseInt(match[1].replace(/[\s,]/g, ''));
+                await DB.run("INSERT INTO settings (key, value) VALUES ('social_telegram_current', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [count.toString()]);
+            }
+        } catch (e) { console.error('Telegram scrape error:', e.message); }
+    }
+
+    // Scrape YouTube
+    if (urls.youtube) {
+        try {
+            const res = await fetch(urls.youtube, { headers });
+            const html = await res.text();
+            const match = html.match(/"subscriberCountText":\{"simpleText":"([\d.KMB]+)\s+subscriber/i);
+            if (match) {
+                let text = match[1].toUpperCase();
+                let count = parseFloat(text);
+                if (text.includes('K')) count *= 1000;
+                else if (text.includes('M')) count *= 1000000;
+                else if (text.includes('B')) count *= 1000000000;
+                await DB.run("INSERT INTO settings (key, value) VALUES ('social_youtube_current', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [Math.round(count).toString()]);
+            }
+        } catch (e) { console.error('YouTube scrape error:', e.message); }
+    }
+
+    // Scrape TikTok
+    if (urls.tiktok) {
+        try {
+            const res = await fetch(urls.tiktok, { headers });
+            const html = await res.text();
+            const match = html.match(/"followerCount":(\d+)/);
+            if (match) {
+                await DB.run("INSERT INTO settings (key, value) VALUES ('social_tiktok_current', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [match[1]]);
+            }
+        } catch (e) { console.error('TikTok scrape error:', e.message); }
+    }
+    
+    // Instagram and Facebook are significantly harder without specialized scrapers/proxies
+    // but we have placeholders for them.
+    
+    console.log('Social stats scraping completed.');
+};
+
+// Initial scrape and hourly schedule
+setTimeout(scrapeSocialStats, 5000); 
+setInterval(scrapeSocialStats, 60 * 60 * 1000);
+
+app.post('/api/admin/social-stats', requireAuth, async (req, res) => {
+    const { stats } = req.body;
+    try {
+        for (const net of Object.keys(stats)) {
+            await DB.run('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [`social_${net}_current`, stats[net].current.toString()]);
+            await DB.run('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [`social_${net}_target`, stats[net].target.toString()]);
+        }
+        res.json({ success: true });
+    } catch { res.status(500).json({ error: 'Stats update error' }); }
+});
+
+app.post('/api/nft/buy', requireAuth, async (req, res) => {
+    const { nftId, price } = req.body;
+    const telegramId = req.user.id;
+    try {
+        const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+        if (!user || user.balance < price) return res.status(400).json({ error: 'Insufficient funds' });
+        
+        await DB.run('UPDATE users SET balance = balance - ? WHERE telegram_id = ?', [price, telegramId]);
+        await DB.run('INSERT INTO user_nfts (telegram_id, nft_id, purchase_price) VALUES (?,?,?)', [telegramId, nftId, price]);
+        
+        const nfts = await DB.all('SELECT * FROM user_nfts WHERE telegram_id = ?', [telegramId]);
+        res.json({ success: true, newBalance: user.balance - price, nfts });
+    } catch { res.status(500).json({ error: 'Purchase error' }); }
+});
+
+app.post('/api/nft/sell', requireAuth, async (req, res) => {
+    const { nftId, price } = req.body;
+    const telegramId = req.user.id;
+    try {
+        const nft = await DB.get('SELECT id FROM user_nfts WHERE telegram_id = ? AND nft_id = ? ORDER BY purchased_at ASC LIMIT 1', [telegramId, nftId]);
+        if (!nft) return res.status(400).json({ error: 'You do not own this share' });
+        
+        await DB.run('DELETE FROM user_nfts WHERE id = ?', [nft.id]);
+        await DB.run('UPDATE users SET balance = balance + ? WHERE telegram_id = ?', [price, telegramId]);
+        
+        const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+        const nfts = await DB.all('SELECT * FROM user_nfts WHERE telegram_id = ?', [telegramId]);
+        res.json({ success: true, newBalance: user.balance, nfts });
+    } catch { res.status(500).json({ error: 'Sell error' }); }
+});
+
+app.get('/api/nft/my/:telegramId', requireAuth, async (req, res) => {
+    const requestedId = req.params.telegramId;
+    // Security: and optionally check if requestedId === req.user.id
+    try {
+        const nfts = await DB.all('SELECT * FROM user_nfts WHERE telegram_id = ?', [requestedId]);
+        res.json({ nfts });
+    } catch { res.status(500).json({ error: 'My NFTs error' }); }
+});
+
+
+app.listen(port, () => console.log(`PostgreSQL Server on ${port}`));

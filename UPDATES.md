@@ -79,3 +79,14 @@ The repository has been updated with the following final changes:
 
 ## 24. News UI Cleanup
 - **Banners**: Removed the "External Link" icons from the banner carousel to simplify the visual design and focus on the image content.
+
+## 25. Major Shop Overhaul
+- **Dynamic Inventory**: The Shop now fetches items from the database instead of using hardcoded values.
+- **Categorization**: Items are organized into sections (Phones, PC, Consoles, etc.) for better navigation.
+- **UX**: Implemented horizontal scrolling for each category, allowing for a cleaner and more compact mobile shopping experience.
+- **Visuals**: Enhanced product cards with premium glassmorphism, category icons, and improved typography.
+
+## 26. Shop Management (Admin)
+- **New Tab**: Added a "Shop" management console to the Admin Panel.
+- **CRUD Operations**: Support for adding, editing (prices/images), and deleting items from the store in real-time.
+- **Automation**: Seeded the database with original demo items during migration for a seamless transition.

@@ -30,7 +30,7 @@ const Admin = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [purchases, setPurchases] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'users' | 'ads' | 'purchases' | 'nft' | 'nft_stats' | 'social' | 'news'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'ads' | 'purchases' | 'nft' | 'nft_stats' | 'social' | 'news' | 'shop'>('users');
   
   // Ads settings
   const [adsEnabled, setAdsEnabled] = useState(false);
@@ -56,8 +56,10 @@ const Admin = () => {
   // News Admin
   const [newsBanners, setNewsBanners] = useState<any[]>([]);
   const [newsPosts, setNewsPosts] = useState<any[]>([]);
+  const [shopItems, setShopItems] = useState<any[]>([]);
   const [bannerForm, setBannerForm] = useState({ imageUrl: '', linkUrl: '' });
   const [postForm, setPostForm] = useState({ title: '', content: '', imageUrl: '' });
+  const [shopForm, setShopForm] = useState({ id: null, category: '', name: '', price: '', imageUrl: '' });
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -117,6 +119,10 @@ const Admin = () => {
         const res2 = await fetch(`${API_URL}/news/posts`, { headers });
         const data2 = await res2.json();
         if (data2.posts) setNewsPosts(data2.posts);
+      } else if (activeTab === 'shop') {
+        const res = await fetch(`${API_URL}/shop/items`, { headers });
+        const data = await res.json();
+        if (data.items) setShopItems(data.items);
       }
     } catch (err) { 
       console.error('Fetch error in Admin:', err); 
@@ -301,6 +307,38 @@ const Admin = () => {
     });
     if (res.ok) {
       setNewsPosts(prev => prev.filter(p => p.id !== id));
+    }
+  };
+
+  const handleSaveShopItem = async () => {
+    if (!shopForm.name || !shopForm.category || !shopForm.price) return alert('Fill name, category and price');
+    const res = await fetch(`${API_URL}/admin/shop/items`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionStorage.getItem('admin_token') || sessionStorage.getItem('auth_token')}`
+      },
+      body: JSON.stringify({ ...shopForm, price: parseInt(shopForm.price) })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setShopItems(data.items);
+      setShopForm({ id: null, category: '', name: '', price: '', imageUrl: '' });
+      setSaveMessage('Товар сохранен');
+      setTimeout(() => setSaveMessage(''), 3000);
+    }
+  };
+
+  const handleDeleteShopItem = async (id: number) => {
+    if (!confirm('Удалить товар?')) return;
+    const res = await fetch(`${API_URL}/admin/shop/items/${id}`, {
+      method: 'DELETE',
+      headers: { 
+        'Authorization': `Bearer ${sessionStorage.getItem('admin_token') || sessionStorage.getItem('auth_token')}`
+      }
+    });
+    if (res.ok) {
+      setShopItems(prev => prev.filter(item => item.id !== id));
     }
   };
 
@@ -557,6 +595,31 @@ const Admin = () => {
         >
           <Newspaper size={18} />
           <span style={{ fontWeight: '800', fontSize: '13px' }}>Новости</span>
+        </button>
+
+        <button 
+          className={`tab-btn ${activeTab === 'shop' ? 'active' : ''}`} 
+          style={{ 
+            flex: 1, 
+            padding: '12px 16px', 
+            borderRadius: '18px', 
+            background: activeTab === 'shop' ? 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))' : 'transparent', 
+            color: activeTab === 'shop' ? 'white' : 'var(--text-secondary)', 
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            minWidth: '100px',
+            boxShadow: activeTab === 'shop' ? '0 10px 20px rgba(30, 64, 175, 0.3)' : 'none',
+            transform: activeTab === 'shop' ? 'scale(1.02)' : 'scale(1)'
+          }}
+          onClick={() => setActiveTab('shop')}
+        >
+          <ShoppingCart size={18} />
+          <span style={{ fontWeight: '800', fontSize: '13px' }}>Магазин</span>
         </button>
       </div>
 
@@ -1047,7 +1110,84 @@ const Admin = () => {
               {newsPosts.length === 0 && <div style={{ textAlign: 'center', opacity: 0.5, padding: '20px' }}>Нет постов</div>}
             </div>
           </div>
+        </div>
+      )}
 
+      {activeTab === 'shop' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          <div className="glass-panel" style={{ padding: '32px' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ShoppingCart size={24} color="var(--primary-color)" /> Управление Товарами
+            </h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+              <input 
+                className="input-field" 
+                placeholder="Название..." 
+                value={shopForm.name} 
+                onChange={e => setShopForm(p => ({ ...p, name: e.target.value }))}
+              />
+              <input 
+                className="input-field" 
+                placeholder="Категория (пр. Телефоны)..." 
+                value={shopForm.category} 
+                onChange={e => setShopForm(p => ({ ...p, category: e.target.value }))}
+              />
+              <input 
+                className="input-field" 
+                type="number"
+                placeholder="Цена (в центах)..." 
+                value={shopForm.price} 
+                onChange={e => setShopForm(p => ({ ...p, price: e.target.value }))}
+              />
+              <input 
+                className="input-field" 
+                placeholder="URL картинки..." 
+                value={shopForm.imageUrl} 
+                onChange={e => setShopForm(p => ({ ...p, imageUrl: e.target.value }))}
+              />
+            </div>
+            
+            <button className="btn-primary" onClick={handleSaveShopItem} style={{ width: '100%', height: '52px', borderRadius: '16px', marginBottom: '16px' }}>
+              {shopForm.id ? 'Обновить товар' : 'Добавить товар'}
+            </button>
+            {shopForm.id && (
+              <button 
+                className="btn-secondary" 
+                onClick={() => setShopForm({ id: null, category: '', name: '', price: '', imageUrl: '' })}
+                style={{ width: '100%', marginBottom: '24px', opacity: 0.6 }}
+              >
+                Отмена редактирования
+              </button>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+              {shopItems.map(item => (
+                <div key={item.id} style={{ display: 'flex', gap: '12px', background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <img src={item.image_url} alt={item.name} style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '12px' }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: '800', fontSize: '14px' }}>{item.name}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--primary-color)', fontWeight: '700' }}>{item.category}</div>
+                    <div style={{ fontSize: '13px', color: 'var(--gold-color)', fontWeight: '800' }}>${(item.price / 100).toFixed(2)}</div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <button 
+                      onClick={() => setShopForm({ id: item.id, category: item.category, name: item.name, price: item.price.toString(), imageUrl: item.image_url })}
+                      style={{ background: 'rgba(56, 189, 248, 0.1)', border: 'none', color: 'var(--primary-color)', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}
+                    >
+                      <Settings size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteShopItem(item.id)}
+                      style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#ef4444', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -213,6 +213,34 @@ app.delete('/api/admin/news/posts/:id', requireAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Admin error' }); }
 });
 
+// SHOP ROUTES
+app.get('/api/shop/items', async (req, res) => {
+    try {
+        const items = await DB.all('SELECT * FROM shop_items ORDER BY category ASC, created_at DESC');
+        res.json({ items });
+    } catch (err) { res.status(500).json({ error: 'DB error' }); }
+});
+
+app.post('/api/admin/shop/items', requireAdmin, async (req, res) => {
+    const { id, category, name, price, imageUrl } = req.body;
+    try {
+        if (id) {
+            await DB.run('UPDATE shop_items SET category=?, name=?, price=?, image_url=? WHERE id=?', [category, name, price, imageUrl, id]);
+        } else {
+            await DB.run('INSERT INTO shop_items (category, name, price, image_url) VALUES (?, ?, ?, ?)', [category, name, price, imageUrl]);
+        }
+        const items = await DB.all('SELECT * FROM shop_items ORDER BY category ASC, created_at DESC');
+        res.json({ success: true, items });
+    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+});
+
+app.delete('/api/admin/shop/items/:id', requireAdmin, async (req, res) => {
+    try {
+        await DB.run('DELETE FROM shop_items WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+});
+
 app.post('/api/watch-ad', requireAuth, limiter, async (req, res) => {
     const telegramId = req.user.id;
     try {

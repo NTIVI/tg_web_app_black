@@ -98,6 +98,32 @@ const initDB = async () => {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`);
 
+        // Shop Items Table
+        await client.query(`CREATE TABLE IF NOT EXISTS shop_items (
+            id SERIAL PRIMARY KEY,
+            category TEXT NOT NULL,
+            name TEXT NOT NULL,
+            price BIGINT NOT NULL,
+            image_url TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`);
+
+        // Default Shop Items
+        const { rows: shopRows } = await client.query('SELECT COUNT(*) FROM shop_items');
+        if (parseInt(shopRows[0].count) === 0) {
+            const defaultItems = [
+                ['Гаджеты', 'Apple Watch', 68000, 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500&q=80'],
+                ['Гаджеты', 'Наушники', 92000, 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80'],
+                ['Телефоны', 'iPhone 17', 148000, 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=500&q=80'],
+                ['Приставки', 'PS5', 168000, 'https://images.unsplash.com/photo-1606144042876-0bfdc6463990?w=500&q=80'],
+                ['ТВ', '4K Smart TV', 195000, 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=500&q=80'],
+                ['ПК', 'Gaming Laptop', 235000, 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=500&q=80']
+            ];
+            for (const [cat, name, price, img] of defaultItems) {
+                await client.query('INSERT INTO shop_items (category, name, price, image_url) VALUES ($1, $2, $3, $4)', [cat, name, price, img]);
+            }
+        }
+
         // Default Ads & NFT Settings
         const defaults = [
             ['ads_enabled', 'true'],

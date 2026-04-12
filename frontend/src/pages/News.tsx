@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Newspaper, ExternalLink } from 'lucide-react';
+import { Newspaper } from 'lucide-react';
 import { API_URL } from '../config';
 
 interface Banner {

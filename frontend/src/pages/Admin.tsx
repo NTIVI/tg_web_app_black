@@ -18,7 +18,9 @@ import {
   ShoppingCart,
   Newspaper,
   Trash2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  TrendingUp,
+  BarChart3
 } from 'lucide-react';
 
 const Admin = () => {
@@ -41,6 +43,7 @@ const Admin = () => {
   const [nftStats, setNftStats] = useState<any[]>([]);
   const [nftRates, setNftRates] = useState<Record<string, number>>({});
   const [globalNftRate, setGlobalNftRate] = useState<string>('');
+  const [globalGrowth, setGlobalGrowth] = useState<{ avg: number, users: number } | null>(null);
 
   // Social Stats Admin
   const [socialStats, setSocialStats] = useState<any>({
@@ -94,6 +97,10 @@ const Admin = () => {
         const res = await fetch(`${API_URL}/nft/rates`, { headers });
         const data = await res.json();
         if (data.rates) setNftRates(data.rates);
+        
+        const gRes = await fetch(`${API_URL}/admin/nft/global-stats`, { headers });
+        const gData = await gRes.json();
+        if (gData.stats) setGlobalGrowth({ avg: gData.stats.avg_multiplier, users: gData.stats.user_count });
       } else if (activeTab === 'nft_stats') {
         const res = await fetch(`${API_URL}/admin/nft/stats`, { headers });
         const data = await res.json();
@@ -175,14 +182,46 @@ const Admin = () => {
     const res = await fetch(`${API_URL}/admin/nft/rates`, {
       method: 'POST',
       headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${sessionStorage.getItem('admin_token') || sessionStorage.getItem('auth_token')}`
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('admin_token') || sessionStorage.getItem('auth_token')}`
       },
       body: JSON.stringify({ rates: parsedRates })
     });
     if (res.ok) {
       setSaveMessage('Проценты сохранены!');
       setTimeout(() => setSaveMessage(''), 3000);
+    }
+  };
+
+  const handleResetGrowth = async () => {
+    if (!confirm('Вы уверены, что хотите сбросить глобальную волатильность у ВСЕХ пользователей до 1.0?')) return;
+    const res = await fetch(`${API_URL}/admin/nft/reset-multiplier`, {
+      method: 'POST',
+      headers: { 
+          'Authorization': `Bearer ${sessionStorage.getItem('admin_token') || sessionStorage.getItem('auth_token')}`
+      }
+    });
+    if (res.ok) {
+        setSaveMessage('Глобальный рост сброшен!');
+        fetchData();
+        setTimeout(() => setSaveMessage(''), 3000);
+    }
+  };
+
+  const handleDeleteShare = async (telegramId: string, nftId: string) => {
+    if (!confirm('Удалить одну последнюю акцию у этого пользователя?')) return;
+    const res = await fetch(`${API_URL}/admin/nft/shares`, {
+      method: 'DELETE',
+      headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('admin_token') || sessionStorage.getItem('auth_token')}`
+      },
+      body: JSON.stringify({ telegramId, nftId })
+    });
+    if (res.ok) {
+        setSaveMessage('Акция удалена');
+        fetchData();
+        setTimeout(() => setSaveMessage(''), 3000);
     }
   };
 
@@ -441,7 +480,7 @@ const Admin = () => {
           }}
           onClick={() => setActiveTab('nft')}
         >
-          <Zap size={18} />
+          <TrendingUp size={18} />
           <span style={{ fontWeight: '800', fontSize: '13px' }}>Акции (%)</span>
         </button>
 
@@ -466,7 +505,7 @@ const Admin = () => {
           }}
           onClick={() => setActiveTab('nft_stats')}
         >
-          <Plus size={18} />
+          <BarChart3 size={18} />
           <span style={{ fontWeight: '800', fontSize: '13px' }}>Стат. Акций</span>
         </button>
 
@@ -706,8 +745,22 @@ const Admin = () => {
       {activeTab === 'nft' && (
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', padding: '32px' }}>
-            <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px', textAlign: 'center' }}>Индивидуальное Управление Акциями (%)</h3>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px', textAlign: 'center' }}>Управление Акциями (%)</h3>
             
+            {globalGrowth && (
+              <div style={{ marginBottom: '24px', padding: '20px', background: 'rgba(30, 64, 175, 0.1)', borderRadius: '24px', border: '1px solid rgba(30, 64, 175, 0.2)', textAlign: 'center' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px', fontWeight: '700' }}>Глобальный рост волатильности</div>
+                <div style={{ fontSize: '32px', fontWeight: '900', color: 'var(--primary-color)', marginBottom: '16px' }}>x{Number(globalGrowth.avg).toFixed(3)}</div>
+                <button 
+                  onClick={handleResetGrowth}
+                  style={{ width: '100%', height: '44px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', color: '#ef4444', fontWeight: '800', fontSize: '13px', cursor: 'pointer' }}
+                >
+                  СБРОСИТЬ РОСТ У ВСЕХ
+                </button>
+                <div style={{ fontSize: '11px', marginTop: '10px', opacity: 0.5 }}>Активных портфелей: {globalGrowth.users}</div>
+              </div>
+            )}
+
             <div style={{ marginBottom: '24px', padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
               <div style={{ fontSize: '14px', fontWeight: '800', marginBottom: '12px', textAlign: 'center' }}>Массовое управление</div>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -719,30 +772,30 @@ const Admin = () => {
                   style={{ flex: 1, textAlign: 'center' }}
                 />
                 <button onClick={applyGlobalRate} className="btn-primary" style={{ padding: '0 20px', borderRadius: '12px', fontSize: '14px' }}>
-                  Применить ко всем
+                  Применить
                 </button>
               </div>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               {[
-                  { id: 'brand1', name: 'Apple' },
-                  { id: 'brand2', name: 'NVIDIA' },
-                  { id: 'brand3', name: 'Samsung' },
                   { id: 'brand4', name: 'Xiaomi' },
-                  { id: 'brand5', name: 'Netflix' },
-                  { id: 'brand6', name: 'Epic Games' },
-                  { id: 'brand7', name: 'Steam' },
                   { id: 'brand8', name: 'Xbox' },
+                  { id: 'brand3', name: 'Samsung' },
+                  { id: 'brand6', name: 'Epic Games' },
+                  { id: 'brand5', name: 'Netflix' },
+                  { id: 'brand7', name: 'Steam' },
+                  { id: 'brand2', name: 'Nvidia' },
+                  { id: 'brand1', name: 'Apple' },
               ].map(nft => (
-                <div key={nft.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ fontSize: '14px', fontWeight: '800', marginBottom: '8px', color: 'var(--primary-color)', textAlign: 'center' }}>{nft.name}</div>
+                <div key={nft.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary-color)', textAlign: 'center' }}>{nft.name}</div>
                   <input 
                     className="input-field" 
                     value={nftRates[nft.id] !== undefined ? nftRates[nft.id] : ''} 
                     onChange={(e) => handleRateChange(nft.id, e.target.value)} 
-                    placeholder="Напр. 5.5 или -2.1"
-                    style={{ textAlign: 'center', width: '100%' }}
+                    placeholder="пр. +5"
+                    style={{ textAlign: 'center', width: '100%', height: '36px', fontSize: '13px' }}
                   />
                 </div>
               ))}
@@ -803,7 +856,15 @@ const Admin = () => {
                         } as Record<string, string>)[row.nft_id] || row.nft_id}
                       </td>
                       <td style={{ padding: '12px 8px', color: 'var(--gold-color)', fontWeight: '800' }}>{row.total_qty} шт</td>
-                      <td style={{ padding: '12px 8px', textAlign: 'right', opacity: 0.5 }}>{new Date(row.last_purchase).toLocaleDateString()}</td>
+                      <td style={{ padding: '12px 8px', textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px' }}>
+                        <span style={{ opacity: 0.5 }}>{new Date(row.last_purchase).toLocaleDateString()}</span>
+                        <button 
+                          onClick={() => handleDeleteShare(row.telegram_id, row.nft_id)}
+                          style={{ background: 'rgba(239, 68, 68, 0.15)', border: 'none', color: '#ef4444', padding: '6px', borderRadius: '8px', cursor: 'pointer', display: 'flex' }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
                     </tr>
                   )) : (
                     <tr><td colSpan={4} style={{ textAlign: 'center', padding: '20px', opacity: 0.5 }}>Нет данных о покупках</td></tr>

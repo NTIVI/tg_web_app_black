@@ -83,6 +83,21 @@ const requireAuth = (req, res, next) => {
     }
 };
 
+const requireAdmin = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+    
+    const token = authHeader.split(' ')[1];
+    try {
+        const decoded = jwt.verify(token, jwtSecret);
+        if (!decoded.isAdmin && decoded.id !== 'admin') return res.status(403).json({ error: 'Access denied: Admin only' });
+        req.user = decoded;
+        next();
+    } catch (err) {
+        return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+};
+
 const bot = token ? new TelegramBot(token, { polling: { interval: 300, autoStart: true, params: { timeout: 10 } } }) : null;
 if (bot) {
     console.log('Bot initialized successfully');
@@ -169,7 +184,7 @@ app.get('/api/news/posts', async (req, res) => {
         res.status(500).json({ error: 'DB error' }); 
     }
 });
-app.post('/api/admin/news/banners', requireAuth, async (req, res) => {
+app.post('/api/admin/news/banners', requireAdmin, async (req, res) => {
     const { imageUrl, linkUrl } = req.body;
     try {
         await DB.run('INSERT INTO news_banners (image_url, link_url) VALUES (?, ?)', [imageUrl, linkUrl || '']);
@@ -177,13 +192,13 @@ app.post('/api/admin/news/banners', requireAuth, async (req, res) => {
         res.json({ success: true, banners });
     } catch (err) { res.status(500).json({ error: 'Admin error' }); }
 });
-app.delete('/api/admin/news/banners/:id', requireAuth, async (req, res) => {
+app.delete('/api/admin/news/banners/:id', requireAdmin, async (req, res) => {
     try {
         await DB.run('DELETE FROM news_banners WHERE id = ?', [req.params.id]);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Admin error' }); }
 });
-app.post('/api/admin/news/posts', requireAuth, async (req, res) => {
+app.post('/api/admin/news/posts', requireAdmin, async (req, res) => {
     const { title, content, imageUrl } = req.body;
     try {
         await DB.run('INSERT INTO news_posts (title, content, image_url) VALUES (?, ?, ?)', [title, content || '', imageUrl || '']);
@@ -191,7 +206,7 @@ app.post('/api/admin/news/posts', requireAuth, async (req, res) => {
         res.json({ success: true, posts });
     } catch (err) { res.status(500).json({ error: 'Admin error' }); }
 });
-app.delete('/api/admin/news/posts/:id', requireAuth, async (req, res) => {
+app.delete('/api/admin/news/posts/:id', requireAdmin, async (req, res) => {
     try {
         await DB.run('DELETE FROM news_posts WHERE id = ?', [req.params.id]);
         res.json({ success: true });
@@ -399,14 +414,14 @@ app.post('/api/admin/auth', authLimiter, async (req, res) => {
     res.status(401).json({ error: 'Invalid passcode' });
 });
 
-app.get('/api/admin/users', requireAuth, async (req, res) => {
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
     try {
         const users = await DB.all('SELECT * FROM users ORDER BY last_seen DESC');
         res.json({ users });
     } catch (err) { res.status(500).json({ error: 'Admin error' }); }
 });
 
-app.get('/api/admin/purchases', requireAuth, async (req, res) => {
+app.get('/api/admin/purchases', requireAdmin, async (req, res) => {
     try {
         const purchases = await DB.all(`
             SELECT p.*, u.username, u.first_name, u.photo_url 
@@ -418,7 +433,7 @@ app.get('/api/admin/purchases', requireAuth, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Admin error' }); }
 });
 
-app.post('/api/admin/user/balance', requireAuth, async (req, res) => {
+app.post('/api/admin/user/balance', requireAdmin, async (req, res) => {
     const { telegramId, amount, action } = req.body;
     try {
         const op = action === 'add' ? '+' : '-';
@@ -443,7 +458,7 @@ app.get('/api/settings/ads', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Settings error' }); }
 });
 
-app.post('/api/admin/settings/ads', requireAuth, async (req, res) => {
+app.post('/api/admin/settings/ads', requireAdmin, async (req, res) => {
     const { ads_enabled, ads_client_id, ads_slot_id, monetag_zone_id } = req.body;
     try {
         await DB.run("INSERT INTO settings (key, value) VALUES ('ads_enabled', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [ads_enabled.toString()]);
@@ -463,7 +478,7 @@ app.get('/api/nft/rates', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Failed to fetch rates' }); }
 });
 
-app.post('/api/admin/nft/rates', requireAuth, async (req, res) => {
+app.post('/api/admin/nft/rates', requireAdmin, async (req, res) => {
     const { rates } = req.body;
     try {
         for (const k of Object.keys(rates)) {
@@ -473,7 +488,21 @@ app.post('/api/admin/nft/rates', requireAuth, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Admin error' }); }
 });
 
-app.get('/api/admin/nft/stats', requireAuth, async (req, res) => {
+app.get('/api/admin/nft/global-stats', requireAdmin, async (req, res) => {
+    try {
+        const stats = await DB.get('SELECT AVG(stock_multiplier) as avg_multiplier, COUNT(*) as user_count FROM users');
+        res.json({ stats });
+    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+});
+
+app.post('/api/admin/nft/reset-multiplier', requireAdmin, async (req, res) => {
+    try {
+        await DB.run('UPDATE users SET stock_multiplier = 1.0');
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+});
+
+app.get('/api/admin/nft/stats', requireAdmin, async (req, res) => {
     try {
         const stats = await DB.all(`
             SELECT u.telegram_id, u.username, u.first_name, un.nft_id, COUNT(*) as total_qty, MAX(un.purchased_at) as last_purchase
@@ -484,6 +513,26 @@ app.get('/api/admin/nft/stats', requireAuth, async (req, res) => {
         `);
         res.json({ stats });
     } catch (err) { res.status(500).json({ error: 'Admin error' }); }
+});
+
+app.delete('/api/admin/nft/shares', requireAdmin, async (req, res) => {
+    const { telegramId, nftId } = req.body;
+    try {
+        // Delete the latest share for this user/brand
+        await DB.run(`
+            DELETE FROM user_nfts 
+            WHERE id IN (
+                SELECT id FROM user_nfts 
+                WHERE telegram_id = ? AND nft_id = ? 
+                ORDER BY purchased_at DESC 
+                LIMIT 1
+            )
+        `, [telegramId, nftId]);
+        res.json({ success: true });
+    } catch (err) { 
+        console.error('Delete share error:', err);
+        res.status(500).json({ error: 'Admin error' }); 
+    }
 });
 
 app.get('/api/social-stats', async (req, res) => {

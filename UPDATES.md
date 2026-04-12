@@ -90,3 +90,7 @@ The repository has been updated with the following final changes:
 - **New Tab**: Added a "Shop" management console to the Admin Panel.
 - **CRUD Operations**: Support for adding, editing (prices/images), and deleting items from the store in real-time.
 - **Automation**: Seeded the database with original demo items during migration for a seamless transition.
+
+## 27. Expanded Product Catalog
+- **Variety**: Added more diverse products including high-end smartphones (S24 Ultra), gaming desktops (RTX 4090), and premium displays (Samsung Odyssey G9).
+- **New Categories**: Introduced "Планшеты" and "Мониторы" to the shop structure.

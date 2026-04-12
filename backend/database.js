@@ -112,12 +112,17 @@ const initDB = async () => {
         const { rows: shopRows } = await client.query('SELECT COUNT(*) FROM shop_items');
         if (parseInt(shopRows[0].count) === 0) {
             const defaultItems = [
-                ['Гаджеты', 'Apple Watch', 68000, 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500&q=80'],
-                ['Гаджеты', 'Наушники', 92000, 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80'],
-                ['Телефоны', 'iPhone 17', 148000, 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=500&q=80'],
-                ['Приставки', 'PS5', 168000, 'https://images.unsplash.com/photo-1606144042876-0bfdc6463990?w=500&q=80'],
-                ['ТВ', '4K Smart TV', 195000, 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=500&q=80'],
-                ['ПК', 'Gaming Laptop', 235000, 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=500&q=80']
+                ['Телефоны', 'iPhone 15 Pro', 128000, 'https://images.unsplash.com/photo-1696446701796-da61225697cc?w=500&q=80'],
+                ['Телефоны', 'Samsung S24 Ultra', 135000, 'https://images.unsplash.com/photo-1707148705001-f1eb98f8287e?w=500&q=80'],
+                ['Гаджеты', 'Apple Watch Ultra', 85000, 'https://images.unsplash.com/photo-1664144822550-934a34bba7ca?w=500&q=80'],
+                ['Гаджеты', 'AirPods Max', 54000, 'https://images.unsplash.com/photo-1613040809024-b4ef7ba99bc3?w=500&q=80'],
+                ['Приставки', 'PS5 Slim', 55000, 'https://images.unsplash.com/photo-1606144042876-0bfdc6463990?w=500&q=80'],
+                ['Приставки', 'Nintendo Switch OLED', 35000, 'https://images.unsplash.com/photo-1578303005324-44c138245862?w=500&q=80'],
+                ['ПК', 'MacBook Air M3', 145000, 'https://images.unsplash.com/photo-1517336714731-489689fd1ca4?w=500&q=80'],
+                ['ПК', 'Gaming Desktop RTX 4090', 450000, 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=500&q=80'],
+                ['Мониторы', 'Samsung Odyssey G9', 120000, 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500&q=80'],
+                ['ТВ', 'LG OLED C3 65"', 220000, 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=500&q=80'],
+                ['Планшеты', 'iPad Pro M4', 115000, 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=500&q=80']
             ];
             for (const [cat, name, price, img] of defaultItems) {
                 await client.query('INSERT INTO shop_items (category, name, price, image_url) VALUES ($1, $2, $3, $4)', [cat, name, price, img]);

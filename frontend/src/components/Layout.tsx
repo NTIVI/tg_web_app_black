@@ -28,14 +28,6 @@ const Layout = () => {
           </NavLink>
 
           <NavLink 
-            to="/news" 
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-          >
-            <Newspaper size={24} />
-            <span>Новости</span>
-          </NavLink>
-          
-          <NavLink 
             to="/shop" 
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
           >
@@ -49,6 +41,14 @@ const Layout = () => {
           >
             <Trophy size={24} />
             <span>Топ</span>
+          </NavLink>
+
+          <NavLink 
+            to="/news" 
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+          >
+            <Newspaper size={24} />
+            <span>Новости</span>
           </NavLink>
 
           <NavLink 

@@ -230,6 +230,12 @@ const Shop = ({ userId, balance, setBalance, setPurchases }: ShopProps) => {
     setTimeout(() => setMessage(''), 3000);
   };
 
+  const groupedItems = items.reduce((acc, item) => {
+    if (!acc[item.category]) acc[item.category] = [];
+    acc[item.category].push(item);
+    return acc;
+  }, {} as Record<string, ShopItem[]>);
+
   const CATEGORY_PRIORITY = ['Телефоны', 'Компьютеры', 'Гаджеты', 'ТВ и Видео', 'Приставки'];
 
   const sortedCategories = Object.keys(groupedItems).sort((a, b) => {

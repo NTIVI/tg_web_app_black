@@ -488,17 +488,30 @@ app.post('/api/bonus/daily-claim', requireAuth, async (req, res) => {
 
 // --- Games API ---
 app.post('/api/games/play', requireAuth, async (req, res) => {
-    const { game, bet, betOn, risk } = req.body;
+    const game = req.body.game;
+    const bet = Math.floor(Number(req.body.bet || 0));
+    const betOn = req.body.betOn;
+    const risk = req.body.risk;
     const telegramId = req.user.id;
 
+    if (isNaN(bet) || bet <= 0) {
+        return res.status(400).json({ error: 'Некорректная ставка' });
+    }
+
     try {
+        console.log(`[GamePlay] User: ${telegramId}, Game: ${game}, Bet: ${bet}`);
         const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-        if (!user || user.balance < bet) return res.status(400).json({ error: 'Недостаточно баланса' });
+        
+        const currentBalance = Number(user?.balance || 0);
+        if (!user || currentBalance < bet) {
+            console.log(`[GamePlay] Insufficient balance: ${currentBalance} < ${bet}`);
+            return res.status(400).json({ error: 'Недостаточно баланса' });
+        }
 
         let result;
         if (game === 'slots') result = GamesLogic.handleSlots(bet);
         else if (game === 'roulette') result = GamesLogic.handleRoulette(bet, betOn);
-        else if (game === 'dice') result = GamesLogic.handleDice(bet, req.body.target, req.body.type);
+        else if (game === 'dice') result = GamesLogic.handleDice(bet, Number(req.body.target || 50), req.body.type);
         else if (game === 'coinflip') result = GamesLogic.handleCoinFlip(bet, betOn);
         else if (game === 'plinko') result = GamesLogic.handlePlinko(bet, risk);
         else if (game === 'wheel') result = GamesLogic.handleWheelSpin(bet);
@@ -507,6 +520,7 @@ app.post('/api/games/play', requireAuth, async (req, res) => {
             await DB.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
                 [telegramId, 'crash', bet, JSON.stringify(state)]);
             await DB.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
+            console.log(`[GamePlay] Crash started for ${telegramId}`);
             return res.json({ success: true, status: 'playing', startTime: state.startTime });
         }
         else if (game === 'hilo') {
@@ -514,37 +528,41 @@ app.post('/api/games/play', requireAuth, async (req, res) => {
             await DB.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
                 [telegramId, 'hilo', bet, JSON.stringify(state)]);
             await DB.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
+            console.log(`[GamePlay] HiLo started for ${telegramId}`);
             return res.json({ success: true, status: 'playing', currentCard: state.currentCard });
         }
         else if (game === 'mines') {
-            const mineCount = req.body.mineCount || 3;
+            const mineCount = Number(req.body.mineCount || 3);
             const state = GamesLogic.handleMinesStart(bet, mineCount);
             await DB.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
                 [telegramId, 'mines', bet, JSON.stringify(state)]);
             await DB.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
+            console.log(`[GamePlay] Mines started for ${telegramId}`);
             return res.json({ success: true, status: 'playing', mineCount, revealed: [] });
         }
         else if (game === 'blackjack') {
-             // Blackjack handles its own state
              const deck = GamesLogic.createDeck();
              const playerHand = [deck.pop(), deck.pop()];
              const dealerHand = [deck.pop(), deck.pop()];
              const playerSum = GamesLogic.calculateHand(playerHand);
-             
              const state = { deck, playerHand, dealerHand, status: 'playing' };
              await DB.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
                 [telegramId, 'blackjack', bet, JSON.stringify(state)]);
-             
-             // Deduct bet immediately for Blackjack
              await DB.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
-             
+             console.log(`[GamePlay] Blackjack started for ${telegramId}`);
              return res.json({ success: true, playerHand, dealerHand: [dealerHand[0], { hidden: true }], playerSum, status: 'playing' });
         }
-        else return res.status(400).json({ error: 'Unknown game' });
+        else {
+            console.log(`[GamePlay] Unknown game: ${game}`);
+            return res.status(400).json({ error: 'Unknown game' });
+        }
 
         // For single-turn games:
-        const winAmount = result.winAmount || 0;
+        const winAmount = Math.floor(result.winAmount || 0);
+        const xpGain = Math.floor(bet / 10);
         const netChange = winAmount - bet;
+
+        console.log(`[GamePlay] Single-turn Result: Win=${winAmount}, Net=${netChange}, XP=${xpGain}`);
 
         await DB.run(`
             UPDATE users SET 
@@ -555,20 +573,23 @@ app.post('/api/games/play', requireAuth, async (req, res) => {
                 xp = xp + ?,
                 level = FLOOR((xp + ?) / 1000) + 1
             WHERE telegram_id = ?
-        `, [netChange, bet, winAmount, Math.floor(bet/10), Math.floor(bet/10), telegramId]);
+        `, [netChange, bet, winAmount, xpGain, xpGain, telegramId]);
 
         await DB.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
             [telegramId, game, bet, winAmount, result.multiplier, JSON.stringify(result)]);
 
-        if (winAmount > bet) updateQuestProgress(telegramId, 'win', 1);
+        if (winAmount > bet) {
+            updateQuestProgress(telegramId, 'win', 1);
+        }
         updateQuestProgress(telegramId, 'games', 1);
         updateQuestProgress(telegramId, 'bet', bet);
+        
         const updated = await DB.get('SELECT balance, xp, level FROM users WHERE telegram_id = ?', [telegramId]);
         res.json({ ...result, ...updated });
 
     } catch (err) { 
-        console.error(err);
-        res.status(500).json({ error: 'Game error' }); 
+        console.error('[GamePlay Error]', err);
+        res.status(500).json({ error: 'Internal Server Error', message: err.message }); 
     }
 });
 

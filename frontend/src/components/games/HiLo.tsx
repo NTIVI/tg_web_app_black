@@ -71,8 +71,9 @@ const HiLo: React.FC<any> = ({ balance, setBalance }) => {
         setStatus('playing');
         setBalance((prev: number) => prev - bet);
       }
-    } catch (e) {
-      setMessage('Ошибка сети');
+    } catch (e: any) {
+       console.error('HiLo startGame error:', e);
+       setMessage('Ошибка сети: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -101,8 +102,9 @@ const HiLo: React.FC<any> = ({ balance, setBalance }) => {
         setCurrentCard(data.currentCard);
         setMultiplier(data.currentMultiplier);
       }
-    } catch (e) {
-      setMessage('Ошибка сети');
+    } catch (e: any) {
+       console.error('HiLo handleGuess error:', e);
+       setMessage('Ошибка сети: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -128,8 +130,9 @@ const HiLo: React.FC<any> = ({ balance, setBalance }) => {
         setBalance(data.balance);
         setMessage(`WIN! +$${(data.winAmount / 100).toFixed(2)}`);
       }
-    } catch (e) {
-      setMessage('Ошибка сети');
+    } catch (e: any) {
+       console.error('HiLo cashOut error:', e);
+       setMessage('Ошибка сети: ' + e.message);
     } finally {
       setLoading(false);
     }

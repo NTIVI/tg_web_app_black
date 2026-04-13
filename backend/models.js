@@ -11,9 +11,9 @@ export const DB = {
         try {
             const convertedSql = convertPlaceholders(sql);
             const res = await pool.query(convertedSql, params);
-            // PostgreSQL doesn't have insertId. If used with RETURNING id, it's in rows[0].id
             resolve({ id: res.rows?.[0]?.id || null, changes: res.rowCount });
         } catch (err) {
+            console.error('DB Run Error:', err.message, '| SQL:', sql, '| Params:', params);
             reject(err);
         }
     }),
@@ -23,6 +23,7 @@ export const DB = {
             const res = await pool.query(convertedSql, params);
             resolve(res.rows[0]);
         } catch (err) {
+            console.error('DB Get Error:', err.message, '| SQL:', sql, '| Params:', params);
             reject(err);
         }
     }),
@@ -32,6 +33,7 @@ export const DB = {
             const res = await pool.query(convertedSql, params);
             resolve(res.rows);
         } catch (err) {
+            console.error('DB All Error:', err.message, '| SQL:', sql, '| Params:', params);
             reject(err);
         }
     })

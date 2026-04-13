@@ -42,7 +42,7 @@ const Mines: React.FC<any> = ({ balance, setBalance }) => {
         setStatus('playing');
         setBalance((prev: number) => prev - bet);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Mines startGame error:', e);
       setMessage('Ошибка сети: ' + e.message);
     } finally {
@@ -73,8 +73,8 @@ const Mines: React.FC<any> = ({ balance, setBalance }) => {
         setRevealed(data.revealed);
         setCurrentMultiplier(data.currentMultiplier);
       }
-    } catch (e) {
-       console.error('HiLo startGame error:', e);
+    } catch (e: any) {
+       console.error('Mines handleAction error:', e);
        setMessage('Ошибка сети: ' + e.message);
     } finally {
       setLoading(false);

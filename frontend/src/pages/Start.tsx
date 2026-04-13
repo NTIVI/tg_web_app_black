@@ -130,7 +130,7 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
         if (setTgUser) {
           setTgUser((prev: any) => ({ ...prev, ...data }));
         }
-        setAdMessage('✅ Сёрфинг пройден! +$0.06');
+        setAdMessage('✅ Сёрфинг пройден! +$0.10');
         setSurfCooldownTime(5);
         setAdState('done');
       } else {

@@ -274,28 +274,32 @@ app.delete('/api/admin/shop/items/:id', requireAdmin, async (req, res) => {
 app.post('/api/watch-ad', requireAuth, limiter, async (req, res) => {
     const telegramId = req.user.id;
     try {
-        const user = await DB.get('SELECT last_ad_watch FROM users WHERE telegram_id = ?', [telegramId]);
-        if (user?.last_ad_watch) {
-            const lastWatchStr = typeof user.last_ad_watch === 'string' ? user.last_ad_watch : user.last_ad_watch.toISOString();
-            const lastWatch = new Date(lastWatchStr + (lastWatchStr.endsWith('Z') ? '' : 'Z'));
-            const diff = (new Date() - lastWatch) / 1000;
-            if (diff < 30) return res.status(429).json({ error: 'Cooldown active', timeLeft: 30 - diff });
-        }
+        const responseData = await DB.transaction(async (tx) => {
+            const user = await tx.get('SELECT last_ad_watch FROM users WHERE telegram_id = ?', [telegramId]);
+            if (user?.last_ad_watch) {
+                const lastWatchStr = typeof user.last_ad_watch === 'string' ? user.last_ad_watch : user.last_ad_watch.toISOString();
+                const lastWatch = new Date(lastWatchStr + (lastWatchStr.endsWith('Z') ? '' : 'Z'));
+                const diff = (new Date() - lastWatch) / 1000;
+                if (diff < 30) throw new Error(`Cooldown: ${Math.ceil(30 - diff)}s`);
+            }
 
-        await DB.run(`
-            UPDATE users 
-            SET balance = balance + 35, 
-                xp = xp + 50, 
-                level = FLOOR((xp + 50) / 1000) + 1,
-                last_ad_watch = CURRENT_TIMESTAMP
-            WHERE telegram_id = ?
-        `, [telegramId]);
+            await tx.run(`
+                UPDATE users 
+                SET balance = balance + 35, 
+                    xp = xp + 50, 
+                    level = FLOOR((xp + 50) / 1000) + 1,
+                    last_ad_watch = CURRENT_TIMESTAMP
+                WHERE telegram_id = ?
+            `, [telegramId]);
+
+            const updatedUser = await tx.get('SELECT balance, xp, level, last_ad_watch FROM users WHERE telegram_id = ?', [telegramId]);
+            return { success: !!updatedUser, newBalance: updatedUser?.balance, xp: updatedUser?.xp, level: updatedUser?.level, last_ad_watch: updatedUser?.last_ad_watch };
+        });
 
         await updateQuestProgress(telegramId, 'ads', 1);
-
-        const updatedUser = await DB.get('SELECT balance, xp, level, last_ad_watch FROM users WHERE telegram_id = ?', [telegramId]);
-        res.json({ success: !!updatedUser, newBalance: updatedUser?.balance, xp: updatedUser?.xp, level: updatedUser?.level, last_ad_watch: updatedUser?.last_ad_watch });
+        res.json(responseData);
     } catch (err) { 
+        if (err.message.includes('Cooldown')) return res.status(429).json({ error: err.message });
         console.error('Watch ad error:', err);
         res.status(500).json({ error: 'Error' }); 
     }
@@ -304,30 +308,33 @@ app.post('/api/watch-ad', requireAuth, limiter, async (req, res) => {
 app.post('/api/surf-ad', requireAuth, limiter, async (req, res) => {
     const telegramId = req.user.id;
     try {
-        // Cooldown mechanism for surf ad (5 seconds)
-        const user = await DB.get('SELECT last_surf_watch FROM users WHERE telegram_id = ?', [telegramId]);
-        if (user?.last_surf_watch) {
-            const lastSurfStr = typeof user.last_surf_watch === 'string' ? user.last_surf_watch : user.last_surf_watch.toISOString();
-            const lastWatch = new Date(lastSurfStr + (lastSurfStr.endsWith('Z') ? '' : 'Z'));
-            const diff = (new Date() - lastWatch) / 1000;
-            if (diff < 5) return res.status(429).json({ error: 'Cooldown active', timeLeft: 5 - diff });
-        }
+        const responseData = await DB.transaction(async (tx) => {
+            const user = await tx.get('SELECT last_surf_watch FROM users WHERE telegram_id = ?', [telegramId]);
+            if (user?.last_surf_watch) {
+                const lastSurfStr = typeof user.last_surf_watch === 'string' ? user.last_surf_watch : user.last_surf_watch.toISOString();
+                const lastWatch = new Date(lastSurfStr + (lastSurfStr.endsWith('Z') ? '' : 'Z'));
+                const diff = (new Date() - lastWatch) / 1000;
+                if (diff < 5) throw new Error(`Cooldown: ${Math.ceil(5 - diff)}s`);
+            }
 
-        await DB.run(`
-            UPDATE users 
-            SET balance = balance + 6, 
-                xp = xp + 10, 
-                level = FLOOR((xp + 10) / 1000) + 1,
-                last_surf_watch = CURRENT_TIMESTAMP,
-                last_ad_watch = CURRENT_TIMESTAMP
-            WHERE telegram_id = ?
-        `, [telegramId]);
+            await tx.run(`
+                UPDATE users 
+                SET balance = balance + 10, 
+                    xp = xp + 10, 
+                    level = FLOOR((xp + 10) / 1000) + 1,
+                    last_surf_watch = CURRENT_TIMESTAMP,
+                    last_ad_watch = CURRENT_TIMESTAMP
+                WHERE telegram_id = ?
+            `, [telegramId]);
+
+            const updatedUser = await tx.get('SELECT balance, xp, level, last_surf_watch FROM users WHERE telegram_id = ?', [telegramId]);
+            return { success: !!updatedUser, newBalance: updatedUser?.balance, xp: updatedUser?.xp, level: updatedUser?.level, last_surf_watch: updatedUser?.last_surf_watch };
+        });
 
         await updateQuestProgress(telegramId, 'ads', 1);
-
-        const updatedUser = await DB.get('SELECT balance, xp, level, last_surf_watch FROM users WHERE telegram_id = ?', [telegramId]);
-        res.json({ success: !!updatedUser, newBalance: updatedUser?.balance, xp: updatedUser?.xp, level: updatedUser?.level, last_surf_watch: updatedUser?.last_surf_watch });
+        res.json(responseData);
     } catch (err) { 
+        if (err.message.includes('Cooldown')) return res.status(429).json({ error: err.message });
         console.error('Surf ad error:', err);
         res.status(500).json({ error: 'Error' }); 
     }
@@ -464,26 +471,32 @@ app.get('/api/bonus/daily-check/:id', requireAuth, async (req, res) => {
 app.post('/api/bonus/daily-claim', requireAuth, async (req, res) => {
     const telegramId = req.user.id;
     try {
-        const user = await DB.get('SELECT last_daily_claim, daily_streak FROM users WHERE telegram_id = ?', [telegramId]);
-        if (!user) return res.status(404).json({ error: 'User not found' });
-        
-        const now = new Date();
-        const lastClaimVal = user.last_daily_claim; 
-        const lastClaimStr = lastClaimVal ? (typeof lastClaimVal === "string" ? lastClaimVal : lastClaimVal.toISOString()) : null; 
-        const lastClaim = lastClaimStr ? new Date(lastClaimStr + (lastClaimStr.endsWith('Z') ? '' : 'Z')) : null;
-        
-        let diffHours = 48;
-        if (lastClaim) {
-            diffHours = (now - lastClaim) / (1000 * 60 * 60);
-            if (diffHours < 24) return res.status(400).json({ error: 'Too early' });
-        }
-        
-        const newStreak = diffHours < 48 ? (user.daily_streak || 0) + 1 : 1;
-        const reward = DAILY_REWARDS[Math.min(newStreak - 1, DAILY_REWARDS.length - 1)];
-        
-        await DB.run('UPDATE users SET balance = balance + ?, daily_streak = ?, last_daily_claim = CURRENT_TIMESTAMP WHERE telegram_id = ?', [reward, newStreak, telegramId]);
-        res.json({ success: true, reward, newStreak });
-    } catch (err) { res.status(500).json({ error: 'Daily claim error' }); }
+        const responseData = await DB.transaction(async (tx) => {
+            const user = await tx.get('SELECT last_daily_claim, daily_streak FROM users WHERE telegram_id = ?', [telegramId]);
+            if (!user) throw new Error('Пользователь не найден');
+            
+            const now = new Date();
+            const lastClaimVal = user.last_daily_claim; 
+            const lastClaimStr = lastClaimVal ? (typeof lastClaimVal === "string" ? lastClaimVal : lastClaimVal.toISOString()) : null; 
+            const lastClaim = lastClaimStr ? new Date(lastClaimStr + (lastClaimStr.endsWith('Z') ? '' : 'Z')) : null;
+            
+            let diffHours = 48;
+            if (lastClaim) {
+                diffHours = (now - lastClaim) / (1000 * 60 * 60);
+                if (diffHours < 24) throw new Error('Слишком рано для получения бонуса');
+            }
+            
+            const newStreak = diffHours < 48 ? (user.daily_streak || 0) + 1 : 1;
+            const reward = DAILY_REWARDS[Math.min(newStreak - 1, DAILY_REWARDS.length - 1)];
+            
+            await tx.run('UPDATE users SET balance = balance + ?, daily_streak = ?, last_daily_claim = CURRENT_TIMESTAMP WHERE telegram_id = ?', [reward, newStreak, telegramId]);
+            return { success: true, reward, newStreak };
+        });
+        res.json(responseData);
+    } catch (err) { 
+        console.error('Daily claim error:', err);
+        res.status(err.message.includes('не найден') ? 404 : 400).json({ error: err.message }); 
+    }
 });
 
 // --- Games API ---

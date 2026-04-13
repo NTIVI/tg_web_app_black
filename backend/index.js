@@ -123,6 +123,11 @@ if (bot) {
 app.get('/api/health', (req, res) => res.json({ status: 'ok', botInitialized: !!bot, time: new Date() }));
 
 // API Routes
+app.post('/api/auth', authLimiter, async (req, res) => {
+    const { initData, tgUser } = req.body;
+    if (!verifyInitData(initData)) return res.status(401).json({ error: 'Invalid data' });
+    const tid = tgUser.id.toString();
+
     try {
         console.log('Authenticating user:', tid);
         await DB.run(`
@@ -351,102 +356,6 @@ app.post('/api/quests/claim', requireAuth, async (req, res) => {
 });
 
 // GAME ROUTES
-app.post('/api/games/play', requireAuth, async (req, res) => {
-    const { game, bet, data } = req.body; // data contains game-specific info (e.g., chosen spots)
-    const telegramId = req.user.id;
-    
-    try {
-        const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-        if (user.balance < bet) return res.status(400).json({ error: 'Insufficient funds' });
-
-        let winAmount = 0;
-        let multiplier = 0;
-        let resultData = {};
-
-        // Server-side RNG logic for each game
-        if (game === 'slots') {
-            const reels = [
-                Math.floor(Math.random() * 7),
-                Math.floor(Math.random() * 7),
-                Math.floor(Math.random() * 7)
-            ];
-            resultData = { reels };
-            if (reels[0] === reels[1] && reels[1] === reels[2]) {
-                multiplier = reels[0] === 0 ? 50 : 10; // Jackpot or standard
-            } else if (reels[0] === reels[1] || reels[1] === reels[2] || reels[0] === reels[2]) {
-                multiplier = 2;
-            }
-        } else if (game === 'dice') {
-            const roll = Math.floor(Math.random() * 100) + 1;
-            const isOver = data.target === 'over';
-            const value = data.value;
-            const won = isOver ? roll > value : roll < value;
-            resultData = { roll };
-            if (won) {
-                const probability = isOver ? (100 - value) / 100 : value / 100;
-                multiplier = 0.95 / probability; // House edge included
-            }
-        } else if (game === 'coinflip') {
-            const roll = Math.random() > 0.5 ? 'heads' : 'tails';
-            resultData = { roll };
-            if (roll === data.guess) multiplier = 2;
-        } else if (game === 'mines') {
-            // Mines logic is multi-step, but here we can handle the final reveal if the user cashes out
-            if (data.action === 'cashout') {
-                multiplier = data.multiplier;
-            } else {
-                // Return immediate result if they hit a mine
-                const isMine = Math.random() < (data.mineCount / 25);
-                if (isMine) multiplier = 0;
-                else multiplier = 1; // placeholder for progress
-            }
-        } else if (game === 'roulette') {
-            const roll = Math.floor(Math.random() * 37);
-            resultData = { roll };
-            const betType = data.type; // 'number', 'color', 'evenodd'
-            if (betType === 'number' && roll === data.value) multiplier = 36;
-            else if (betType === 'color' && ((data.value === 'red' && [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(roll)) || (data.value === 'black' && [2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35].includes(roll)))) multiplier = 2;
-            else if (betType === 'evenodd' && ((data.value === 'even' && roll !== 0 && roll % 2 === 0) || (data.value === 'odd' && roll % 2 !== 0))) multiplier = 2;
-        } else if (game === 'crash') {
-            // Server determines crash point
-            const crashPoint = Math.max(1, (0.99 / (1 - Math.random())).toFixed(2));
-            resultData = { crashPoint };
-            if (data.cashout <= crashPoint) multiplier = data.cashout;
-            else multiplier = 0;
-        } else if (game === 'plinko') {
-            const outcomes = [0.2, 0.5, 1, 1.5, 2, 5, 10]; // Example buckets
-            multiplier = outcomes[Math.floor(Math.random() * outcomes.length)];
-        } else if (game === 'blackjack') {
-            const playerVal = Math.floor(Math.random() * 10) + 12; // Simple mock
-            const dealerVal = Math.floor(Math.random() * 10) + 15;
-            if (playerVal > 21) multiplier = 0;
-            else if (dealerVal > 21 || playerVal > dealerVal) multiplier = 2;
-            else if (playerVal === dealerVal) multiplier = 1;
-            resultData = { playerVal, dealerVal };
-        } else if (game === 'hilo') {
-            const won = Math.random() > 0.6; // High difficulty
-            if (won) multiplier = 1.8;
-        } else if (game === 'wheel') {
-            const multiArr = [0, 0.5, 1, 1.5, 2, 5, 0, 10];
-            multiplier = multiArr[Math.floor(Math.random() * multiArr.length)];
-        }
-
-        winAmount = Math.floor(bet * multiplier);
-        const profit = winAmount - bet;
-
-        await DB.run('UPDATE users SET balance = balance + ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ?, total_wins_sum = total_wins_sum + ? WHERE telegram_id = ?', [profit, bet, winAmount, telegramId]);
-        await DB.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)', [telegramId, game, bet, winAmount, multiplier, JSON.stringify(resultData)]);
-        
-        // Update Quests
-        await updateQuestProgress(telegramId, 'games', 1);
-        if (winAmount > 0) await updateQuestProgress(telegramId, 'win', 1);
-        if (bet >= 1000) await updateQuestProgress(telegramId, 'bet1000', 1);
-
-        const updatedUser = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-        res.json({ success: true, balance: updatedUser.balance, winAmount, multiplier, resultData });
-
-    } catch (err) { console.error('Play error:', err); res.status(500).json({ error: 'Game error' }); }
-});
 app.post('/api/buy', requireAuth, async (req, res) => {
     const { itemName, price } = req.body;
     const telegramId = req.user.id;
@@ -628,7 +537,7 @@ app.post('/api/games/play', requireAuth, async (req, res) => {
         const winAmount = result.winAmount || 0;
         const netChange = winAmount - bet;
 
-        await DB.run(\`
+        await DB.run(`
             UPDATE users SET 
                 balance = balance + ?, 
                 total_bets_count = total_bets_count + 1, 
@@ -637,13 +546,14 @@ app.post('/api/games/play', requireAuth, async (req, res) => {
                 xp = xp + ?,
                 level = FLOOR((xp + ?) / 1000) + 1
             WHERE telegram_id = ?
-        \`, [netChange, bet, winAmount, Math.floor(bet/10), Math.floor(bet/10), telegramId]);
+        `, [netChange, bet, winAmount, Math.floor(bet/10), Math.floor(bet/10), telegramId]);
 
         await DB.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
             [telegramId, game, bet, winAmount, result.multiplier, JSON.stringify(result)]);
 
-        if (winAmount > bet) updateQuestProgress(telegramId, 'wins', 1);
+        if (winAmount > bet) updateQuestProgress(telegramId, 'win', 1);
         updateQuestProgress(telegramId, 'games', 1);
+        updateQuestProgress(telegramId, 'bet', bet);
         const updated = await DB.get('SELECT balance, xp, level FROM users WHERE telegram_id = ?', [telegramId]);
         res.json({ ...result, ...updated });
 
@@ -700,8 +610,9 @@ app.post('/api/games/action', requireAuth, async (req, res) => {
                 await DB.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
                 await DB.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
                     [telegramId, 'blackjack', bet, winAmount, multiplier, JSON.stringify({ playerHand: state.playerHand, dealerHand: state.dealerHand })]);
-                if (winAmount > bet) updateQuestProgress(telegramId, 'wins', 1);
+                if (winAmount > bet) updateQuestProgress(telegramId, 'win', 1);
                 updateQuestProgress(telegramId, 'games', 1);
+                updateQuestProgress(telegramId, 'bet', bet);
 
                 const updated = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
                 return res.json({ dealerHand: state.dealerHand, dealerSum, status: winAmount > bet ? 'win' : winAmount === bet ? 'push' : 'lose', winAmount, balance: updated.balance });
@@ -729,8 +640,9 @@ app.post('/api/games/action', requireAuth, async (req, res) => {
                     [telegramId, 'mines', bet, winAmount, multiplier, JSON.stringify(state)]);
                 
                 const updated = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-                if (winAmount > bet) updateQuestProgress(telegramId, 'wins', 1);
+                if (winAmount > bet) updateQuestProgress(telegramId, 'win', 1);
                 updateQuestProgress(telegramId, 'games', 1);
+                updateQuestProgress(telegramId, 'bet', bet);
                 return res.json({ status: 'win', winAmount, balance: updated.balance, mines: state.mines });
             }
         } else if (active.game_name === 'crash') {
@@ -752,8 +664,9 @@ app.post('/api/games/action', requireAuth, async (req, res) => {
                     [telegramId, 'crash', bet, winAmount, currentMultiplier, JSON.stringify(state)]);
                 
                 const updated = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-                if (winAmount > bet) updateQuestProgress(telegramId, 'wins', 1);
+                if (winAmount > bet) updateQuestProgress(telegramId, 'win', 1);
                 updateQuestProgress(telegramId, 'games', 1);
+                updateQuestProgress(telegramId, 'bet', bet);
                 return res.json({ status: 'win', winAmount, balance: updated.balance, multiplier: currentMultiplier });
             }
         } else if (active.game_name === 'hilo') {
@@ -786,8 +699,9 @@ app.post('/api/games/action', requireAuth, async (req, res) => {
                     [telegramId, 'hilo', bet, winAmount, state.multiplier, JSON.stringify(state)]);
                 
                 const updated = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-                if (winAmount > bet) updateQuestProgress(telegramId, 'wins', 1);
+                if (winAmount > bet) updateQuestProgress(telegramId, 'win', 1);
                 updateQuestProgress(telegramId, 'games', 1);
+                updateQuestProgress(telegramId, 'bet', bet);
                 return res.json({ status: 'win', winAmount, balance: updated.balance });
             }
         }

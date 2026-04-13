@@ -7,6 +7,8 @@ import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import { DB } from './models.js';
+import fetch from 'node-fetch';
+import * as GamesLogic from './games.js';
 
 dotenv.config();
 const app = express();
@@ -121,19 +123,6 @@ if (bot) {
 app.get('/api/health', (req, res) => res.json({ status: 'ok', botInitialized: !!bot, time: new Date() }));
 
 // API Routes
-app.post('/api/auth', authLimiter, async (req, res) => {
-    const { initData, initDataUnsafe } = req.body;
-    
-    // STRICT BOT CHECK: In production, initData MUST be present and valid
-    const isMock = !initData && process.env.NODE_ENV !== 'production';
-    if (!isMock && (!initData || !verifyInitData(initData))) {
-        console.warn('Bot attempt or invalid auth detected');
-        return res.status(403).json({ error: 'Access denied: Valid Telegram authentication required' });
-    }
-
-    const tgUser = initDataUnsafe?.user || { id: 'mock_123', username: 'mock_user' };
-    const tid = tgUser.id.toString();
-
     try {
         console.log('Authenticating user:', tid);
         await DB.run(`
@@ -151,8 +140,18 @@ app.post('/api/auth', authLimiter, async (req, res) => {
         
         // Fetch additional user data for bundling
         const purchases = await DB.all('SELECT * FROM purchases WHERE telegram_id = ? ORDER BY purchased_at DESC', [tid]);
-        const nfts = await DB.all('SELECT * FROM user_nfts WHERE telegram_id = ? ORDER BY purchased_at DESC', [tid]);
+        const quests = await DB.all('SELECT q.*, uq.current_value, uq.is_completed, uq.claimed_at FROM quests q LEFT JOIN user_quests uq ON q.id = uq.quest_id AND uq.telegram_id = ?', [tid]);
         
+        // Update streak if missed a day
+        if (user.last_daily_claim) {
+            const now = new Date();
+            const lastClaim = new Date(user.last_daily_claim + (user.last_daily_claim.toString().endsWith('Z') ? '' : 'Z'));
+            const diffHours = (now - lastClaim) / (1000 * 60 * 60);
+            if (diffHours >= 48) {
+                await DB.run('UPDATE users SET daily_streak = 0 WHERE telegram_id = ?', [tid]);
+            }
+        }
+
         // Generate Token
         const token = jwt.sign({ id: user.telegram_id, username: user.username }, jwtSecret, { expiresIn: '7d' });
         
@@ -160,10 +159,27 @@ app.post('/api/auth', authLimiter, async (req, res) => {
             user, 
             token,
             purchases: purchases || [],
-            nfts: nfts || []
+            quests: quests || []
         });
     } catch (err) { console.error('Auth error:', err); res.status(500).json({ error: 'DB error' }); }
 });
+
+// QUEST HELPERS
+const updateQuestProgress = async (telegramId, category, increment = 1) => {
+    try {
+        const activeQuests = await DB.all('SELECT id, target_value FROM quests WHERE category = ?', [category]);
+        for (const quest of activeQuests) {
+            await DB.run(`
+                INSERT INTO user_quests (telegram_id, quest_id, current_value, is_completed)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(telegram_id, quest_id) DO UPDATE SET
+                    current_value = LEAST(user_quests.current_value + ?, quests.target_value),
+                    is_completed = CASE WHEN user_quests.current_value + ? >= quests.target_value THEN TRUE ELSE user_quests.is_completed END,
+                    updated_at = CURRENT_TIMESTAMP
+            `, [telegramId, quest.id, increment, increment >= quest.target_value, increment, increment]);
+        }
+    } catch (err) { console.error('Quest update error:', err); }
+};
 
 // NEWS ROUTES
 app.get('/api/news/banners', async (req, res) => {
@@ -257,11 +273,12 @@ app.post('/api/watch-ad', requireAuth, limiter, async (req, res) => {
             SET balance = balance + 35, 
                 xp = xp + 50, 
                 level = FLOOR((xp + 50) / 1000) + 1,
-                last_ad_watch = CURRENT_TIMESTAMP,
-                stock_multiplier = COALESCE(stock_multiplier, 1.0) + 0.015,
-                last_stock_penalty = CURRENT_TIMESTAMP
+                last_ad_watch = CURRENT_TIMESTAMP
             WHERE telegram_id = ?
         `, [telegramId]);
+
+        await updateQuestProgress(telegramId, 'ads', 1);
+
         const updatedUser = await DB.get('SELECT balance, xp, level, last_ad_watch FROM users WHERE telegram_id = ?', [telegramId]);
         res.json({ success: !!updatedUser, newBalance: updatedUser?.balance, xp: updatedUser?.xp, level: updatedUser?.level, last_ad_watch: updatedUser?.last_ad_watch });
     } catch (err) { 
@@ -288,10 +305,12 @@ app.post('/api/surf-ad', requireAuth, limiter, async (req, res) => {
                 xp = xp + 10, 
                 level = FLOOR((xp + 10) / 1000) + 1,
                 last_surf_watch = CURRENT_TIMESTAMP,
-                last_ad_watch = CURRENT_TIMESTAMP,
-                stock_multiplier = COALESCE(stock_multiplier, 1.0) + 0.005
+                last_ad_watch = CURRENT_TIMESTAMP
             WHERE telegram_id = ?
         `, [telegramId]);
+
+        await updateQuestProgress(telegramId, 'ads', 1);
+
         const updatedUser = await DB.get('SELECT balance, xp, level, last_surf_watch FROM users WHERE telegram_id = ?', [telegramId]);
         res.json({ success: !!updatedUser, newBalance: updatedUser?.balance, xp: updatedUser?.xp, level: updatedUser?.level, last_surf_watch: updatedUser?.last_surf_watch });
     } catch (err) { 
@@ -300,33 +319,133 @@ app.post('/api/surf-ad', requireAuth, limiter, async (req, res) => {
     }
 });
 
-app.get('/api/user/stocks', requireAuth, async (req, res) => {
+// QUEST ROUTES
+app.get('/api/quests', requireAuth, async (req, res) => {
     const telegramId = req.user.id;
     try {
-        const user = await DB.get('SELECT stock_multiplier, last_ad_watch, last_stock_penalty, registered_at FROM users WHERE telegram_id = ?', [telegramId]);
-        if (!user) return res.status(404).json({ error: 'User not found' });
+        const quests = await DB.all(`
+            SELECT q.*, uq.current_value, uq.is_completed, uq.claimed_at 
+            FROM quests q 
+            LEFT JOIN user_quests uq ON q.id = uq.quest_id AND uq.telegram_id = ?
+        `, [telegramId]);
+        res.json({ quests });
+    } catch (err) { res.status(500).json({ error: 'Fetch quests error' }); }
+});
+
+app.post('/api/quests/claim', requireAuth, async (req, res) => {
+    const { questId } = req.body;
+    const telegramId = req.user.id;
+    try {
+        const userQuest = await DB.get('SELECT * FROM user_quests WHERE telegram_id = ? AND quest_id = ?', [telegramId, questId]);
+        if (!userQuest || !userQuest.is_completed) return res.status(400).json({ error: 'Quest not completed' });
+        if (userQuest.claimed_at) return res.status(400).json({ error: 'Rewards already claimed' });
+
+        const quest = await DB.get('SELECT reward FROM quests WHERE id = ?', [questId]);
         
-        let multiplier = user.stock_multiplier || 1.0;
+        await DB.run('UPDATE user_quests SET claimed_at = CURRENT_TIMESTAMP WHERE telegram_id = ? AND quest_id = ?', [telegramId, questId]);
+        await DB.run('UPDATE users SET balance = balance + ? WHERE telegram_id = ?', [quest.reward, telegramId]);
         
-        // Base time on last ad watch or registration 
-        const adTimeStr = user.last_ad_watch || user.registered_at;
-        const lastAdWatch = adTimeStr ? new Date(typeof adTimeStr === 'string' ? adTimeStr + (adTimeStr.endsWith('Z') ? '' : 'Z') : adTimeStr.toISOString()) : null;
-        
-        if (lastAdWatch) {
-            const now = new Date();
-            const hoursSinceAd = (now.getTime() - lastAdWatch.getTime()) / (1000 * 60 * 60);
-            
-            if (hoursSinceAd >= 24 && multiplier > 1.0) {
-                multiplier = 1.0;
-                await DB.run(`UPDATE users SET stock_multiplier = 1.0 WHERE telegram_id = ?`, [telegramId]);
+        const updated = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+        res.json({ success: true, balance: updated.balance });
+    } catch (err) { res.status(500).json({ error: 'Claim error' }); }
+});
+
+// GAME ROUTES
+app.post('/api/games/play', requireAuth, async (req, res) => {
+    const { game, bet, data } = req.body; // data contains game-specific info (e.g., chosen spots)
+    const telegramId = req.user.id;
+    
+    try {
+        const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+        if (user.balance < bet) return res.status(400).json({ error: 'Insufficient funds' });
+
+        let winAmount = 0;
+        let multiplier = 0;
+        let resultData = {};
+
+        // Server-side RNG logic for each game
+        if (game === 'slots') {
+            const reels = [
+                Math.floor(Math.random() * 7),
+                Math.floor(Math.random() * 7),
+                Math.floor(Math.random() * 7)
+            ];
+            resultData = { reels };
+            if (reels[0] === reels[1] && reels[1] === reels[2]) {
+                multiplier = reels[0] === 0 ? 50 : 10; // Jackpot or standard
+            } else if (reels[0] === reels[1] || reels[1] === reels[2] || reels[0] === reels[2]) {
+                multiplier = 2;
             }
+        } else if (game === 'dice') {
+            const roll = Math.floor(Math.random() * 100) + 1;
+            const isOver = data.target === 'over';
+            const value = data.value;
+            const won = isOver ? roll > value : roll < value;
+            resultData = { roll };
+            if (won) {
+                const probability = isOver ? (100 - value) / 100 : value / 100;
+                multiplier = 0.95 / probability; // House edge included
+            }
+        } else if (game === 'coinflip') {
+            const roll = Math.random() > 0.5 ? 'heads' : 'tails';
+            resultData = { roll };
+            if (roll === data.guess) multiplier = 2;
+        } else if (game === 'mines') {
+            // Mines logic is multi-step, but here we can handle the final reveal if the user cashes out
+            if (data.action === 'cashout') {
+                multiplier = data.multiplier;
+            } else {
+                // Return immediate result if they hit a mine
+                const isMine = Math.random() < (data.mineCount / 25);
+                if (isMine) multiplier = 0;
+                else multiplier = 1; // placeholder for progress
+            }
+        } else if (game === 'roulette') {
+            const roll = Math.floor(Math.random() * 37);
+            resultData = { roll };
+            const betType = data.type; // 'number', 'color', 'evenodd'
+            if (betType === 'number' && roll === data.value) multiplier = 36;
+            else if (betType === 'color' && ((data.value === 'red' && [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(roll)) || (data.value === 'black' && [2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35].includes(roll)))) multiplier = 2;
+            else if (betType === 'evenodd' && ((data.value === 'even' && roll !== 0 && roll % 2 === 0) || (data.value === 'odd' && roll % 2 !== 0))) multiplier = 2;
+        } else if (game === 'crash') {
+            // Server determines crash point
+            const crashPoint = Math.max(1, (0.99 / (1 - Math.random())).toFixed(2));
+            resultData = { crashPoint };
+            if (data.cashout <= crashPoint) multiplier = data.cashout;
+            else multiplier = 0;
+        } else if (game === 'plinko') {
+            const outcomes = [0.2, 0.5, 1, 1.5, 2, 5, 10]; // Example buckets
+            multiplier = outcomes[Math.floor(Math.random() * outcomes.length)];
+        } else if (game === 'blackjack') {
+            const playerVal = Math.floor(Math.random() * 10) + 12; // Simple mock
+            const dealerVal = Math.floor(Math.random() * 10) + 15;
+            if (playerVal > 21) multiplier = 0;
+            else if (dealerVal > 21 || playerVal > dealerVal) multiplier = 2;
+            else if (playerVal === dealerVal) multiplier = 1;
+            resultData = { playerVal, dealerVal };
+        } else if (game === 'hilo') {
+            const won = Math.random() > 0.6; // High difficulty
+            if (won) multiplier = 1.8;
+        } else if (game === 'wheel') {
+            const multiArr = [0, 0.5, 1, 1.5, 2, 5, 0, 10];
+            multiplier = multiArr[Math.floor(Math.random() * multiArr.length)];
         }
+
+        winAmount = Math.floor(bet * multiplier);
+        const profit = winAmount - bet;
+
+        await DB.run('UPDATE users SET balance = balance + ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ?, total_wins_sum = total_wins_sum + ? WHERE telegram_id = ?', [profit, bet, winAmount, telegramId]);
+        await DB.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)', [telegramId, game, bet, winAmount, multiplier, JSON.stringify(resultData)]);
         
-        res.json({ multiplier });
-    } catch (err) { 
-        console.error('Stocks error:', err);
-        res.status(500).json({ error: 'Failed to fetch stocks' }); 
-    }
+        // Update Quests
+        await updateQuestProgress(telegramId, 'games', 1);
+        if (winAmount > 0) await updateQuestProgress(telegramId, 'win', 1);
+        if (bet >= 1000) await updateQuestProgress(telegramId, 'bet1000', 1);
+
+        const updatedUser = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+        res.json({ success: true, balance: updatedUser.balance, winAmount, multiplier, resultData });
+
+    } catch (err) { console.error('Play error:', err); res.status(500).json({ error: 'Game error' }); }
 });
 app.post('/api/buy', requireAuth, async (req, res) => {
     const { itemName, price } = req.body;
@@ -350,6 +469,8 @@ app.post('/api/buy', requireAuth, async (req, res) => {
         await DB.run('UPDATE users SET balance = balance - ? WHERE telegram_id = ?', [itemPrice, telegramId]);
         await DB.run('INSERT INTO purchases (telegram_id, item_name, price) VALUES (?,?,?)', [telegramId, itemName, itemPrice]);
         
+        await updateQuestProgress(telegramId, 'shop', itemPrice);
+
         const purchases = await DB.all('SELECT * FROM purchases WHERE telegram_id = ? ORDER BY purchased_at DESC', [telegramId]);
         res.json({ success: true, newBalance: currentBalance - itemPrice, purchases });
     } catch (err) { 
@@ -447,6 +568,236 @@ app.post('/api/bonus/daily-claim', requireAuth, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Daily claim error' }); }
 });
 
+// --- Games API ---
+app.post('/api/games/play', requireAuth, async (req, res) => {
+    const { game, bet, betOn, risk } = req.body;
+    const telegramId = req.user.id;
+
+    try {
+        const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+        if (!user || user.balance < bet) return res.status(400).json({ error: 'Недостаточно баланса' });
+
+        let result;
+        if (game === 'slots') result = GamesLogic.handleSlots(bet);
+        else if (game === 'roulette') result = GamesLogic.handleRoulette(bet, betOn);
+        else if (game === 'dice') result = GamesLogic.handleDice(bet, req.body.target, req.body.type);
+        else if (game === 'coinflip') result = GamesLogic.handleCoinFlip(bet, betOn);
+        else if (game === 'plinko') result = GamesLogic.handlePlinko(bet, risk);
+        else if (game === 'wheel') result = GamesLogic.handleWheelSpin(bet);
+        else if (game === 'crash') {
+            const state = GamesLogic.handleCrashStart(bet);
+            await DB.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
+                [telegramId, 'crash', bet, JSON.stringify(state)]);
+            await DB.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
+            return res.json({ success: true, status: 'playing', startTime: state.startTime });
+        }
+        else if (game === 'hilo') {
+            const state = GamesLogic.handleHiLoStart(bet);
+            await DB.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
+                [telegramId, 'hilo', bet, JSON.stringify(state)]);
+            await DB.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
+            return res.json({ success: true, status: 'playing', currentCard: state.currentCard });
+        }
+        else if (game === 'mines') {
+            const mineCount = req.body.mineCount || 3;
+            const state = GamesLogic.handleMinesStart(bet, mineCount);
+            await DB.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
+                [telegramId, 'mines', bet, JSON.stringify(state)]);
+            await DB.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
+            return res.json({ success: true, status: 'playing', mineCount, revealed: [] });
+        }
+        else if (game === 'blackjack') {
+             // Blackjack handles its own state
+             const deck = GamesLogic.createDeck();
+             const playerHand = [deck.pop(), deck.pop()];
+             const dealerHand = [deck.pop(), deck.pop()];
+             const playerSum = GamesLogic.calculateHand(playerHand);
+             
+             const state = { deck, playerHand, dealerHand, status: 'playing' };
+             await DB.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
+                [telegramId, 'blackjack', bet, JSON.stringify(state)]);
+             
+             // Deduct bet immediately for Blackjack
+             await DB.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
+             
+             return res.json({ success: true, playerHand, dealerHand: [dealerHand[0], { hidden: true }], playerSum, status: 'playing' });
+        }
+        else return res.status(400).json({ error: 'Unknown game' });
+
+        // For single-turn games:
+        const winAmount = result.winAmount || 0;
+        const netChange = winAmount - bet;
+
+        await DB.run(\`
+            UPDATE users SET 
+                balance = balance + ?, 
+                total_bets_count = total_bets_count + 1, 
+                total_bets_sum = total_bets_sum + ?,
+                total_wins_sum = total_wins_sum + ?,
+                xp = xp + ?,
+                level = FLOOR((xp + ?) / 1000) + 1
+            WHERE telegram_id = ?
+        \`, [netChange, bet, winAmount, Math.floor(bet/10), Math.floor(bet/10), telegramId]);
+
+        await DB.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
+            [telegramId, game, bet, winAmount, result.multiplier, JSON.stringify(result)]);
+
+        if (winAmount > bet) updateQuestProgress(telegramId, 'wins', 1);
+        updateQuestProgress(telegramId, 'games', 1);
+        const updated = await DB.get('SELECT balance, xp, level FROM users WHERE telegram_id = ?', [telegramId]);
+        res.json({ ...result, ...updated });
+
+    } catch (err) { 
+        console.error(err);
+        res.status(500).json({ error: 'Game error' }); 
+    }
+});
+
+app.post('/api/games/action', requireAuth, async (req, res) => {
+    const { action } = req.body;
+    const telegramId = req.user.id;
+
+    try {
+        const active = await DB.get('SELECT * FROM active_games WHERE telegram_id = ?', [telegramId]);
+        if (!active) return res.status(400).json({ error: 'No active game' });
+
+        const state = JSON.parse(active.state);
+        const bet = active.bet_amount;
+
+        if (active.game_name === 'blackjack') {
+            if (action === 'hit') {
+                state.playerHand.push(state.deck.pop());
+                const sum = GamesLogic.calculateHand(state.playerHand);
+                if (sum > 21) {
+                    // Bust
+                    await DB.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
+                    return res.json({ playerHand: state.playerHand, playerSum: sum, status: 'bust', winAmount: 0 });
+                }
+                await DB.run('UPDATE active_games SET state = ? WHERE telegram_id = ?', [JSON.stringify(state), telegramId]);
+                return res.json({ playerHand: state.playerHand, playerSum: sum, status: 'playing' });
+            } 
+            else if (action === 'stand') {
+                // Dealer plays
+                let dealerSum = GamesLogic.calculateHand(state.dealerHand);
+                while (dealerSum < 17) {
+                    state.dealerHand.push(state.deck.pop());
+                    dealerSum = GamesLogic.calculateHand(state.dealerHand);
+                }
+                
+                const playerSum = GamesLogic.calculateHand(state.playerHand);
+                let winAmount = 0;
+                let multiplier = 0;
+
+                if (dealerSum > 21 || playerSum > dealerSum) {
+                    winAmount = bet * 2;
+                    multiplier = 2;
+                } else if (playerSum === dealerSum) {
+                    winAmount = bet;
+                    multiplier = 1;
+                }
+
+                await DB.run('UPDATE users SET balance = balance + ?, total_wins_sum = total_wins_sum + ? WHERE telegram_id = ?', [winAmount, winAmount, telegramId]);
+                await DB.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
+                await DB.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
+                    [telegramId, 'blackjack', bet, winAmount, multiplier, JSON.stringify({ playerHand: state.playerHand, dealerHand: state.dealerHand })]);
+                if (winAmount > bet) updateQuestProgress(telegramId, 'wins', 1);
+                updateQuestProgress(telegramId, 'games', 1);
+
+                const updated = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+                return res.json({ dealerHand: state.dealerHand, dealerSum, status: winAmount > bet ? 'win' : winAmount === bet ? 'push' : 'lose', winAmount, balance: updated.balance });
+            }
+        } else if (active.game_name === 'mines') {
+            if (action === 'open') {
+                const idx = req.body.index;
+                if (state.mines[idx]) {
+                    // Hit a mine
+                    await DB.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
+                    return res.json({ status: 'lose', mines: state.mines, winAmount: 0 });
+                }
+                if (!state.revealed.includes(idx)) state.revealed.push(idx);
+                const multiplier = GamesLogic.getMinesMultiplier(state.revealed.length, state.mines.filter(m => m).length);
+                await DB.run('UPDATE active_games SET state = ? WHERE telegram_id = ?', [JSON.stringify(state), telegramId]);
+                return res.json({ status: 'playing', revealed: state.revealed, currentMultiplier: multiplier });
+            } else if (action === 'cashout') {
+                if (state.revealed.length === 0) return res.status(400).json({ error: 'Open at least one cell' });
+                const multiplier = GamesLogic.getMinesMultiplier(state.revealed.length, state.mines.filter(m => m).length);
+                const winAmount = Math.floor(bet * multiplier);
+                
+                await DB.run('UPDATE users SET balance = balance + ?, total_wins_sum = total_wins_sum + ? WHERE telegram_id = ?', [winAmount, winAmount, telegramId]);
+                await DB.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
+                await DB.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
+                    [telegramId, 'mines', bet, winAmount, multiplier, JSON.stringify(state)]);
+                
+                const updated = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+                if (winAmount > bet) updateQuestProgress(telegramId, 'wins', 1);
+                updateQuestProgress(telegramId, 'games', 1);
+                return res.json({ status: 'win', winAmount, balance: updated.balance, mines: state.mines });
+            }
+        } else if (active.game_name === 'crash') {
+            if (action === 'cashout') {
+                const now = Date.now();
+                const elapsedSeconds = (now - state.startTime) / 1000;
+                // Multiplier formula: e^(0.06 * seconds)
+                const currentMultiplier = Math.pow(Math.E, 0.06 * elapsedSeconds);
+                
+                if (currentMultiplier > state.crashPoint) {
+                    await DB.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
+                    return res.json({ status: 'crashed', crashPoint: state.crashPoint, winAmount: 0 });
+                }
+                
+                const winAmount = Math.floor(bet * currentMultiplier);
+                await DB.run('UPDATE users SET balance = balance + ?, total_wins_sum = total_wins_sum + ? WHERE telegram_id = ?', [winAmount, winAmount, telegramId]);
+                await DB.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
+                await DB.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
+                    [telegramId, 'crash', bet, winAmount, currentMultiplier, JSON.stringify(state)]);
+                
+                const updated = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+                if (winAmount > bet) updateQuestProgress(telegramId, 'wins', 1);
+                updateQuestProgress(telegramId, 'games', 1);
+                return res.json({ status: 'win', winAmount, balance: updated.balance, multiplier: currentMultiplier });
+            }
+        } else if (active.game_name === 'hilo') {
+            if (action === 'guess') {
+                const guess = req.body.guess; // 'higher', 'lower', 'same'
+                const nextCard = state.deck.pop();
+                const val1 = GamesLogic.getCardValue(state.currentCard);
+                const val2 = GamesLogic.getCardValue(nextCard);
+                
+                let win = false;
+                if (guess === 'higher' && val2 > val1) win = true;
+                else if (guess === 'lower' && val2 < val1) win = true;
+                else if (guess === 'same' && val2 === val1) win = true;
+                
+                if (!win) {
+                    await DB.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
+                    return res.json({ status: 'lose', nextCard, winAmount: 0 });
+                }
+                
+                // Multiplier logic for Hi-Lo (simplified)
+                state.multiplier *= 1.5; 
+                state.currentCard = nextCard;
+                await DB.run('UPDATE active_games SET state = ? WHERE telegram_id = ?', [JSON.stringify(state), telegramId]);
+                return res.json({ status: 'playing', currentCard: nextCard, currentMultiplier: state.multiplier });
+            } else if (action === 'cashout') {
+                const winAmount = Math.floor(bet * state.multiplier);
+                await DB.run('UPDATE users SET balance = balance + ?, total_wins_sum = total_wins_sum + ? WHERE telegram_id = ?', [winAmount, winAmount, telegramId]);
+                await DB.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
+                await DB.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
+                    [telegramId, 'hilo', bet, winAmount, state.multiplier, JSON.stringify(state)]);
+                
+                const updated = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+                if (winAmount > bet) updateQuestProgress(telegramId, 'wins', 1);
+                updateQuestProgress(telegramId, 'games', 1);
+                return res.json({ status: 'win', winAmount, balance: updated.balance });
+            }
+        }
+        res.status(400).json({ error: 'Invalid action' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Action error' });
+    }
+});
+
 // Admin Routes
 app.post('/api/admin/auth', authLimiter, async (req, res) => {
     const { password } = req.body;
@@ -510,72 +861,6 @@ app.post('/api/admin/settings/ads', requireAdmin, async (req, res) => {
         await DB.run("INSERT INTO settings (key, value) VALUES ('monetag_zone_id', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [monetag_zone_id]);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Admin settings error' }); }
-});
-
-app.get('/api/nft/rates', async (req, res) => {
-    try {
-        const rows = await DB.all("SELECT key, value FROM settings WHERE key LIKE 'brand%'");
-        const rates = {};
-        rows.forEach(r => rates[r.key] = parseFloat(r.value) || 0);
-        res.json({ rates });
-    } catch (err) { res.status(500).json({ error: 'Failed to fetch rates' }); }
-});
-
-app.post('/api/admin/nft/rates', requireAdmin, async (req, res) => {
-    const { rates } = req.body;
-    try {
-        for (const k of Object.keys(rates)) {
-            await DB.run('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', [k, rates[k].toString()]);
-        }
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
-});
-
-app.get('/api/admin/nft/global-stats', requireAdmin, async (req, res) => {
-    try {
-        const stats = await DB.get('SELECT AVG(stock_multiplier) as avg_multiplier, COUNT(*) as user_count FROM users');
-        res.json({ stats });
-    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
-});
-
-app.post('/api/admin/nft/reset-multiplier', requireAdmin, async (req, res) => {
-    try {
-        await DB.run('UPDATE users SET stock_multiplier = 1.0');
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
-});
-
-app.get('/api/admin/nft/stats', requireAdmin, async (req, res) => {
-    try {
-        const stats = await DB.all(`
-            SELECT u.telegram_id, u.username, u.first_name, un.nft_id, COUNT(*) as total_qty, MAX(un.purchased_at) as last_purchase
-            FROM user_nfts un
-            JOIN users u ON un.telegram_id = u.telegram_id
-            GROUP BY u.telegram_id, un.nft_id
-            ORDER BY last_purchase DESC
-        `);
-        res.json({ stats });
-    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
-});
-
-app.delete('/api/admin/nft/shares', requireAdmin, async (req, res) => {
-    const { telegramId, nftId } = req.body;
-    try {
-        // Delete the latest share for this user/brand
-        await DB.run(`
-            DELETE FROM user_nfts 
-            WHERE id IN (
-                SELECT id FROM user_nfts 
-                WHERE telegram_id = ? AND nft_id = ? 
-                ORDER BY purchased_at DESC 
-                LIMIT 1
-            )
-        `, [telegramId, nftId]);
-        res.json({ success: true });
-    } catch (err) { 
-        console.error('Delete share error:', err);
-        res.status(500).json({ error: 'Admin error' }); 
-    }
 });
 
 app.get('/api/social-stats', async (req, res) => {
@@ -734,46 +1019,5 @@ app.post('/api/admin/social-stats/refresh', requireAdmin, async (req, res) => {
         res.status(500).json({ error: 'Refresh failed' });
     }
 });
-
-app.post('/api/nft/buy', requireAuth, async (req, res) => {
-    const { nftId, price } = req.body;
-    const telegramId = req.user.id;
-    try {
-        const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-        if (!user || user.balance < price) return res.status(400).json({ error: 'Insufficient funds' });
-        
-        await DB.run('UPDATE users SET balance = balance - ? WHERE telegram_id = ?', [price, telegramId]);
-        await DB.run('INSERT INTO user_nfts (telegram_id, nft_id, purchase_price) VALUES (?,?,?)', [telegramId, nftId, price]);
-        
-        const nfts = await DB.all('SELECT * FROM user_nfts WHERE telegram_id = ?', [telegramId]);
-        res.json({ success: true, newBalance: user.balance - price, nfts });
-    } catch { res.status(500).json({ error: 'Purchase error' }); }
-});
-
-app.post('/api/nft/sell', requireAuth, async (req, res) => {
-    const { nftId, price } = req.body;
-    const telegramId = req.user.id;
-    try {
-        const nft = await DB.get('SELECT id FROM user_nfts WHERE telegram_id = ? AND nft_id = ? ORDER BY purchased_at ASC LIMIT 1', [telegramId, nftId]);
-        if (!nft) return res.status(400).json({ error: 'You do not own this share' });
-        
-        await DB.run('DELETE FROM user_nfts WHERE id = ?', [nft.id]);
-        await DB.run('UPDATE users SET balance = balance + ? WHERE telegram_id = ?', [price, telegramId]);
-        
-        const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-        const nfts = await DB.all('SELECT * FROM user_nfts WHERE telegram_id = ?', [telegramId]);
-        res.json({ success: true, newBalance: user.balance, nfts });
-    } catch { res.status(500).json({ error: 'Sell error' }); }
-});
-
-app.get('/api/nft/my/:telegramId', requireAuth, async (req, res) => {
-    const requestedId = req.params.telegramId;
-    // Security: and optionally check if requestedId === req.user.id
-    try {
-        const nfts = await DB.all('SELECT * FROM user_nfts WHERE telegram_id = ?', [requestedId]);
-        res.json({ nfts });
-    } catch { res.status(500).json({ error: 'My NFTs error' }); }
-});
-
 
 app.listen(port, () => console.log(`PostgreSQL Server on ${port}`));

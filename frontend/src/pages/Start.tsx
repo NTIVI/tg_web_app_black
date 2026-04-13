@@ -10,8 +10,6 @@ interface StartProps {
   setTgUser: (newUser: any) => void;
   purchases: any[];
   setPurchases: (p: any[]) => void;
-  myNfts: any[];
-  setMyNfts: (n: any[]) => void;
 }
 
 const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) => {
@@ -279,11 +277,11 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
           </div>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
             <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'rgba(30, 64, 175, 0.2)', border: '1px solid var(--primary-color)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)', fontWeight: 'bold' }}>3</div>
-            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Тратьте баланс в Магазине и на Акции брендов!</div>
+            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Тратьте баланс в Магазине или играйте в азартные Игры!</div>
           </div>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
             <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'rgba(30, 64, 175, 0.2)', border: '1px solid var(--primary-color)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)', fontWeight: 'bold' }}>4</div>
-            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Ваша активность не только приносит доход, но и стимулирует рост акций в приложении, меняя ваше развитие в экосистеме YourTurn!</div>
+            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Выполняйте ежедневные Квесты и получайте дополнительные бонусы и XP. Ваша активность — ключ к успеху в YourTurn!</div>
           </div>
         </div>
       </div>

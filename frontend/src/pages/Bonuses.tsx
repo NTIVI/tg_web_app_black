@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
-import { Gift, ExternalLink, CheckCircle2, DollarSign } from 'lucide-react';
+import { Gift, ExternalLink, CheckCircle2, DollarSign, Target, Star, Trophy } from 'lucide-react';
 
 const TelegramIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -42,9 +42,10 @@ const SOCIAL_CONFIG: any = {
   youtube: { title: 'YouTube', icon: <YoutubeIcon />, bg: 'linear-gradient(135deg, rgba(255, 0, 0, 0.1) 0%, rgba(255, 0, 0, 0.05) 100%)', border: '1px solid rgba(255, 0, 0, 0.2)', iconColor: '#FF0000', barBg: 'linear-gradient(90deg, #FF0000 0%, #CC0000 100%)', textColor: '#FF0000' }
 };
 
-const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDaily, setTgUser }: any) => {
-  const [claimedIds, setClaimedIds] = useState<string[]>([]);
+const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDaily, setTgUser, quests, setQuests }: any) => {
   const [claiming, setClaiming] = useState<string | null>(null);
+  const [userQuests, setUserQuests] = useState<any[]>([]);
+  const [loadingQuests, setLoadingQuests] = useState(true);
   const [socialStats, setSocialStats] = useState<any>(() => {
     const cached = localStorage.getItem('cached_social_stats');
     return cached ? JSON.parse(cached) : {
@@ -57,7 +58,7 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
   });
 
   const streak = dailyStatus?.currentStreak || 0;
-  const steps = [5000, 10, 30, 50, 70, 100, 150];
+  const steps = [10, 20, 50, 100, 250, 500, 1000]; // in cents
 
   useEffect(() => {
     const tid = tgUser?.telegram_id || tgUser?.id;
@@ -85,9 +86,25 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
       } catch (e) {}
     };
     fetchStats();
+    fetchStats();
+    fetchQuests();
     const interval = setInterval(fetchStats, 120000);
     return () => clearInterval(interval);
   }, []);
+
+  const fetchQuests = async () => {
+    try {
+      const res = await fetch(`${API_URL}/quests`, {
+        headers: { 'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}` }
+      });
+      const data = await res.json();
+      if (data.quests) setUserQuests(data.quests);
+    } catch (e) {
+      console.error('Fetch quests error:', e);
+    } finally {
+      setLoadingQuests(false);
+    }
+  };
 
   const handleClaim = async (bonus: any) => {
     const tid = tgUser?.telegram_id || tgUser?.id;
@@ -130,10 +147,7 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
             } else {
               setBalance((prev: number) => prev + bonus.reward);
             }
-            // Sync global user state with new XP and Level
-            if (setTgUser) {
-              setTgUser((prev: any) => ({ ...prev, ...data }));
-            }
+            if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
           }
         }
       } catch (err) {
@@ -142,6 +156,27 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
         setClaiming(null);
       }
     }, 2000);
+  };
+
+  const handleClaimQuest = async (questId: number) => {
+    try {
+      const res = await fetch(`${API_URL}/quests/claim`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify({ questId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBalance(data.newBalance);
+        if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
+        fetchQuests(); // Refresh quests
+      }
+    } catch (e) {
+      console.error('Claim quest error:', e);
+    }
   };
 
   const formatSubs = (count: number) => {
@@ -379,6 +414,75 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
           </div>
         );
       })}
+      </div>
+
+      {/* Quests Section */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', marginTop: '32px' }}>
+        <Target size={24} color="var(--primary-color)" />
+        <h3 style={{ margin: 0, opacity: 0.8 }}>Ежедневные квесты</h3>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
+        {loadingQuests ? (
+          <div style={{ padding: '40px', textAlign: 'center' }}><div className="spinner"></div></div>
+        ) : userQuests.length > 0 ? userQuests.map((q: any) => {
+          const isDone = q.current_progress >= q.target_value;
+          const isClaimed = q.is_claimed;
+          const pct = Math.min(100, (q.current_progress / q.target_value) * 100);
+
+          return (
+            <div key={q.id} className="glass-panel" style={{ padding: '16px', marginBottom: 0, border: isClaimed ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(168, 85, 247, 0.2)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '15px', fontWeight: '800' }}>{q.title}</span>
+                    {isClaimed && <CheckCircle2 size={14} color="var(--success-color)" />}
+                  </div>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '12px', margin: 0 }}>{q.description}</p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ color: 'var(--gold-color)', fontWeight: '900', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
+                     <DollarSign size={14} />+${(q.reward_balance / 100).toFixed(2)}
+                  </div>
+                  <div style={{ color: 'var(--primary-color)', fontWeight: '800', fontSize: '11px', opacity: 0.8 }}>+{q.reward_xp} XP</div>
+                </div>
+              </div>
+
+              <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.03)', borderRadius: '4px', overflow: 'hidden', marginBottom: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ 
+                  width: `${pct}%`, 
+                  height: '100%', 
+                  background: isDone ? 'var(--success-color)' : 'linear-gradient(90deg, #1e40af, #a855f7)', 
+                  borderRadius: '4px',
+                  boxShadow: isDone ? 'none' : '0 0 10px rgba(168, 85, 247, 0.4)'
+                }}></div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: '700' }}>
+                  ПРОГРЕСС: {q.current_progress} / {q.target_value}
+                </span>
+                {isDone ? (
+                  isClaimed ? (
+                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '800', textTransform: 'uppercase' }}>Получено</span>
+                  ) : (
+                    <button 
+                      className="btn-primary" 
+                      onClick={() => handleClaimQuest(q.id)}
+                      style={{ padding: '6px 16px', fontSize: '12px', borderRadius: '10px', minWidth: '80px', background: 'var(--success-color)' }}
+                    >
+                      Забрать
+                    </button>
+                  )
+                ) : (
+                  <span style={{ fontSize: '11px', color: 'var(--primary-color)', fontWeight: '800' }}>{pct.toFixed(0)}%</span>
+                )}
+              </div>
+            </div>
+          );
+        }) : (
+          <div style={{ padding: '20px', textAlign: 'center', opacity: 0.5 }}>Квестов пока нет</div>
+        )}
       </div>
 
 

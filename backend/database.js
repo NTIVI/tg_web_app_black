@@ -32,20 +32,19 @@ const initDB = async () => {
             last_daily_claim TIMESTAMP,
             daily_streak INTEGER DEFAULT 0,
             last_ad_watch TIMESTAMP,
-            last_surf_watch TIMESTAMP
+            last_surf_watch TIMESTAMP,
+            total_bets_count INTEGER DEFAULT 0,
+            total_bets_sum BIGINT DEFAULT 0,
+            total_wins_sum BIGINT DEFAULT 0
         )`);
 
-        // Migration: Remove yt_balance if exists
+        // Update Users Table: Remove stock columns if they exist, add stats columns if they don't
         try {
-            await client.query(`ALTER TABLE users DROP COLUMN IF EXISTS yt_balance`);
-        } catch (e) {
-            // Might fail if column doesn't exist or other issues, safe to ignore in most cases
-        }
-
-        // Migration: Add stock_multiplier and last_stock_penalty
-        try {
-            await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS stock_multiplier REAL DEFAULT 1.0`);
-            await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_stock_penalty TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
+            await client.query(`ALTER TABLE users DROP COLUMN IF EXISTS stock_multiplier`);
+            await client.query(`ALTER TABLE users DROP COLUMN IF EXISTS last_stock_penalty`);
+            await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS total_bets_count INTEGER DEFAULT 0`);
+            await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS total_bets_sum BIGINT DEFAULT 0`);
+            await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS total_wins_sum BIGINT DEFAULT 0`);
         } catch (e) {}
 
         // Purchases Table
@@ -57,6 +56,41 @@ const initDB = async () => {
             purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`);
 
+        // Game History Table
+        await client.query(`CREATE TABLE IF NOT EXISTS game_history (
+            id SERIAL PRIMARY KEY,
+            telegram_id TEXT,
+            game_name TEXT,
+            bet_amount BIGINT,
+            win_amount BIGINT,
+            multiplier REAL,
+            result_data JSONB,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`);
+
+        // Quests Table
+        await client.query(`CREATE TABLE IF NOT EXISTS quests (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            description TEXT,
+            reward BIGINT,
+            target_value INTEGER,
+            type TEXT, -- 'daily' or 'weekly'
+            category TEXT -- 'games', 'ads', 'shop'
+        )`);
+
+        // User Quests Progress Table
+        await client.query(`CREATE TABLE IF NOT EXISTS user_quests (
+            id SERIAL PRIMARY KEY,
+            telegram_id TEXT,
+            quest_id TEXT REFERENCES quests(id),
+            current_value INTEGER DEFAULT 0,
+            is_completed BOOLEAN DEFAULT FALSE,
+            claimed_at TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(telegram_id, quest_id)
+        )`);
+
         // Bonuses Claimed Table
         await client.query(`CREATE TABLE IF NOT EXISTS bonuses_claimed (
             id SERIAL PRIMARY KEY,
@@ -65,20 +99,20 @@ const initDB = async () => {
             claimed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`);
 
+        // Active Games (for multi-turn games like Blackjack, Mines)
+        await client.query(`CREATE TABLE IF NOT EXISTS active_games (
+            id SERIAL PRIMARY KEY,
+            telegram_id TEXT UNIQUE,
+            game_name TEXT,
+            bet_amount BIGINT,
+            state JSONB,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`);
+
         // Settings Table
         await client.query(`CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
             value TEXT
-        )`);
-
-        // User NFTs Table
-        await client.query(`CREATE TABLE IF NOT EXISTS user_nfts (
-            id SERIAL PRIMARY KEY,
-            telegram_id TEXT,
-            nft_id TEXT,
-            quantity INTEGER DEFAULT 1,
-            purchase_price BIGINT,
-            purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`);
 
         // News Banners
@@ -129,16 +163,31 @@ const initDB = async () => {
             }
         }
 
-        // Default Ads & NFT Settings
+        // Default Quests
+        const { rows: questRows } = await client.query('SELECT COUNT(*) FROM quests');
+        if (parseInt(questRows[0].count) === 0) {
+            const defaultQuests = [
+                ['daily_games_10', 'Мастер азарта', 'Сыграйте в любые игры 10 раз', 500, 10, 'daily', 'games'],
+                ['daily_win_5', 'Везунчик', 'Выиграйте в играх 5 раз', 1000, 5, 'daily', 'games'],
+                ['daily_ads_5', 'Зритель', 'Посмотрите 5 рекламных роликов', 750, 5, 'daily', 'ads'],
+                ['daily_bet_1000', 'Крупный игрок', 'Поставьте в сумме более 1000 монет', 1500, 1000, 'daily', 'games'],
+                ['weekly_games_100', 'Легенда казино', 'Сыграйте 100 раз за неделю', 5000, 100, 'weekly', 'games'],
+                ['weekly_win_50', 'Король удачи', 'Выиграйте 50 раз за неделю', 10000, 50, 'weekly', 'games'],
+                ['weekly_ads_30', 'Фанат рекламы', 'Посмотрите 30 рекламных роликов за неделю', 4000, 30, 'weekly', 'ads'],
+                ['weekly_spend_10000', 'Шопоголик', 'Потратьте в магазине 10,000 монет', 8000, 10000, 'weekly', 'shop']
+            ];
+            for (const [id, title, desc, reward, target, type, cat] of defaultQuests) {
+                await client.query('INSERT INTO quests (id, title, description, reward, target_value, type, category) VALUES ($1, $2, $3, $4, $5, $6, $7)', [id, title, desc, reward, target, type, cat]);
+            }
+        }
+
+        // Default Ads & Settings
         const defaults = [
             ['ads_enabled', 'true'],
             ['ads_client_id', 'ca-pub-5854666775312114'],
             ['ads_slot_id', '9448831633'],
             ['monetag_zone_id', '9609'],
             ['rewarded_ad_provider', 'monetag'],
-            ['nft_manipulation_target', '0'],
-            ['nft_manipulation_duration', '0'],
-            ['nft_manipulation_start', '0'],
             ['social_tiktok_url', 'https://www.tiktok.com/@just___000'],
             ['social_telegram_url', 'https://t.me/YourTurn_APP'],
             ['social_youtube_url', 'https://www.youtube.com/@YourTurn_Arm'],

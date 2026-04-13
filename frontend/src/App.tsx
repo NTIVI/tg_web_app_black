@@ -6,9 +6,9 @@ import Shop from './pages/Shop';
 import Profile from './pages/Profile';
 import Top from './pages/Top';
 import Bonuses from './pages/Bonuses';
-import Admin from './pages/Admin';
-import Promotions from './pages/Promotions';
 import News from './pages/News';
+import Games from './pages/Games';
+import GamePage from './pages/GamePage';
 import DailyBonusModal from './components/DailyBonusModal';
 import { API_URL } from './config';
 
@@ -29,8 +29,8 @@ function App() {
     const cached = localStorage.getItem('cached_purchases');
     return cached ? JSON.parse(cached) : [];
   });
-  const [myNfts, setMyNfts] = useState<any[]>(() => {
-    const cached = localStorage.getItem('cached_nfts');
+  const [quests, setQuests] = useState<any[]>(() => {
+    const cached = localStorage.getItem('cached_quests');
     return cached ? JSON.parse(cached) : [];
   });
 
@@ -116,13 +116,13 @@ function App() {
         setTgUser(updatedUser);
         setBalance(data.user.balance);
         setPurchases(data.purchases || []);
-        setMyNfts(data.nfts || []);
+        setQuests(data.quests || []);
         
         // Cache everything
         localStorage.setItem('cached_user', JSON.stringify(updatedUser));
         localStorage.setItem('cached_balance', data.user.balance.toString());
         localStorage.setItem('cached_purchases', JSON.stringify(data.purchases || []));
-        localStorage.setItem('cached_nfts', JSON.stringify(data.nfts || []));
+        localStorage.setItem('cached_quests', JSON.stringify(data.quests || []));
         
         checkDailyBonus(user.id);
       }
@@ -210,8 +210,8 @@ function App() {
     setTgUser: updateTgUser,
     purchases,
     setPurchases,
-    myNfts,
-    setMyNfts,
+    quests,
+    setQuests,
     dailyStatus,
     handleClaimDaily,
     claimingDaily
@@ -248,7 +248,7 @@ function App() {
               <div className="logo-text-gradient">YourTurn</div>
             </div>
             <p className="onboarding-bio">
-              Ваш путь в мир цифровых инвестиций и бонусов 🚀. Зарабатывайте бонусы 💰, покупайте акции мировых брендов 📈 и развивайте свой профиль ✨.
+              Ваш путь в мир азарта, развлечений и бонусов 🚀. Зарабатывайте бонусы 💰, играйте в захватывающие игры 🎮 и развивайте свой профиль ✨.
             </p>
           </div>
           
@@ -279,7 +279,8 @@ function App() {
               <li>Заработок $ на просмотре рекламы — до $0.35 за ролик.</li>
               <li>Сёрфинг сайтов — быстрый доход и опыт.</li>
               <li><b>Магазин товаров</b> — покупайте реальные вещи за свой баланс.</li>
-              <li>Акции брендов — инвестируйте в крупнейшие компании.</li>
+              <li><b>Азартные игры</b> — 10 уникальных игр для приумножения капитала.</li>
+              <li>Ежедневные квесты — выполняйте задания и получайте награды.</li>
               <li>Глобальный рейтинг — соревнуйтесь за звание лучшего.</li>
             </ul>
           </div>
@@ -319,7 +320,8 @@ function App() {
           <Route path="top" element={<Top />} />
           <Route path="bonuses" element={<Bonuses {...props} />} />
           <Route path="profile" element={<Profile {...props} />} />
-          <Route path="promotions" element={<Promotions {...props} />} />
+          <Route path="games" element={<Games {...props} />} />
+          <Route path="games/:gameId" element={<GamePage {...props} />} />
           <Route path="news" element={<News />} />
           <Route path="admin" element={<Admin />} />
         </Route>

@@ -1,38 +1,7 @@
 import { useEffect } from 'react';
-import { Wallet, Trophy, Package, Calendar, ShieldCheck, Layers } from 'lucide-react';
+import { Wallet, Trophy, Package, Calendar, ShieldCheck, Gamepad2, TrendingUp, DollarSign } from 'lucide-react';
 
-const BRAND_DATA: Record<string, { name: string, img: string }> = {
-  brand1: { name: 'Apple', img: '/brands/apple.png?v=3' },
-  brand2: { name: 'Nvidia', img: '/brands/nvidia.png?v=3' },
-  brand3: { name: 'Samsung', img: '/brands/samsung.png?v=3' },
-  brand4: { name: 'Xiaomi', img: '/brands/xiaomi.png?v=3' },
-  brand5: { name: 'Netflix', img: '/brands/netflix.png?v=3' },
-  brand6: { name: 'Epic Games', img: '/brands/epicgames.png?v=3' },
-  brand7: { name: 'Steam', img: '/brands/steam.png?v=3' },
-  brand8: { name: 'Xbox', img: '/brands/xbox.png?v=3' },
-};
-
-const Profile = ({ balance, tgUser, purchases, myNfts }: any) => {
-  // Group raw NFTs by nft_id
-  const groupedNfts = (myNfts || []).reduce((acc: any, curr: any) => {
-    const brand = BRAND_DATA[curr.nft_id];
-    if (!brand) return acc;
-    
-    if (!acc[curr.nft_id]) {
-      acc[curr.nft_id] = {
-        name: brand.name,
-        img: brand.img,
-        qty: 0,
-        totalInvested: 0
-      };
-    }
-    acc[curr.nft_id].qty += 1;
-    acc[curr.nft_id].totalInvested += Number(curr.purchase_price || 0);
-    return acc;
-  }, {});
-
-  const nftsToDisplay = Object.values(groupedNfts);
-
+const Profile = ({ balance, tgUser, purchases }: any) => {
   useEffect(() => {
     // Synchronized via global App.tsx init
   }, [tgUser?.telegram_id]);
@@ -102,50 +71,36 @@ const Profile = ({ balance, tgUser, purchases, myNfts }: any) => {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-        <Layers size={20} color="var(--primary-color)" />
-        <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Мои акции</h3>
+        <Gamepad2 size={20} color="var(--primary-color)" />
+        <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Статистика игр</h3>
       </div>
 
       <div className="glass-panel" style={{ 
-        padding: '16px', 
+        padding: '24px', 
         marginBottom: '24px', 
-        background: 'linear-gradient(90deg, rgba(30, 64, 175, 0.1), rgba(168, 85, 247, 0.1))',
+        background: 'linear-gradient(135deg, rgba(30, 64, 175, 0.05), rgba(168, 85, 247, 0.05))',
         border: '1px solid rgba(255, 255, 255, 0.05)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        aspectRatio: '3/1'
       }}>
-        <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
-          {nftsToDisplay.length > 0 ? nftsToDisplay.map((nft: any, i: number) => (
-            <div key={i} style={{ 
-              minWidth: '90px', 
-              background: 'none', 
-              padding: '6px', 
-              textAlign: 'center'
-            }}>
-              <img src={nft.img} style={{ 
-                width: '48px', 
-                height: '48px', 
-                marginBottom: '4px',
-                filter: 'brightness(1.15) contrast(1.1) saturate(1.1) drop-shadow(0 0 6px rgba(255,255,255,0.1))'
-              }} alt="NFT" />
-              <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--gold-color)' }}>{nft.name}</div>
-              <div style={{ fontSize: '9px', opacity: 0.5 }}>x{nft.qty} шт</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+              <TrendingUp size={14} />
+              <span>Всего игр</span>
             </div>
-          )) : (
-            <div style={{ fontSize: '13px', opacity: 0.5, padding: '10px' }}>У вас пока нет акций</div>
-          )}
+            <div style={{ fontSize: '20px', fontWeight: '900', color: '#fff' }}>{tgUser?.total_bets_count || 0}</div>
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+              <DollarSign size={14} />
+              <span>Выиграно</span>
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--success-color)' }}>${((tgUser?.total_wins_sum || 0) / 100).toFixed(2)}</div>
+          </div>
         </div>
-        <div style={{ 
-          borderTop: '1px solid rgba(255,255,255,0.05)', 
-          paddingTop: '8px', 
-          display: 'flex', 
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <span style={{ fontSize: '12px', opacity: 0.5, fontWeight: '600' }}>Статус коллекции</span>
-          <span style={{ fontSize: '13px', fontWeight: '900', color: 'var(--primary-color)' }}>Всего: {myNfts.reduce((acc: number, n: any) => acc + n.qty, 0)} шт</span>
+        
+        <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Общий оборот</span>
+          <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--gold-color)' }}>${((tgUser?.total_bets_sum || 0) / 100).toFixed(2)}</span>
         </div>
       </div>
 

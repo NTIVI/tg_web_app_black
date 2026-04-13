@@ -3,7 +3,11 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const { Pool } = pg;
+const { Pool, types } = pg;
+
+// Force BIGINT (int8, OID 20) to be parsed as Number (instead of string)
+// Note: Only do this if you know your values won't exceed Number.MAX_SAFE_INTEGER
+types.setTypeParser(20, val => parseInt(val, 10));
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,

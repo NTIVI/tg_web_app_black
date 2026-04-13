@@ -36,5 +36,37 @@ export const DB = {
             console.error('DB All Error:', err.message, '| SQL:', sql, '| Params:', params);
             reject(err);
         }
+    }),
+    transaction: (callback) => new Promise(async (resolve, reject) => {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const tx = {
+                run: async (sql, params = []) => {
+                    const convertedSql = convertPlaceholders(sql);
+                    const res = await client.query(convertedSql, params);
+                    return { id: res.rows?.[0]?.id || null, changes: res.rowCount };
+                },
+                get: async (sql, params = []) => {
+                    const convertedSql = convertPlaceholders(sql);
+                    const res = await client.query(convertedSql, params);
+                    return res.rows[0];
+                },
+                all: async (sql, params = []) => {
+                    const convertedSql = convertPlaceholders(sql);
+                    const res = await client.query(convertedSql, params);
+                    return res.rows;
+                }
+            };
+            const result = await callback(tx);
+            await client.query('COMMIT');
+            resolve(result);
+        } catch (err) {
+            await client.query('ROLLBACK');
+            console.error('Transaction Error:', err.message);
+            reject(err);
+        } finally {
+            client.release();
+        }
     })
 };

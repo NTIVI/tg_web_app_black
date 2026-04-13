@@ -499,97 +499,117 @@ app.post('/api/games/play', requireAuth, async (req, res) => {
     }
 
     try {
-        console.log(`[GamePlay] User: ${telegramId}, Game: ${game}, Bet: ${bet}`);
-        const user = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-        
-        const currentBalance = Number(user?.balance || 0);
-        if (!user || currentBalance < bet) {
-            console.log(`[GamePlay] Insufficient balance: ${currentBalance} < ${bet}`);
-            return res.status(400).json({ error: 'Недостаточно баланса' });
+        const responseData = await DB.transaction(async (tx) => {
+            const user = await tx.get('SELECT balance, xp, level FROM users WHERE telegram_id = ?', [telegramId]);
+            if (!user || user.balance < bet) {
+                throw new Error('Недостаточно баланса');
+            }
+
+            let result;
+            if (game === 'slots') result = GamesLogic.handleSlots(bet);
+            else if (game === 'roulette') result = GamesLogic.handleRoulette(bet, betOn);
+            else if (game === 'dice') result = GamesLogic.handleDice(bet, Number(req.body.target || 50), req.body.type);
+            else if (game === 'coinflip') result = GamesLogic.handleCoinFlip(bet, betOn);
+            else if (game === 'plinko') result = GamesLogic.handlePlinko(bet, risk);
+            else if (game === 'wheel') result = GamesLogic.handleWheelSpin(bet);
+            else if (game === 'crash') {
+                const state = GamesLogic.handleCrashStart(bet);
+                await tx.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
+                    [telegramId, 'crash', bet, JSON.stringify(state)]);
+                await tx.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
+                return { success: true, status: 'playing', startTime: state.startTime };
+            }
+            else if (game === 'hilo') {
+                const state = GamesLogic.handleHiLoStart(bet);
+                await tx.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
+                    [telegramId, 'hilo', bet, JSON.stringify(state)]);
+                await tx.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
+                return { success: true, status: 'playing', currentCard: state.currentCard };
+            }
+            else if (game === 'mines') {
+                const mineCount = Number(req.body.mineCount || 3);
+                const state = GamesLogic.handleMinesStart(bet, mineCount);
+                await tx.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
+                    [telegramId, 'mines', bet, JSON.stringify(state)]);
+                await tx.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
+                return { success: true, status: 'playing', mineCount, revealed: [] };
+            }
+            else if (game === 'blackjack') {
+                 const deck = GamesLogic.createDeck();
+                 const playerHand = [deck.pop(), deck.pop()];
+                 const dealerHand = [deck.pop(), deck.pop()];
+                 const playerSum = GamesLogic.calculateHand(playerHand);
+                 const state = { deck, playerHand, dealerHand, status: 'playing' };
+                 await tx.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
+                    [telegramId, 'blackjack', bet, JSON.stringify(state)]);
+                 await tx.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
+                 return { success: true, playerHand, dealerHand: [dealerHand[0], { hidden: true }], playerSum, status: 'playing' };
+            }
+            else throw new Error('Unknown game');
+
+            // For single-turn games:
+            const winAmount = Math.floor(result.winAmount || 0);
+            const xpGain = Math.floor(bet / 10);
+            const netChange = winAmount - bet;
+
+            await tx.run(`
+                UPDATE users SET 
+                    balance = balance + ?, 
+                    total_bets_count = total_bets_count + 1, 
+                    total_bets_sum = total_bets_sum + ?,
+                    total_wins_sum = total_wins_sum + ?,
+                    xp = xp + ?,
+                    level = FLOOR((xp + ?) / 1000) + 1
+                WHERE telegram_id = ?
+            `, [netChange, bet, winAmount, xpGain, xpGain, telegramId]);
+
+            await tx.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
+                [telegramId, game, bet, winAmount, result.multiplier, JSON.stringify(result)]);
+
+            const updated = await tx.get('SELECT balance, xp, level FROM users WHERE telegram_id = ?', [telegramId]);
+            
+            return { ...result, ...updated, shouldUpdateQuests: true, winAmount };
+        });
+
+        if (responseData.shouldUpdateQuests) {
+            if (responseData.winAmount > bet) updateQuestProgress(telegramId, 'win', 1);
+            updateQuestProgress(telegramId, 'games', 1);
+            updateQuestProgress(telegramId, 'bet', bet);
+            delete responseData.shouldUpdateQuests;
+            delete responseData.winAmount;
         }
 
-        let result;
-        if (game === 'slots') result = GamesLogic.handleSlots(bet);
-        else if (game === 'roulette') result = GamesLogic.handleRoulette(bet, betOn);
-        else if (game === 'dice') result = GamesLogic.handleDice(bet, Number(req.body.target || 50), req.body.type);
-        else if (game === 'coinflip') result = GamesLogic.handleCoinFlip(bet, betOn);
-        else if (game === 'plinko') result = GamesLogic.handlePlinko(bet, risk);
-        else if (game === 'wheel') result = GamesLogic.handleWheelSpin(bet);
-        else if (game === 'crash') {
-            const state = GamesLogic.handleCrashStart(bet);
-            await DB.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
-                [telegramId, 'crash', bet, JSON.stringify(state)]);
-            await DB.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
-            console.log(`[GamePlay] Crash started for ${telegramId}`);
-            return res.json({ success: true, status: 'playing', startTime: state.startTime });
-        }
-        else if (game === 'hilo') {
-            const state = GamesLogic.handleHiLoStart(bet);
-            await DB.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
-                [telegramId, 'hilo', bet, JSON.stringify(state)]);
-            await DB.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
-            console.log(`[GamePlay] HiLo started for ${telegramId}`);
-            return res.json({ success: true, status: 'playing', currentCard: state.currentCard });
-        }
-        else if (game === 'mines') {
-            const mineCount = Number(req.body.mineCount || 3);
-            const state = GamesLogic.handleMinesStart(bet, mineCount);
-            await DB.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
-                [telegramId, 'mines', bet, JSON.stringify(state)]);
-            await DB.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
-            console.log(`[GamePlay] Mines started for ${telegramId}`);
-            return res.json({ success: true, status: 'playing', mineCount, revealed: [] });
-        }
-        else if (game === 'blackjack') {
-             const deck = GamesLogic.createDeck();
-             const playerHand = [deck.pop(), deck.pop()];
-             const dealerHand = [deck.pop(), deck.pop()];
-             const playerSum = GamesLogic.calculateHand(playerHand);
-             const state = { deck, playerHand, dealerHand, status: 'playing' };
-             await DB.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
-                [telegramId, 'blackjack', bet, JSON.stringify(state)]);
-             await DB.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
-             console.log(`[GamePlay] Blackjack started for ${telegramId}`);
-             return res.json({ success: true, playerHand, dealerHand: [dealerHand[0], { hidden: true }], playerSum, status: 'playing' });
-        }
-        else {
-            console.log(`[GamePlay] Unknown game: ${game}`);
-            return res.status(400).json({ error: 'Unknown game' });
-        }
-
-        // For single-turn games:
-        const winAmount = Math.floor(result.winAmount || 0);
-        const xpGain = Math.floor(bet / 10);
-        const netChange = winAmount - bet;
-
-        console.log(`[GamePlay] Single-turn Result: Win=${winAmount}, Net=${netChange}, XP=${xpGain}`);
-
-        await DB.run(`
-            UPDATE users SET 
-                balance = balance + ?, 
-                total_bets_count = total_bets_count + 1, 
-                total_bets_sum = total_bets_sum + ?,
-                total_wins_sum = total_wins_sum + ?,
-                xp = xp + ?,
-                level = FLOOR((xp + ?) / 1000) + 1
-            WHERE telegram_id = ?
-        `, [netChange, bet, winAmount, xpGain, xpGain, telegramId]);
-
-        await DB.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
-            [telegramId, game, bet, winAmount, result.multiplier, JSON.stringify(result)]);
-
-        if (winAmount > bet) {
-            updateQuestProgress(telegramId, 'win', 1);
-        }
-        updateQuestProgress(telegramId, 'games', 1);
-        updateQuestProgress(telegramId, 'bet', bet);
-        
-        const updated = await DB.get('SELECT balance, xp, level FROM users WHERE telegram_id = ?', [telegramId]);
-        res.json({ ...result, ...updated });
+        res.json(responseData);
 
     } catch (err) { 
         console.error('[GamePlay Error]', err);
-        res.status(500).json({ error: 'Internal Server Error', message: err.message }); 
+        res.status(err.message === 'Недостаточно баланса' ? 400 : 500).json({ error: err.message }); 
+    }
+});
+
+app.post('/api/shop/buy', requireAuth, async (req, res) => {
+    const { itemId } = req.body;
+    const telegramId = req.user.id;
+
+    try {
+        const responseData = await DB.transaction(async (tx) => {
+            const item = await tx.get('SELECT * FROM shop_items WHERE id = ?', [itemId]);
+            if (!item) throw new Error('Товар не найден');
+
+            const user = await tx.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+            if (!user || user.balance < item.price) throw new Error('Недостаточно баланса');
+
+            await tx.run('UPDATE users SET balance = balance - ? WHERE telegram_id = ?', [item.price, telegramId]);
+            await tx.run('INSERT INTO purchases (telegram_id, item_name, price) VALUES (?,?,?)', [telegramId, item.name, item.price]);
+            
+            return { success: true, itemName: item.name };
+        });
+
+        updateQuestProgress(telegramId, 'shop', 1);
+        res.json(responseData);
+    } catch (err) {
+        console.error('[ShopBuy Error]', err);
+        res.status(err.message.includes('не найден') ? 404 : 400).json({ error: err.message });
     }
 });
 
@@ -598,147 +618,151 @@ app.post('/api/games/action', requireAuth, async (req, res) => {
     const telegramId = req.user.id;
 
     try {
-        const active = await DB.get('SELECT * FROM active_games WHERE telegram_id = ?', [telegramId]);
-        if (!active) return res.status(400).json({ error: 'No active game' });
+        const responseData = await DB.transaction(async (tx) => {
+            const active = await tx.get('SELECT * FROM active_games WHERE telegram_id = ?', [telegramId]);
+            if (!active) throw new Error('Нет активной игры');
 
-        const state = JSON.parse(active.state);
-        const bet = active.bet_amount;
+            const state = JSON.parse(active.state);
+            const bet = Number(active.bet_amount);
 
-        if (active.game_name === 'blackjack') {
-            if (action === 'hit') {
-                state.playerHand.push(state.deck.pop());
-                const sum = GamesLogic.calculateHand(state.playerHand);
-                if (sum > 21) {
-                    // Bust
-                    await DB.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
-                    return res.json({ playerHand: state.playerHand, playerSum: sum, status: 'bust', winAmount: 0 });
+            if (active.game_name === 'blackjack') {
+                if (action === 'hit') {
+                    state.playerHand.push(state.deck.pop());
+                    const sum = GamesLogic.calculateHand(state.playerHand);
+                    if (sum > 21) {
+                        await tx.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
+                        return { playerHand: state.playerHand, playerSum: sum, status: 'bust', winAmount: 0 };
+                    }
+                    await tx.run('UPDATE active_games SET state = ? WHERE telegram_id = ?', [JSON.stringify(state), telegramId]);
+                    return { playerHand: state.playerHand, playerSum: sum, status: 'playing' };
+                } 
+                else if (action === 'stand') {
+                    let dealerSum = GamesLogic.calculateHand(state.dealerHand);
+                    while (dealerSum < 17) {
+                        state.dealerHand.push(state.deck.pop());
+                        dealerSum = GamesLogic.calculateHand(state.dealerHand);
+                    }
+                    
+                    const playerSum = GamesLogic.calculateHand(state.playerHand);
+                    let winAmount = 0;
+                    let multiplier = 0;
+
+                    if (dealerSum > 21 || playerSum > dealerSum) {
+                        winAmount = bet * 2;
+                        multiplier = 2;
+                    } else if (playerSum === dealerSum) {
+                        winAmount = bet;
+                        multiplier = 1;
+                    }
+
+                    await tx.run('UPDATE users SET balance = balance + ?, total_wins_sum = total_wins_sum + ? WHERE telegram_id = ?', [winAmount, winAmount, telegramId]);
+                    await tx.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
+                    await tx.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
+                        [telegramId, 'blackjack', bet, winAmount, multiplier, JSON.stringify({ playerHand: state.playerHand, dealerHand: state.dealerHand })]);
+                    
+                    const updated = await tx.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+                    return { 
+                        dealerHand: state.dealerHand, 
+                        dealerSum, 
+                        status: winAmount > bet ? 'win' : winAmount === bet ? 'push' : 'lose', 
+                        winAmount, 
+                        balance: updated.balance,
+                        shouldUpdateQuests: true,
+                        bet
+                    };
                 }
-                await DB.run('UPDATE active_games SET state = ? WHERE telegram_id = ?', [JSON.stringify(state), telegramId]);
-                return res.json({ playerHand: state.playerHand, playerSum: sum, status: 'playing' });
-            } 
-            else if (action === 'stand') {
-                // Dealer plays
-                let dealerSum = GamesLogic.calculateHand(state.dealerHand);
-                while (dealerSum < 17) {
-                    state.dealerHand.push(state.deck.pop());
-                    dealerSum = GamesLogic.calculateHand(state.dealerHand);
+            } else if (active.game_name === 'mines') {
+                if (action === 'open') {
+                    const idx = Number(req.body.index);
+                    if (state.mines[idx]) {
+                        await tx.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
+                        return { status: 'lose', mines: state.mines, winAmount: 0 };
+                    }
+                    if (!state.revealed.includes(idx)) state.revealed.push(idx);
+                    const multiplier = GamesLogic.getMinesMultiplier(state.revealed.length, state.mines.filter(m => m).length);
+                    await tx.run('UPDATE active_games SET state = ? WHERE telegram_id = ?', [JSON.stringify(state), telegramId]);
+                    return { status: 'playing', revealed: state.revealed, currentMultiplier: multiplier };
+                } else if (action === 'cashout') {
+                    if (state.revealed.length === 0) throw new Error('Откройте хотя бы одну ячейку');
+                    const multiplier = GamesLogic.getMinesMultiplier(state.revealed.length, state.mines.filter(m => m).length);
+                    const winAmount = Math.floor(bet * multiplier);
+                    
+                    await tx.run('UPDATE users SET balance = balance + ?, total_wins_sum = total_wins_sum + ? WHERE telegram_id = ?', [winAmount, winAmount, telegramId]);
+                    await tx.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
+                    await tx.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
+                        [telegramId, 'mines', bet, winAmount, multiplier, JSON.stringify(state)]);
+                    
+                    const updated = await tx.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+                    return { status: 'win', winAmount, balance: updated.balance, mines: state.mines, shouldUpdateQuests: true, bet };
                 }
-                
-                const playerSum = GamesLogic.calculateHand(state.playerHand);
-                let winAmount = 0;
-                let multiplier = 0;
-
-                if (dealerSum > 21 || playerSum > dealerSum) {
-                    winAmount = bet * 2;
-                    multiplier = 2;
-                } else if (playerSum === dealerSum) {
-                    winAmount = bet;
-                    multiplier = 1;
+            } else if (active.game_name === 'crash') {
+                if (action === 'cashout') {
+                    const now = Date.now();
+                    const elapsedSeconds = (now - state.startTime) / 1000;
+                    const currentMultiplier = Math.pow(Math.E, 0.06 * elapsedSeconds);
+                    
+                    if (currentMultiplier > state.crashPoint) {
+                        await tx.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
+                        return { status: 'crashed', crashPoint: state.crashPoint, winAmount: 0 };
+                    }
+                    
+                    const winAmount = Math.floor(bet * currentMultiplier);
+                    await tx.run('UPDATE users SET balance = balance + ?, total_wins_sum = total_wins_sum + ? WHERE telegram_id = ?', [winAmount, winAmount, telegramId]);
+                    await tx.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
+                    await tx.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
+                        [telegramId, 'crash', bet, winAmount, currentMultiplier, JSON.stringify(state)]);
+                    
+                    const updated = await tx.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+                    return { status: 'win', winAmount, balance: updated.balance, multiplier: currentMultiplier, shouldUpdateQuests: true, bet };
                 }
-
-                await DB.run('UPDATE users SET balance = balance + ?, total_wins_sum = total_wins_sum + ? WHERE telegram_id = ?', [winAmount, winAmount, telegramId]);
-                await DB.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
-                await DB.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
-                    [telegramId, 'blackjack', bet, winAmount, multiplier, JSON.stringify({ playerHand: state.playerHand, dealerHand: state.dealerHand })]);
-                if (winAmount > bet) updateQuestProgress(telegramId, 'win', 1);
-                updateQuestProgress(telegramId, 'games', 1);
-                updateQuestProgress(telegramId, 'bet', bet);
-
-                const updated = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-                return res.json({ dealerHand: state.dealerHand, dealerSum, status: winAmount > bet ? 'win' : winAmount === bet ? 'push' : 'lose', winAmount, balance: updated.balance });
+            } else if (active.game_name === 'hilo') {
+                if (action === 'guess') {
+                    const guess = req.body.guess;
+                    const nextCard = state.deck.pop();
+                    const val1 = GamesLogic.getCardValue(state.currentCard);
+                    const val2 = GamesLogic.getCardValue(nextCard);
+                    
+                    let win = false;
+                    if (guess === 'higher' && val2 > val1) win = true;
+                    else if (guess === 'lower' && val2 < val1) win = true;
+                    else if (guess === 'same' && val2 === val1) win = true;
+                    
+                    if (!win) {
+                        await tx.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
+                        return { status: 'lose', nextCard, winAmount: 0 };
+                    }
+                    
+                    state.multiplier *= 1.5; 
+                    state.currentCard = nextCard;
+                    await tx.run('UPDATE active_games SET state = ? WHERE telegram_id = ?', [JSON.stringify(state), telegramId]);
+                    return { status: 'playing', currentCard: nextCard, currentMultiplier: state.multiplier };
+                } else if (action === 'cashout') {
+                    const winAmount = Math.floor(bet * state.multiplier);
+                    await tx.run('UPDATE users SET balance = balance + ?, total_wins_sum = total_wins_sum + ? WHERE telegram_id = ?', [winAmount, winAmount, telegramId]);
+                    await tx.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
+                    await tx.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
+                        [telegramId, 'hilo', bet, winAmount, state.multiplier, JSON.stringify(state)]);
+                    
+                    const updated = await tx.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
+                    return { status: 'win', winAmount, balance: updated.balance, shouldUpdateQuests: true, bet };
+                }
             }
-        } else if (active.game_name === 'mines') {
-            if (action === 'open') {
-                const idx = req.body.index;
-                if (state.mines[idx]) {
-                    // Hit a mine
-                    await DB.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
-                    return res.json({ status: 'lose', mines: state.mines, winAmount: 0 });
-                }
-                if (!state.revealed.includes(idx)) state.revealed.push(idx);
-                const multiplier = GamesLogic.getMinesMultiplier(state.revealed.length, state.mines.filter(m => m).length);
-                await DB.run('UPDATE active_games SET state = ? WHERE telegram_id = ?', [JSON.stringify(state), telegramId]);
-                return res.json({ status: 'playing', revealed: state.revealed, currentMultiplier: multiplier });
-            } else if (action === 'cashout') {
-                if (state.revealed.length === 0) return res.status(400).json({ error: 'Open at least one cell' });
-                const multiplier = GamesLogic.getMinesMultiplier(state.revealed.length, state.mines.filter(m => m).length);
-                const winAmount = Math.floor(bet * multiplier);
-                
-                await DB.run('UPDATE users SET balance = balance + ?, total_wins_sum = total_wins_sum + ? WHERE telegram_id = ?', [winAmount, winAmount, telegramId]);
-                await DB.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
-                await DB.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
-                    [telegramId, 'mines', bet, winAmount, multiplier, JSON.stringify(state)]);
-                
-                const updated = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-                if (winAmount > bet) updateQuestProgress(telegramId, 'win', 1);
-                updateQuestProgress(telegramId, 'games', 1);
-                updateQuestProgress(telegramId, 'bet', bet);
-                return res.json({ status: 'win', winAmount, balance: updated.balance, mines: state.mines });
-            }
-        } else if (active.game_name === 'crash') {
-            if (action === 'cashout') {
-                const now = Date.now();
-                const elapsedSeconds = (now - state.startTime) / 1000;
-                // Multiplier formula: e^(0.06 * seconds)
-                const currentMultiplier = Math.pow(Math.E, 0.06 * elapsedSeconds);
-                
-                if (currentMultiplier > state.crashPoint) {
-                    await DB.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
-                    return res.json({ status: 'crashed', crashPoint: state.crashPoint, winAmount: 0 });
-                }
-                
-                const winAmount = Math.floor(bet * currentMultiplier);
-                await DB.run('UPDATE users SET balance = balance + ?, total_wins_sum = total_wins_sum + ? WHERE telegram_id = ?', [winAmount, winAmount, telegramId]);
-                await DB.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
-                await DB.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
-                    [telegramId, 'crash', bet, winAmount, currentMultiplier, JSON.stringify(state)]);
-                
-                const updated = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-                if (winAmount > bet) updateQuestProgress(telegramId, 'win', 1);
-                updateQuestProgress(telegramId, 'games', 1);
-                updateQuestProgress(telegramId, 'bet', bet);
-                return res.json({ status: 'win', winAmount, balance: updated.balance, multiplier: currentMultiplier });
-            }
-        } else if (active.game_name === 'hilo') {
-            if (action === 'guess') {
-                const guess = req.body.guess; // 'higher', 'lower', 'same'
-                const nextCard = state.deck.pop();
-                const val1 = GamesLogic.getCardValue(state.currentCard);
-                const val2 = GamesLogic.getCardValue(nextCard);
-                
-                let win = false;
-                if (guess === 'higher' && val2 > val1) win = true;
-                else if (guess === 'lower' && val2 < val1) win = true;
-                else if (guess === 'same' && val2 === val1) win = true;
-                
-                if (!win) {
-                    await DB.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
-                    return res.json({ status: 'lose', nextCard, winAmount: 0 });
-                }
-                
-                // Multiplier logic for Hi-Lo (simplified)
-                state.multiplier *= 1.5; 
-                state.currentCard = nextCard;
-                await DB.run('UPDATE active_games SET state = ? WHERE telegram_id = ?', [JSON.stringify(state), telegramId]);
-                return res.json({ status: 'playing', currentCard: nextCard, currentMultiplier: state.multiplier });
-            } else if (action === 'cashout') {
-                const winAmount = Math.floor(bet * state.multiplier);
-                await DB.run('UPDATE users SET balance = balance + ?, total_wins_sum = total_wins_sum + ? WHERE telegram_id = ?', [winAmount, winAmount, telegramId]);
-                await DB.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
-                await DB.run('INSERT INTO game_history (telegram_id, game_name, bet_amount, win_amount, multiplier, result_data) VALUES (?, ?, ?, ?, ?, ?)',
-                    [telegramId, 'hilo', bet, winAmount, state.multiplier, JSON.stringify(state)]);
-                
-                const updated = await DB.get('SELECT balance FROM users WHERE telegram_id = ?', [telegramId]);
-                if (winAmount > bet) updateQuestProgress(telegramId, 'win', 1);
-                updateQuestProgress(telegramId, 'games', 1);
-                updateQuestProgress(telegramId, 'bet', bet);
-                return res.json({ status: 'win', winAmount, balance: updated.balance });
-            }
+            throw new Error('Неизвестная игра или действие');
+        });
+
+        if (responseData.shouldUpdateQuests) {
+            const bet = responseData.bet;
+            if (responseData.winAmount > bet) updateQuestProgress(telegramId, 'win', 1);
+            updateQuestProgress(telegramId, 'games', 1);
+            updateQuestProgress(telegramId, 'bet', bet);
+            delete responseData.shouldUpdateQuests;
+            delete responseData.bet;
         }
-        res.status(400).json({ error: 'Invalid action' });
+
+        res.json(responseData);
+
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Action error' });
+        console.error('[GameAction Error]', err);
     }
 });
 

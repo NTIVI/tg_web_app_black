@@ -100,7 +100,7 @@ function App() {
       const res = await fetch(`${API_URL}/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData, initDataUnsafe: { user } }),
+        body: JSON.stringify({ initData, tgUser: user }),
         signal: controller.signal
       });
       clearTimeout(timeoutId);
@@ -110,6 +110,8 @@ function App() {
       
       if (data.token) {
         sessionStorage.setItem('auth_token', data.token);
+      } else {
+        console.error('No token received from auth');
       }
       
       if (data.user) {

@@ -124,12 +124,21 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok', botInitialized: !!
 
 // API Routes
 app.post('/api/auth', authLimiter, async (req, res) => {
-    const { initData, tgUser } = req.body;
+    const { initData, tgUser, initDataUnsafe } = req.body;
     if (!verifyInitData(initData)) return res.status(401).json({ error: 'Invalid data' });
-    const tid = tgUser.id.toString();
+    
+    // Support both direct tgUser and initDataUnsafe.user for backward compatibility
+    const userToAuth = tgUser || initDataUnsafe?.user;
+    
+    if (!userToAuth || !userToAuth.id) {
+        console.error('Auth attempt without valid user data:', req.body);
+        return res.status(400).json({ error: 'Missing user data' });
+    }
+
+    const tid = userToAuth.id.toString();
 
     try {
-        console.log('Authenticating user:', tid);
+        console.log('Authenticating user:', tid, userToAuth.username);
         await DB.run(`
             INSERT INTO users (telegram_id, username, first_name, last_name, photo_url, last_seen)
             VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
@@ -139,7 +148,7 @@ app.post('/api/auth', authLimiter, async (req, res) => {
                 last_name=excluded.last_name,
                 photo_url=excluded.photo_url,
                 last_seen=excluded.last_seen
-        `, [tid, tgUser.username || '', tgUser.first_name || '', tgUser.last_name || '', tgUser.photo_url || '']);
+        `, [tid, userToAuth.username || '', userToAuth.first_name || '', userToAuth.last_name || '', userToAuth.photo_url || '']);
 
         const user = await DB.get('SELECT * FROM users WHERE telegram_id = ?', [tid]);
         

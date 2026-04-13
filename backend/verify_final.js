@@ -18,7 +18,7 @@ const scrapeSocialStats = async () => {
         urls[net] = s.value;
     });
 
-    const headers = { 
+    const headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9'
     };
@@ -29,9 +29,9 @@ const scrapeSocialStats = async () => {
             console.log('YouTube Handle:', urls.youtube);
             const res = await fetch(urls.youtube, { headers });
             const html = await res.text();
-            const match = html.match(/"subscriberCountText":\s*\{\s*"simpleText":\s*"([^"]+)"/i) || 
-                          html.match(/"label":\s*"([^"]+)\s+(subscribers|подписчиков)/i) ||
-                          html.match(/([\d.]+[KMBТМ]?)\s+(subscribers|подписчиков|отметки)/i);
+            const match = html.match(/"subscriberCountText":\s*\{\s*"simpleText":\s*"([^"]+)"/i) ||
+                html.match(/"label":\s*"([^"]+)\s+(subscribers|подписчиков)/i) ||
+                html.match(/([\d.]+[KMBТМ]?)\s+(subscribers|подписчиков|отметки)/i);
             if (match) {
                 const text = (match[1]).toUpperCase().replace(/,/g, '');
                 console.log('YouTube Match Text:', text);

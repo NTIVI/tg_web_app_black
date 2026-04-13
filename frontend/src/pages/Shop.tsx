@@ -128,11 +128,26 @@ const CategorySection = ({ category, items, balance, onBuy }: {
               willChange: 'transform, opacity'
             }}
           >
-            <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '20px', overflow: 'hidden', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px' }}>
+            <div style={{ 
+              width: '100%', 
+              aspectRatio: '1/1', 
+              borderRadius: '20px', 
+              overflow: 'hidden', 
+              background: 'rgba(255, 255, 255, 0.03)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              padding: '0' 
+            }}>
               <img 
                 src={item.image_url} 
                 alt={item.name} 
-                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))'
+                }} 
               />
             </div>
             
@@ -215,11 +230,17 @@ const Shop = ({ userId, balance, setBalance, setPurchases }: ShopProps) => {
     setTimeout(() => setMessage(''), 3000);
   };
 
-  const groupedItems = items.reduce((acc, item) => {
-    if (!acc[item.category]) acc[item.category] = [];
-    acc[item.category].push(item);
-    return acc;
-  }, {} as Record<string, ShopItem[]>);
+  const CATEGORY_PRIORITY = ['Телефоны', 'Компьютеры', 'Гаджеты', 'ТВ и Видео', 'Приставки'];
+
+  const sortedCategories = Object.keys(groupedItems).sort((a, b) => {
+    const indexA = CATEGORY_PRIORITY.indexOf(a);
+    const indexB = CATEGORY_PRIORITY.indexOf(b);
+    
+    if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    return indexA - indexB;
+  });
 
   if (loading) return (
     <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
@@ -254,11 +275,11 @@ const Shop = ({ userId, balance, setBalance, setPurchases }: ShopProps) => {
         </div>
       )}
 
-      {Object.entries(groupedItems).map(([category, catItems]) => (
+      {sortedCategories.map(category => (
         <CategorySection 
           key={category} 
           category={category} 
-          items={catItems} 
+          items={groupedItems[category]} 
           balance={balance} 
           onBuy={handleBuy} 
         />

@@ -87,7 +87,13 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
         setAdState('done');
       }
     } catch {
-      setAdMessage('❌ Ошибка сети.');
+            if (e.message.includes('Недостаточно баланса')) {
+        setAdMessage('❌ Ошибка: Недостаточно баланса');
+      } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
+        setAdMessage('❌ Ошибка: Сессия истекла');
+      } else {
+        setAdMessage('❌ ' + (e.message === 'Failed to fetch' ? 'Ошибка сети' : e.message));
+      }
       setAdState('done');
     }
     setTimeout(() => setAdState('idle'), 3000);
@@ -138,7 +144,13 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
         setAdState('done');
       }
     } catch {
-      setAdMessage('❌ Ошибка сети.');
+            if (e.message.includes('Недостаточно баланса')) {
+        setAdMessage('❌ Ошибка: Недостаточно баланса');
+      } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
+        setAdMessage('❌ Ошибка: Сессия истекла');
+      } else {
+        setAdMessage('❌ ' + (e.message === 'Failed to fetch' ? 'Ошибка сети' : e.message));
+      }
       setAdState('done');
     }
     setTimeout(() => setAdState('idle'), 3000);

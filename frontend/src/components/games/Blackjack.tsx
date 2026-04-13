@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
 import { Club, Spade, Heart, Diamond } from 'lucide-react';
@@ -14,30 +15,35 @@ const SuitIcon = ({ suit, size = 20 }: { suit: string, size?: number }) => {
 };
 
 const Card = ({ card, hidden }: { card: any, hidden?: boolean }) => (
-  <div style={{
-    width: '60px',
-    height: '90px',
-    background: hidden ? 'linear-gradient(135deg, #1e40af, #a855f7)' : '#fff',
-    borderRadius: '10px',
-    border: '1px solid rgba(0,0,0,0.1)',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
-    position: 'relative',
-    color: '#000',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-  }}>
+  <motion.div 
+    initial={{ scale: 0.8, opacity: 0, y: -20, rotateY: hidden ? 180 : 0 }}
+    animate={{ scale: 1, opacity: 1, y: 0, rotateY: hidden ? 180 : 0 }}
+    transition={{ type: 'spring', damping: 15, stiffness: 100 }}
+    style={{
+      width: '60px',
+      height: '90px',
+      background: hidden ? 'linear-gradient(135deg, #1e40af, #a855f7)' : '#fff',
+      borderRadius: '10px',
+      border: '1px solid rgba(0,0,0,0.1)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
+      position: 'relative',
+      color: '#000',
+      perspective: '1000px',
+      transformStyle: 'preserve-3d'
+    }}>
     {!hidden && (
-      <>
+      <div style={{ position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ position: 'absolute', top: '5px', left: '5px', fontSize: '12px', fontWeight: '900' }}>{card.value}</div>
         <SuitIcon suit={card.suit} size={28} />
         <div style={{ position: 'absolute', bottom: '5px', right: '5px', fontSize: '12px', fontWeight: '900', transform: 'rotate(180deg)' }}>{card.value}</div>
-      </>
+      </div>
     )}
-    {hidden && <div style={{ color: '#fff', fontSize: '24px', fontWeight: '900', opacity: 0.3 }}>?</div>}
-  </div>
+    {hidden && <div style={{ color: '#fff', fontSize: '24px', fontWeight: '900', opacity: 0.3, transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }}>?</div>}
+  </motion.div>
 );
 
 const Blackjack: React.FC<any> = ({ balance, setBalance }) => {
@@ -76,7 +82,13 @@ const Blackjack: React.FC<any> = ({ balance, setBalance }) => {
         setBalance((prev: number) => prev - bet);
       }
     } catch (e) {
-      setMessage('Ошибка сети');
+            if (e.message.includes('Недостаточно баланса')) {
+        setMessage('Ошибка: Недостаточно баланса');
+      } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
+        setMessage('Ошибка: Сессия истекла');
+      } else {
+        setMessage(e.message === 'Failed to fetch' ? 'Ошибка сети' : e.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -109,7 +121,13 @@ const Blackjack: React.FC<any> = ({ balance, setBalance }) => {
           else if (data.status === 'push') setMessage('НИЧЬЯ (PUSH)');
       }
     } catch (e) {
-      setMessage('Ошибка сети');
+            if (e.message.includes('Недостаточно баланса')) {
+        setMessage('Ошибка: Недостаточно баланса');
+      } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
+        setMessage('Ошибка: Сессия истекла');
+      } else {
+        setMessage(e.message === 'Failed to fetch' ? 'Ошибка сети' : e.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -142,7 +160,19 @@ const Blackjack: React.FC<any> = ({ balance, setBalance }) => {
 
         {/* Message Overlay */}
         <div style={{ textAlign: 'center', minHeight: '30px' }}>
-          {message && <div style={{ fontSize: '18px', fontWeight: '900', color: status === 'win' ? 'var(--success-color)' : status === 'playing' ? '#fff' : '#ef4444' }}>{message}</div>}
+          <AnimatePresence mode="wait">
+            {message && (
+              <motion.div 
+                key={message}
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.5, opacity: 0 }}
+                style={{ fontSize: '18px', fontWeight: '900', color: status === 'win' ? 'var(--success-color)' : status === 'playing' ? '#fff' : '#ef4444' }}
+              >
+                {message}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Player Hand */}

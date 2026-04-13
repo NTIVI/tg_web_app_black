@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
 import { Star, Zap, Gem, Bell, Apple, Cherry } from 'lucide-react';
@@ -62,7 +63,13 @@ const Slots: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
       }, 2000);
 
     } catch (e) {
-      setMessage('Ошибка сети');
+            if (e.message.includes('Недостаточно баланса')) {
+        setMessage('Ошибка: Недостаточно баланса');
+      } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
+        setMessage('Ошибка: Сессия истекла');
+      } else {
+        setMessage(e.message === 'Failed to fetch' ? 'Ошибка сети' : e.message);
+      }
       setSpinning(false);
     }
   };
@@ -115,16 +122,22 @@ const Slots: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
       {/* Message Area */}
       <div style={{ height: '24px', textAlign: 'center' }}>
-        {message && (
-          <div style={{ 
-            fontSize: '18px', 
-            fontWeight: '900', 
-            color: message.includes('ВЫИГРЫШ') ? 'var(--success-color)' : '#fff',
-            textShadow: message.includes('ВЫИГРЫШ') ? '0 0 10px var(--success-color)' : 'none',
-            animation: 'fadeIn 0.3s'
-          }}>
-            {message}
-          </div>
+        <AnimatePresence mode="wait">
+          {message && (
+             <motion.div
+               key={message}
+               initial={{ scale: 0.5, opacity: 0 }}
+               animate={{ scale: 1, opacity: 1 }}
+               exit={{ scale: 0.5, opacity: 0 }}
+               style={{
+ height: '24px', textAlign: 'center' 
+               }}
+             >
+               {message}
+             </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
         )}
       </div>
 

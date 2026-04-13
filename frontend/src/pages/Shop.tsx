@@ -225,7 +225,13 @@ const Shop = ({ userId, balance, setBalance, setPurchases }: ShopProps) => {
         setMessage(data.error || 'Ошибка при покупке');
       }
     } catch (err) {
-      setMessage('Ошибка сети.');
+            if (e.message.includes('Недостаточно баланса')) {
+        setMessage('Ошибка: Недостаточно баланса');
+      } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
+        setMessage('Ошибка: Сессия истекла');
+      } else {
+        setMessage(e.message === 'Failed to fetch' ? 'Ошибка сети' : e.message);
+      }
     }
     setTimeout(() => setMessage(''), 3000);
   };

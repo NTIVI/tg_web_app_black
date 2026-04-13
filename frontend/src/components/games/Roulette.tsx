@@ -69,7 +69,13 @@ const Roulette: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
       }, 3000);
 
     } catch (e) {
-      setMessage('Ошибка сети');
+            if (e.message.includes('Недостаточно баланса')) {
+        setMessage('Ошибка: Недостаточно баланса');
+      } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
+        setMessage('Ошибка: Сессия истекла');
+      } else {
+        setMessage(e.message === 'Failed to fetch' ? 'Ошибка сети' : e.message);
+      }
       setSpinning(false);
     }
   };

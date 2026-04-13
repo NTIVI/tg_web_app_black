@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
 import { Club, Spade, Heart, Diamond, ArrowUp, ArrowDown, HelpCircle } from 'lucide-react';
@@ -14,25 +15,28 @@ const SuitIcon = ({ suit, size = 20 }: { suit: string, size?: number }) => {
 };
 
 const Card = ({ card }: { card: any }) => (
-  <div style={{
-    width: '100px',
-    height: '140px',
-    background: '#fff',
-    borderRadius: '16px',
-    border: '1px solid rgba(0,0,0,0.1)',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 10px 20px rgba(0,0,0,0.3)',
-    position: 'relative',
-    color: '#000',
-    animation: 'slideIn 0.3s ease-out'
-  }}>
+  <motion.div 
+    initial={{ x: 50, opacity: 0, rotateY: 90 }}
+    animate={{ x: 0, opacity: 1, rotateY: 0 }}
+    transition={{ type: 'spring', damping: 12, stiffness: 100 }}
+    style={{
+      width: '100px',
+      height: '140px',
+      background: '#fff',
+      borderRadius: '16px',
+      border: '1px solid rgba(0,0,0,0.1)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0 10px 20px rgba(0,0,0,0.3)',
+      position: 'relative',
+      color: '#000',
+    }}>
     <div style={{ position: 'absolute', top: '10px', left: '10px', fontSize: '18px', fontWeight: '900' }}>{card.value}</div>
     <SuitIcon suit={card.suit} size={40} />
     <div style={{ position: 'absolute', bottom: '10px', right: '10px', fontSize: '18px', fontWeight: '900', transform: 'rotate(180deg)' }}>{card.value}</div>
-  </div>
+  </motion.div>
 );
 
 const HiLo: React.FC<any> = ({ balance, setBalance }) => {
@@ -164,8 +168,20 @@ const HiLo: React.FC<any> = ({ balance, setBalance }) => {
         )}
       </div>
 
-      <div style={{ height: '24px', textAlign: 'center', fontSize: '18px', fontWeight: '900', color: status === 'win' ? 'var(--success-color)' : status === 'lose' ? '#ef4444' : '#fff' }}>
-        {message}
+      <div style={{ height: '24px', textAlign: 'center' }}>
+        <AnimatePresence mode="wait">
+            {message && (
+                <motion.div 
+                    key={message}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    style={{ fontSize: '18px', fontWeight: '900', color: status === 'win' ? 'var(--success-color)' : status === 'lose' ? '#ef4444' : '#fff' }}
+                >
+                    {message}
+                </motion.div>
+            )}
+        </AnimatePresence>
       </div>
 
       {status === 'playing' ? (
@@ -193,12 +209,7 @@ const HiLo: React.FC<any> = ({ balance, setBalance }) => {
           </div>
       )}
 
-      <style>{`
-        @keyframes slideIn {
-          from { transform: translateX(50px); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-      `}</style>
+      {/* Removed keyframes since we use framer-motion */}
     </div>
   );
 };

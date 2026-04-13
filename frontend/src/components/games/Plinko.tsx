@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
 
@@ -43,7 +44,13 @@ const Plinko: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         animateBall(data.bucketIdx, data);
       }
     } catch (e) {
-      setMessage('Ошибка сети');
+            if (e.message.includes('Недостаточно баланса')) {
+        setMessage('Ошибка: Недостаточно баланса');
+      } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
+        setMessage('Ошибка: Сессия истекла');
+      } else {
+        setMessage(e.message === 'Failed to fetch' ? 'Ошибка сети' : e.message);
+      }
       setDropping(false);
     } finally {
       setLoading(false);
@@ -146,8 +153,22 @@ const Plinko: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         )}
       </div>
 
-      <div style={{ height: '24px', textAlign: 'center', fontSize: '18px', fontWeight: '900' }}>
-        {message}
+      <div style={{ height: '24px', textAlign: 'center' }}>
+        <AnimatePresence mode="wait">
+          {message && (
+             <motion.div
+               key={message}
+               initial={{ scale: 0.5, opacity: 0 }}
+               animate={{ scale: 1, opacity: 1 }}
+               exit={{ scale: 0.5, opacity: 0 }}
+               style={{
+ height: '24px', textAlign: 'center', fontSize: '18px', fontWeight: '900' 
+               }}
+             >
+               {message}
+             </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <BetControls 

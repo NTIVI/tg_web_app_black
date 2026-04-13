@@ -182,7 +182,11 @@ const Admin = () => {
         setSaveMessage('Ошибка обновления');
       }
     } catch (err) {
-      setSaveMessage('Ошибка сети');
+            if (e.message.includes('Unauthorized') || e.message.includes('token')) {
+        setSaveMessage('Ошибка: Сессия истекла');
+      } else {
+        setSaveMessage(e.message === 'Failed to fetch' ? 'Ошибка сети: Сервер недоступен' : e.message);
+      }
     } finally {
       setIsRefreshing(false);
       setTimeout(() => setSaveMessage(''), 3000);

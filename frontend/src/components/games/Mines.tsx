@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
 import { Gem, Bomb } from 'lucide-react';
@@ -103,7 +104,13 @@ const Mines: React.FC<any> = ({ balance, setBalance }) => {
         setMessage(`WIN! +$${(data.winAmount / 100).toFixed(2)}`);
       }
     } catch (e) {
-      setMessage('Ошибка сети');
+            if (e.message.includes('Недостаточно баланса')) {
+        setMessage('Ошибка: Недостаточно баланса');
+      } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
+        setMessage('Ошибка: Сессия истекла');
+      } else {
+        setMessage(e.message === 'Failed to fetch' ? 'Ошибка сети' : e.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -125,32 +132,45 @@ const Mines: React.FC<any> = ({ balance, setBalance }) => {
         border: '1px solid rgba(255,255,255,0.05)'
       }}>
         {Array.from({ length: 25 }).map((_, i) => (
-          <div 
+          <motion.div 
             key={i}
             onClick={() => handleOpen(i)}
+            whileHover={status === 'playing' && !revealed.includes(i) ? { scale: 1.05 } : {}}
+            whileTap={status === 'playing' && !revealed.includes(i) ? { scale: 0.95 } : {}}
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ 
+              opacity: 1, 
+              scale: 1,
+              rotateY: revealed.includes(i) || mines.length > 0 ? 360 : 0,
+              backgroundColor: revealed.includes(i) ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)'
+            }}
+            transition={{ duration: 0.4, type: 'spring', bounce: 0.4 }}
             style={{ 
               aspectRatio: '1',
-              background: revealed.includes(i) ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
               borderRadius: '12px',
               cursor: status === 'playing' && !revealed.includes(i) ? 'pointer' : 'default',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               border: '1px solid rgba(255,255,255,0.05)',
-              transition: 'all 0.2s',
-              transform: revealed.includes(i) || mines.length > 0 ? 'rotateY(0)' : 'rotateY(0)'
+              perspective: '1000px'
             }}
           >
-            {revealed.includes(i) && <Gem size={24} color="var(--primary-color)" />}
-            {mines[i] && <Bomb size={24} color={revealed.includes(i) ? '#ef4444' : 'rgba(239, 68, 68, 0.4)'} />}
-          </div>
+            {revealed.includes(i) && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}><Gem size={24} color="var(--primary-color)" /></motion.div>}
+            {mines[i] && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}><Bomb size={24} color={revealed.includes(i) ? '#ef4444' : 'rgba(239, 68, 68, 0.4)'} /></motion.div>}
+          </motion.div>
         ))}
       </div>
 
       <div style={{ textAlign: 'center', height: '24px' }}>
-         <div style={{ fontSize: '18px', fontWeight: '900', color: status === 'win' ? 'var(--success-color)' : status === 'lose' ? '#ef4444' : '#fff' }}>
+         <motion.div 
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            key={message || status}
+            style={{ fontSize: '18px', fontWeight: '900', color: status === 'win' ? 'var(--success-color)' : status === 'lose' ? '#ef4444' : '#fff' }}
+         >
             {message || (status === 'playing' ? `Текущий множитель: x${currentMultiplier.toFixed(2)}` : '')}
-         </div>
+         </motion.div>
       </div>
 
       {status === 'playing' ? (

@@ -529,14 +529,16 @@ app.post('/api/games/play', requireAuth, async (req, res) => {
                 const state = GamesLogic.handleCrashStart(bet);
                 await tx.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
                     [telegramId, 'crash', bet, JSON.stringify(state)]);
-                await tx.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
+                const xpGain = Math.floor(bet / 10);
+                await tx.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ?, xp = xp + ?, level = FLOOR((xp + ?) / 1000) + 1 WHERE telegram_id = ?', [bet, bet, xpGain, xpGain, telegramId]);
                 return { success: true, status: 'playing', startTime: state.startTime };
             }
             else if (game === 'hilo') {
                 const state = GamesLogic.handleHiLoStart(bet);
                 await tx.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
                     [telegramId, 'hilo', bet, JSON.stringify(state)]);
-                await tx.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
+                const xpGain = Math.floor(bet / 10);
+                await tx.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ?, xp = xp + ?, level = FLOOR((xp + ?) / 1000) + 1 WHERE telegram_id = ?', [bet, bet, xpGain, xpGain, telegramId]);
                 return { success: true, status: 'playing', currentCard: state.currentCard };
             }
             else if (game === 'mines') {
@@ -544,7 +546,8 @@ app.post('/api/games/play', requireAuth, async (req, res) => {
                 const state = GamesLogic.handleMinesStart(bet, mineCount);
                 await tx.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
                     [telegramId, 'mines', bet, JSON.stringify(state)]);
-                await tx.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
+                const xpGain = Math.floor(bet / 10);
+                await tx.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ?, xp = xp + ?, level = FLOOR((xp + ?) / 1000) + 1 WHERE telegram_id = ?', [bet, bet, xpGain, xpGain, telegramId]);
                 return { success: true, status: 'playing', mineCount, revealed: [] };
             }
             else if (game === 'blackjack') {
@@ -555,7 +558,8 @@ app.post('/api/games/play', requireAuth, async (req, res) => {
                  const state = { deck, playerHand, dealerHand, status: 'playing' };
                  await tx.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
                     [telegramId, 'blackjack', bet, JSON.stringify(state)]);
-                 await tx.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ? WHERE telegram_id = ?', [bet, bet, telegramId]);
+                 const xpGain = Math.floor(bet / 10);
+                 await tx.run('UPDATE users SET balance = balance - ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ?, xp = xp + ?, level = FLOOR((xp + ?) / 1000) + 1 WHERE telegram_id = ?', [bet, bet, xpGain, xpGain, telegramId]);
                  return { success: true, playerHand, dealerHand: [dealerHand[0], { hidden: true }], playerSum, status: 'playing' };
             }
             else throw new Error('Unknown game');

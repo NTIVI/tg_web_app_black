@@ -57,7 +57,13 @@ const Crash: React.FC<any> = ({ balance, setBalance }) => {
         setLoading(false);
       }
     } catch (e) {
-      setMessage('Ошибка сети');
+            if (e.message.includes('Недостаточно баланса')) {
+        setMessage('Ошибка: Недостаточно баланса');
+      } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
+        setMessage('Ошибка: Сессия истекла');
+      } else {
+        setMessage(e.message === 'Failed to fetch' ? 'Ошибка сети' : e.message);
+      }
       setLoading(false);
     }
   };
@@ -86,7 +92,13 @@ const Crash: React.FC<any> = ({ balance, setBalance }) => {
         setMessage(`CRASHED AT x${data.crashPoint.toFixed(2)}`);
       }
     } catch (e) {
-      setMessage('Ошибка сети');
+            if (e.message.includes('Недостаточно баланса')) {
+        setMessage('Ошибка: Недостаточно баланса');
+      } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
+        setMessage('Ошибка: Сессия истекла');
+      } else {
+        setMessage(e.message === 'Failed to fetch' ? 'Ошибка сети' : e.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -141,8 +153,22 @@ const Crash: React.FC<any> = ({ balance, setBalance }) => {
         )}
       </div>
 
-      <div style={{ height: '24px', textAlign: 'center', fontSize: '18px', fontWeight: '900', color: status === 'win' ? 'var(--success-color)' : status === 'crashed' ? '#ef4444' : '#fff' }}>
-        {message}
+      <div style={{ height: '24px', textAlign: 'center' }}>
+        <AnimatePresence mode="wait">
+          {message && (
+             <motion.div
+               key={message}
+               initial={{ scale: 0.5, opacity: 0 }}
+               animate={{ scale: 1, opacity: 1 }}
+               exit={{ scale: 0.5, opacity: 0 }}
+               style={{
+ height: '24px', textAlign: 'center', fontSize: '18px', fontWeight: '900', color: status === 'win' ? 'var(--success-color)' : status === 'crashed' ? '#ef4444' : '#fff' 
+               }}
+             >
+               {message}
+             </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {status === 'playing' ? (

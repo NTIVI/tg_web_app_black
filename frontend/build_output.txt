@@ -1,0 +1,33 @@
+
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+src/App.tsx(326,41): error TS2304: Cannot find name 'Admin'.
+src/components/games/BetControls.tsx(1,1): error TS6133: 'FC' is declared but its value is never read.
+src/components/games/BetControls.tsx(1,10): error TS1484: 'FC' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/games/BetControls.tsx(16,9): error TS6133: 'handleMax' is declared but its value is never read.
+src/components/games/BetControls.tsx(17,9): error TS6133: 'handleMin' is declared but its value is never read.
+src/components/games/Blackjack.tsx(43,58): error TS6133: 'tgUser' is declared but its value is never read.
+src/components/games/Blackjack.tsx(43,66): error TS6133: 'setTgUser' is declared but its value is never read.
+src/components/games/CoinFlip.tsx(5,57): error TS6133: 'tgUser' is declared but its value is never read.
+src/components/games/Crash.tsx(4,1): error TS6133: 'TrendingUp' is declared but its value is never read.
+src/components/games/Crash.tsx(6,54): error TS6133: 'tgUser' is declared but its value is never read.
+src/components/games/Crash.tsx(6,62): error TS6133: 'setTgUser' is declared but its value is never read.
+src/components/games/Dice.tsx(6,53): error TS6133: 'tgUser' is declared but its value is never read.
+src/components/games/HiLo.tsx(38,53): error TS6133: 'tgUser' is declared but its value is never read.
+src/components/games/HiLo.tsx(38,61): error TS6133: 'setTgUser' is declared but its value is never read.
+src/components/games/Mines.tsx(6,54): error TS6133: 'tgUser' is declared but its value is never read.
+src/components/games/Mines.tsx(6,62): error TS6133: 'setTgUser' is declared but its value is never read.
+src/components/games/Plinko.tsx(5,55): error TS6133: 'tgUser' is declared but its value is never read.
+src/components/games/Plinko.tsx(54,9): error TS6133: 'currentX' is declared but its value is never read.
+src/components/games/Plinko.tsx(55,11): error TS6133: 'path' is declared but its value is never read.
+src/components/games/Roulette.tsx(15,57): error TS6133: 'tgUser' is declared but its value is never read.
+src/components/games/Slots.tsx(1,20): error TS6133: 'useEffect' is declared but its value is never read.
+src/components/games/Slots.tsx(15,54): error TS6133: 'tgUser' is declared but its value is never read.
+src/components/games/Slots.tsx(19,10): error TS6133: 'result' is declared but its value is never read.
+src/components/games/WheelOfFortune.tsx(5,63): error TS6133: 'tgUser' is declared but its value is never read.
+src/pages/Admin.tsx(577,22): error TS2304: Cannot find name 'Plus'.
+src/pages/Admin.tsx(584,22): error TS2304: Cannot find name 'Minus'.
+src/pages/Admin.tsx(686,20): error TS2304: Cannot find name 'AlertCircle'.
+src/pages/Admin.tsx(771,110): error TS2304: Cannot find name 'Zap'.
+src/pages/Bonuses.tsx(3,64): error TS6133: 'Star' is declared but its value is never read.

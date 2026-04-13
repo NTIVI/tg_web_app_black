@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
 
-const WheelOfFortune: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
+const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);

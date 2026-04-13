@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
-import { Gem, Bomb, Shield } from 'lucide-react';
+import { Gem, Bomb } from 'lucide-react';
 
-const Mines: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
+const Mines: React.FC<any> = ({ balance, setBalance }) => {
   const [bet, setBet] = useState(100);
   const [mineCount, setMineCount] = useState(3);
   const [status, setStatus] = useState<'idle' | 'playing' | 'win' | 'lose'>('idle');

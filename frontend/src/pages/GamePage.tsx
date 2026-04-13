@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Wallet, Info, History } from 'lucide-react';
-import { API_URL } from '../config';
 
 // Individual Game Components (to be implemented)
 import Slots from '../components/games/Slots';
@@ -31,7 +30,6 @@ const GAME_INFO: Record<string, { name: string, color: string }> = {
 const GamePage = ({ balance, setBalance, tgUser, setTgUser }: any) => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
-  const [history, setHistory] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
   const game = gameId ? GAME_INFO[gameId] : null;

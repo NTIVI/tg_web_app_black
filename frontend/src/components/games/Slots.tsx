@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
 import { Star, Zap, Gem, Bell, Apple, Cherry } from 'lucide-react';
@@ -12,11 +12,10 @@ const SYMBOLS = [
   { icon: <Cherry size={40} />, color: '#ec4899', value: 'cherry', multiplier: 2 },
 ];
 
-const Slots: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
+const Slots: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [bet, setBet] = useState(100); // 1.00$
   const [spinning, setSpinning] = useState(false);
   const [reels, setReels] = useState([0, 1, 2]);
-  const [result, setResult] = useState<any>(null);
   const [message, setMessage] = useState('');
 
   const spinReels = async () => {
@@ -27,7 +26,6 @@ const Slots: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
 
     setSpinning(true);
     setMessage('');
-    setResult(null);
 
     try {
       const res = await fetch(`${API_URL}/games/play`, {
@@ -53,7 +51,6 @@ const Slots: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
       setTimeout(() => {
         setReels(outcome);
         setSpinning(false);
-        setResult(data);
         setBalance(data.newBalance);
         if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
 

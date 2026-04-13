@@ -1,5 +1,4 @@
-import React from 'react';
-import { Minus, Plus, Zap } from 'lucide-react';
+import type { FC } from 'react';
 
 interface BetControlsProps {
   bet: number;
@@ -11,11 +10,9 @@ interface BetControlsProps {
   disabled?: boolean;
 }
 
-const BetControls: React.FC<BetControlsProps> = ({ bet, setBet, minBet, maxBet, onPlay, loading, disabled }) => {
+const BetControls: FC<BetControlsProps> = ({ bet, setBet, minBet, maxBet, onPlay, loading, disabled }) => {
   const handleHalf = () => setBet(Math.max(minBet, Math.floor(bet / 2)));
   const handleDouble = () => setBet(Math.min(maxBet, bet * 2));
-  const handleMax = () => setBet(maxBet);
-  const handleMin = () => setBet(minBet);
 
   return (
     <div className="bet-controls-container" style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%', maxWidth: '400px', margin: '0 auto' }}>

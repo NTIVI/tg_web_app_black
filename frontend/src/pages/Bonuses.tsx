@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
-import { Gift, ExternalLink, CheckCircle2, DollarSign, Target, Star, Trophy } from 'lucide-react';
+import { Gift, ExternalLink, CheckCircle2, DollarSign, Target } from 'lucide-react';
 
 const TelegramIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -42,8 +42,9 @@ const SOCIAL_CONFIG: any = {
   youtube: { title: 'YouTube', icon: <YoutubeIcon />, bg: 'linear-gradient(135deg, rgba(255, 0, 0, 0.1) 0%, rgba(255, 0, 0, 0.05) 100%)', border: '1px solid rgba(255, 0, 0, 0.2)', iconColor: '#FF0000', barBg: 'linear-gradient(90deg, #FF0000 0%, #CC0000 100%)', textColor: '#FF0000' }
 };
 
-const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDaily, setTgUser, quests, setQuests }: any) => {
+const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDaily, setTgUser }: any) => {
   const [claiming, setClaiming] = useState<string | null>(null);
+  const [claimedIds, setClaimedIds] = useState<string[]>([]);
   const [userQuests, setUserQuests] = useState<any[]>([]);
   const [loadingQuests, setLoadingQuests] = useState(true);
   const [socialStats, setSocialStats] = useState<any>(() => {

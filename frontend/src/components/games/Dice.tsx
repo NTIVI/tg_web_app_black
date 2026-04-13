@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
 import { Dice6 } from 'lucide-react';
 
-const Dice: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
+const Dice: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [target, setTarget] = useState(50);
   const [type, setType] = useState<'under' | 'over'>('under');

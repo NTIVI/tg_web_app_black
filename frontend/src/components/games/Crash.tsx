@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
-import { TrendingUp } from 'lucide-react';
 
-const Crash: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
+
+const Crash: React.FC<any> = ({ balance, setBalance }) => {
   const [bet, setBet] = useState(100);
   const [status, setStatus] = useState<'idle' | 'playing' | 'crashed' | 'win'>('idle');
   const [multiplier, setMultiplier] = useState(1.00);

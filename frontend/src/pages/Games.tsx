@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Dices, 
   CircleDot, 
-  Clubs, 
+  Club, 
   TrendingUp, 
   ArrowDownCircle, 
   Bomb, 
@@ -12,14 +12,13 @@ import {
   Zap,
   Gamepad2,
   Trophy,
-  History,
-  Star
+  History
 } from 'lucide-react';
 
 const GAME_LIST = [
   { id: 'slots', name: 'Слоты', icon: <Gamepad2 size={32} />, color: '#f59e0b', desc: 'Классические игровые автоматы' },
   { id: 'roulette', name: 'Рулетка', icon: <CircleDot size={32} />, color: '#ef4444', desc: 'Европейская рулетка' },
-  { id: 'blackjack', name: 'Блэкджек', icon: <Clubs size={32} />, color: '#3b82f6', desc: 'Набери 21 и обыграй дилера' },
+  { id: 'blackjack', name: 'Блэкджек', icon: <Club size={32} />, color: '#3b82f6', desc: 'Набери 21 и обыграй дилера' },
   { id: 'crash', name: 'Crash', icon: <TrendingUp size={32} />, color: '#10b981', desc: 'Успей забрать до взрыва' },
   { id: 'plinko', name: 'Plinko', icon: <ArrowDownCircle size={32} />, color: '#a855f7', desc: 'Падение шарика за множителем' },
   { id: 'mines', name: 'Mines', icon: <Bomb size={32} />, color: '#f43f5e', desc: 'Найди алмазы, обходи мины' },

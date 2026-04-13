@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
-import { Clubs, Spades, Hearts, Diamonds } from 'lucide-react';
+import { Club, Spade, Heart, Diamond } from 'lucide-react';
 
 const SuitIcon = ({ suit, size = 20 }: { suit: string, size?: number }) => {
   switch (suit) {
-    case 'hearts': return <Hearts size={size} color="#ef4444" fill="#ef4444" />;
-    case 'diamonds': return <Diamonds size={size} color="#ef4444" fill="#ef4444" />;
-    case 'clubs': return <Clubs size={size} color="#333" fill="#333" />;
-    case 'spades': return <Spades size={size} color="#333" fill="#333" />;
+    case 'hearts': return <Heart size={size} color="#ef4444" fill="#ef4444" />;
+    case 'diamonds': return <Diamond size={size} color="#ef4444" fill="#ef4444" />;
+    case 'clubs': return <Club size={size} color="#333" fill="#333" />;
+    case 'spades': return <Spade size={size} color="#333" fill="#333" />;
     default: return null;
   }
 };
@@ -40,7 +40,7 @@ const Card = ({ card, hidden }: { card: any, hidden?: boolean }) => (
   </div>
 );
 
-const Blackjack: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
+const Blackjack: React.FC<any> = ({ balance, setBalance }) => {
   const [bet, setBet] = useState(100);
   const [status, setStatus] = useState<'idle' | 'playing' | 'win' | 'lose' | 'push' | 'bust'>('idle');
   const [playerHand, setPlayerHand] = useState<any[]>([]);
@@ -136,7 +136,7 @@ const Blackjack: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) =>
           <div style={{ fontSize: '11px', opacity: 0.5, textTransform: 'uppercase', textAlign: 'center', marginBottom: '10px' }}>Дилер</div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
             {dealerHand.map((c, i) => <Card key={i} card={c} hidden={c.hidden} />)}
-            {dealerHand.length === 0 && <div style={{ color: 'rgba(255,255,255,0.05)', fontSize: '40px' }}><Clubs size={60} /></div>}
+            {dealerHand.length === 0 && <div style={{ color: 'rgba(255,255,255,0.05)', fontSize: '40px' }}><Club size={60} /></div>}
           </div>
         </div>
 
@@ -149,7 +149,7 @@ const Blackjack: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) =>
         <div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '10px' }}>
             {playerHand.map((c, i) => <Card key={i} card={c} />)}
-            {playerHand.length === 0 && <div style={{ color: 'rgba(255,255,255,0.05)', fontSize: '40px' }}><Hearts size={60} /></div>}
+            {playerHand.length === 0 && <div style={{ color: 'rgba(255,255,255,0.05)', fontSize: '40px' }}><Heart size={60} /></div>}
           </div>
           <div style={{ fontSize: '11px', opacity: 0.5, textTransform: 'uppercase', textAlign: 'center' }}>Вы</div>
         </div>

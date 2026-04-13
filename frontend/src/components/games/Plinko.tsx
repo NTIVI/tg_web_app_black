@@ -1,13 +1,12 @@
-import React, { useState, useRef } from 'react';
+import { useState } from 'react';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
 
-const Plinko: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
+const Plinko: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [loading, setLoading] = useState(false);
   const [dropping, setDropping] = useState(false);
   const [message, setMessage] = useState('');
-  const [ballPath, setBallPath] = useState<number[]>([]);
   const [ballPos, setBallPos] = useState({ x: 50, y: 0 });
 
   // 8 rows of pins
@@ -52,8 +51,6 @@ const Plinko: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
   };
 
   const animateBall = (targetBucket: number, data: any) => {
-    let currentX = 50; // percentage
-    const path = [];
     
     // Total buckets is 10. Center is between index 4 and 5.
     // Each step is -5% or +5% (scaled to target)

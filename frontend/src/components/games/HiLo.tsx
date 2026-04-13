@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
-import { Clubs, Spades, Hearts, Diamonds, ArrowUp, ArrowDown, HelpCircle } from 'lucide-react';
+import { Club, Spade, Heart, Diamond, ArrowUp, ArrowDown, HelpCircle } from 'lucide-react';
 
 const SuitIcon = ({ suit, size = 20 }: { suit: string, size?: number }) => {
   switch (suit) {
-    case 'hearts': return <Hearts size={size} color="#ef4444" fill="#ef4444" />;
-    case 'diamonds': return <Diamonds size={size} color="#ef4444" fill="#ef4444" />;
-    case 'clubs': return <Clubs size={size} color="#333" fill="#333" />;
-    case 'spades': return <Spades size={size} color="#333" fill="#333" />;
+    case 'hearts': return <Heart size={size} color="#ef4444" fill="#ef4444" />;
+    case 'diamonds': return <Diamond size={size} color="#ef4444" fill="#ef4444" />;
+    case 'clubs': return <Club size={size} color="#333" fill="#333" />;
+    case 'spades': return <Spade size={size} color="#333" fill="#333" />;
     default: return null;
   }
 };
@@ -35,7 +35,7 @@ const Card = ({ card }: { card: any }) => (
   </div>
 );
 
-const HiLo: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
+const HiLo: React.FC<any> = ({ balance, setBalance }) => {
   const [bet, setBet] = useState(100);
   const [status, setStatus] = useState<'idle' | 'playing' | 'win' | 'lose'>('idle');
   const [currentCard, setCurrentCard] = useState<any>(null);

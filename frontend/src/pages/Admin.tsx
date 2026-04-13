@@ -5,22 +5,20 @@ import {
   Settings, 
   ShoppingBag, 
   Search, 
-  Plus, 
-  Minus, 
   Check, 
-  AlertCircle, 
   Lock, 
   Eye, 
   EyeOff,
   DollarSign,
   Calendar,
-  Zap,
   ShoppingCart,
   Newspaper,
   Trash2,
   Image as ImageIcon,
-  TrendingUp,
-  BarChart3
+  Plus, 
+  Minus,
+  AlertCircle,
+  Zap
 } from 'lucide-react';
 
 const Admin = () => {

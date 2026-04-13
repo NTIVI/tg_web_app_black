@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
 
-const CoinFlip: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
+const CoinFlip: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [betOn, setBetOn] = useState<'heads' | 'tails'>('heads');
   const [loading, setLoading] = useState(false);

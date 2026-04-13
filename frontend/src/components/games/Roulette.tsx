@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
 
@@ -12,7 +12,7 @@ const getColor = (num: number) => {
   return reds.includes(num) ? '#ef4444' : '#1a1a1a'; // Red or Black
 };
 
-const Roulette: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
+const Roulette: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [betOn, setBetOn] = useState<'red' | 'black' | 'green'>('red');
   const [spinning, setSpinning] = useState(false);

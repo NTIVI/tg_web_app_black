@@ -9,6 +9,7 @@ import Bonuses from './pages/Bonuses';
 import News from './pages/News';
 import Games from './pages/Games';
 import GamePage from './pages/GamePage';
+import Admin from './pages/Admin';
 import DailyBonusModal from './components/DailyBonusModal';
 import { API_URL } from './config';
 

@@ -695,7 +695,6 @@ app.post('/api/games/action', requireAuth, async (req, res) => {
                         }
                     }
                     
-                    const playerSum = GamesLogic.calculateHand(state.playerHand);
                     let winAmount = 0;
                     let multiplier = 0;
 

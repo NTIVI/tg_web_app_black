@@ -55,7 +55,7 @@ const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
           }
         }, 4000);
       }
-    } catch (e) {
+    } catch (e: any) {
             if (e.message.includes('Недостаточно баланса')) {
         setMessage('Ошибка: Недостаточно баланса');
       } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {

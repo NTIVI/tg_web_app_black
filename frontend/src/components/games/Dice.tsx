@@ -49,7 +49,7 @@ const Dice: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
           setMessage('MISS! Попробуйте еще раз');
         }
       }
-    } catch (e) {
+    } catch (e: any) {
             if (e.message.includes('Недостаточно баланса')) {
         setMessage('Ошибка: Недостаточно баланса');
       } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {

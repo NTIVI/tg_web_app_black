@@ -181,7 +181,7 @@ const Admin = () => {
       } else {
         setSaveMessage('Ошибка обновления');
       }
-    } catch (err) {
+    } catch (e: any) {
             if (e.message.includes('Unauthorized') || e.message.includes('token')) {
         setSaveMessage('Ошибка: Сессия истекла');
       } else {

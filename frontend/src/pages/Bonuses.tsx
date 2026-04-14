@@ -84,7 +84,7 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
           setSocialStats(data.stats);
           localStorage.setItem('cached_social_stats', JSON.stringify(data.stats));
         }
-      } catch (e) {}
+      } catch (e: any) {}
     };
     fetchStats();
     fetchStats();
@@ -100,7 +100,7 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
       });
       const data = await res.json();
       if (data.quests) setUserQuests(data.quests);
-    } catch (e) {
+    } catch (e: any) {
       console.error('Fetch quests error:', e);
     } finally {
       setLoadingQuests(false);
@@ -175,7 +175,7 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
         if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
         fetchQuests(); // Refresh quests
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Claim quest error:', e);
     }
   };

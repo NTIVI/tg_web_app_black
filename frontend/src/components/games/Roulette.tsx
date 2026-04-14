@@ -68,7 +68,7 @@ const Roulette: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         }
       }, 3000);
 
-    } catch (e) {
+    } catch (e: any) {
             if (e.message.includes('Недостаточно баланса')) {
         setMessage('Ошибка: Недостаточно баланса');
       } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {

@@ -81,7 +81,7 @@ const Blackjack: React.FC<any> = ({ balance, setBalance }) => {
         setStatus('playing');
         setBalance((prev: number) => prev - bet);
       }
-    } catch (e) {
+    } catch (e: any) {
             if (e.message.includes('Недостаточно баланса')) {
         setMessage('Ошибка: Недостаточно баланса');
       } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
@@ -120,7 +120,7 @@ const Blackjack: React.FC<any> = ({ balance, setBalance }) => {
           else if (data.status === 'lose') setMessage('ДИЛЕР ВЫИГРАЛ');
           else if (data.status === 'push') setMessage('НИЧЬЯ (PUSH)');
       }
-    } catch (e) {
+    } catch (e: any) {
             if (e.message.includes('Недостаточно баланса')) {
         setMessage('Ошибка: Недостаточно баланса');
       } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {

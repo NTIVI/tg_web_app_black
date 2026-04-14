@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
 import { Gem, Bomb } from 'lucide-react';
@@ -103,7 +103,7 @@ const Mines: React.FC<any> = ({ balance, setBalance }) => {
         setMines(data.mines);
         setMessage(`WIN! +$${(data.winAmount / 100).toFixed(2)}`);
       }
-    } catch (e) {
+    } catch (e: any) {
             if (e.message.includes('Недостаточно баланса')) {
         setMessage('Ошибка: Недостаточно баланса');
       } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {

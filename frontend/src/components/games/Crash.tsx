@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
-
 
 const Crash: React.FC<any> = ({ balance, setBalance }) => {
   const [bet, setBet] = useState(100);
@@ -56,7 +56,7 @@ const Crash: React.FC<any> = ({ balance, setBalance }) => {
         setBalance((prev: number) => prev - bet);
         setLoading(false);
       }
-    } catch (e) {
+    } catch (e: any) {
             if (e.message.includes('Недостаточно баланса')) {
         setMessage('Ошибка: Недостаточно баланса');
       } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
@@ -91,7 +91,7 @@ const Crash: React.FC<any> = ({ balance, setBalance }) => {
         setStatus('crashed');
         setMessage(`CRASHED AT x${data.crashPoint.toFixed(2)}`);
       }
-    } catch (e) {
+    } catch (e: any) {
             if (e.message.includes('Недостаточно баланса')) {
         setMessage('Ошибка: Недостаточно баланса');
       } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {

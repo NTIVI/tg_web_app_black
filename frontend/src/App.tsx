@@ -151,7 +151,7 @@ function App() {
         setDailyStatus(data);
         setShowDailyModal(true); // Direct show daily if needed, or rely on other logic
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Check daily error:', e);
     }
   };
@@ -177,7 +177,7 @@ function App() {
         });
         setShowDailyModal(false);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Claim daily error:', e);
     } finally {
       setClaimingDaily(false);

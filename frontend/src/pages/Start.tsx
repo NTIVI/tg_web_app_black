@@ -86,8 +86,8 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
         setAdMessage(data.error?.includes('Cooldown') ? '⏰ Подождите перед следующим просмотром.' : '❌ Ошибка начисления.');
         setAdState('done');
       }
-    } catch {
-            if (e.message.includes('Недостаточно баланса')) {
+    } catch (e: any) {
+      if (e.message.includes('Недостаточно баланса')) {
         setAdMessage('❌ Ошибка: Недостаточно баланса');
       } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
         setAdMessage('❌ Ошибка: Сессия истекла');
@@ -143,8 +143,8 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
         setAdMessage(data.error?.includes('Cooldown') ? '⏰ Подождите перед следующим сёрфингом.' : '❌ Ошибка начисления.');
         setAdState('done');
       }
-    } catch {
-            if (e.message.includes('Недостаточно баланса')) {
+    } catch (e: any) {
+      if (e.message.includes('Недостаточно баланса')) {
         setAdMessage('❌ Ошибка: Недостаточно баланса');
       } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
         setAdMessage('❌ Ошибка: Сессия истекла');

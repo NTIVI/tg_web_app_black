@@ -555,7 +555,8 @@ app.post('/api/games/play', requireAuth, async (req, res) => {
                  const playerHand = [deck.pop(), deck.pop()];
                  const dealerHand = [deck.pop(), deck.pop()];
                  const playerSum = GamesLogic.calculateHand(playerHand);
-                 const state = { deck, playerHand, dealerHand, status: 'playing' };
+                 const forceWin = GamesLogic.shouldWin();
+                 const state = { deck, playerHand, dealerHand, status: 'playing', forceWin };
                  await tx.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
                     [telegramId, 'blackjack', bet, JSON.stringify(state)]);
                  const xpGain = Math.floor(bet / 10);
@@ -654,10 +655,44 @@ app.post('/api/games/action', requireAuth, async (req, res) => {
                     return { playerHand: state.playerHand, playerSum: sum, status: 'playing' };
                 } 
                 else if (action === 'stand') {
+                    const playerSum = GamesLogic.calculateHand(state.playerHand);
                     let dealerSum = GamesLogic.calculateHand(state.dealerHand);
-                    while (dealerSum < 17) {
-                        state.dealerHand.push(state.deck.pop());
-                        dealerSum = GamesLogic.calculateHand(state.dealerHand);
+
+                    if (state.forceWin !== undefined) {
+                        let attempts = 0;
+                        while (attempts < 15) {
+                            if (state.forceWin) {
+                                // Force Win: we want dealerSum > 21 OR (dealerSum >= 17 AND dealerSum < playerSum)
+                                if (dealerSum > 21 || (dealerSum >= 17 && dealerSum < playerSum)) break;
+                                state.dealerHand.push(state.deck.pop());
+                            } else {
+                                // Force Lose: we want dealerSum >= playerSum AND dealerSum <= 21
+                                if (dealerSum >= playerSum && dealerSum <= 21) break;
+                                if (dealerSum > 21) {
+                                    state.dealerHand.pop(); // undo bust
+                                    let found = false;
+                                    for (let i = 0; i < state.deck.length; i++) {
+                                        state.dealerHand.push(state.deck[i]);
+                                        if (GamesLogic.calculateHand(state.dealerHand) <= 21) {
+                                            state.deck.splice(i, 1);
+                                            found = true;
+                                            break;
+                                        }
+                                        state.dealerHand.pop();
+                                    }
+                                    if (!found) break; // can't prevent bust, will bust
+                                } else {
+                                    state.dealerHand.push(state.deck.pop());
+                                }
+                            }
+                            dealerSum = GamesLogic.calculateHand(state.dealerHand);
+                            attempts++;
+                        }
+                    } else {
+                        while (dealerSum < 17) {
+                            state.dealerHand.push(state.deck.pop());
+                            dealerSum = GamesLogic.calculateHand(state.dealerHand);
+                        }
                     }
                     
                     const playerSum = GamesLogic.calculateHand(state.playerHand);
@@ -691,6 +726,16 @@ app.post('/api/games/action', requireAuth, async (req, res) => {
             } else if (active.game_name === 'mines') {
                 if (action === 'open') {
                     const idx = Number(req.body.index);
+                    if (state.forceWin === false) {
+                        state.mines[idx] = true;
+                    } else if (state.forceWin === true) {
+                        if (state.mines[idx]) {
+                            state.mines[idx] = false;
+                            const emptyIdx = state.mines.findIndex((m, i) => !m && i !== idx);
+                            if (emptyIdx !== -1) state.mines[emptyIdx] = true;
+                        }
+                    }
+
                     if (state.mines[idx]) {
                         await tx.run('DELETE FROM active_games WHERE telegram_id = ?', [telegramId]);
                         return { status: 'lose', mines: state.mines, winAmount: 0 };
@@ -735,9 +780,22 @@ app.post('/api/games/action', requireAuth, async (req, res) => {
             } else if (active.game_name === 'hilo') {
                 if (action === 'guess') {
                     const guess = req.body.guess;
-                    const nextCard = state.deck.pop();
                     const val1 = GamesLogic.getCardValue(state.currentCard);
-                    const val2 = GamesLogic.getCardValue(nextCard);
+                    let nextCard = state.deck.pop();
+                    let val2 = GamesLogic.getCardValue(nextCard);
+                    
+                    if (state.forceWin !== undefined) {
+                        const targetWin = state.forceWin;
+                        for (let i = 0; i < state.deck.length; i++) {
+                            const cv = GamesLogic.getCardValue(state.deck[i]);
+                            const matches = (guess === 'higher' && cv > val1) || (guess === 'lower' && cv < val1) || (guess === 'same' && cv === val1);
+                            if (targetWin ? matches : !matches) {
+                                nextCard = state.deck.splice(i, 1)[0];
+                                val2 = cv;
+                                break;
+                            }
+                        }
+                    }
                     
                     let win = false;
                     if (guess === 'higher' && val2 > val1) win = true;
@@ -780,6 +838,7 @@ app.post('/api/games/action', requireAuth, async (req, res) => {
 
     } catch (err) {
         console.error('[GameAction Error]', err);
+        res.status(400).json({ error: err.message });
     }
 });
 

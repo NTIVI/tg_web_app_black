@@ -1,3 +1,5 @@
+const shouldWin = () => Math.random() < 0.35; // 35% win probability
+
 const SYMBOLS = ['cherry', 'lemon', 'apple', 'bell', 'gem', 'star'];
 const SLOTS_PAYTABLE = {
     'star': 50,
@@ -9,39 +11,34 @@ const SLOTS_PAYTABLE = {
 };
 
 const handleSlots = (bet) => {
-    const outcome = [
-        Math.floor(Math.random() * SYMBOLS.length),
-        Math.floor(Math.random() * SYMBOLS.length),
-        Math.floor(Math.random() * SYMBOLS.length)
-    ];
-    let multiplier = 0;
-    const s1 = SYMBOLS[outcome[0]];
-    const s2 = SYMBOLS[outcome[1]];
-    const s3 = SYMBOLS[outcome[2]];
-
-    if (s1 === s2 && s2 === s3) {
-        multiplier = SLOTS_PAYTABLE[s1] || 0;
-    } else if (s1 === s2) {
-        multiplier = 1.5;
+    const win = shouldWin();
+    if (!win) {
+        // Force lose: return mismatching symbols
+        const outcome = [0, 1, 2].sort(() => Math.random() - 0.5);
+        return { outcome, multiplier: 0, winAmount: 0 };
     }
-    const winAmount = Math.floor(bet * multiplier);
-    return { outcome, multiplier, winAmount };
+    const s = Math.floor(Math.random() * SYMBOLS.length);
+    const multiplier = SLOTS_PAYTABLE[SYMBOLS[s]] || 1.5;
+    return { outcome: [s, s, s], multiplier, winAmount: Math.floor(bet * multiplier) };
 };
 
 const handleRoulette = (bet, betOn) => {
-    const winNumber = Math.floor(Math.random() * 37);
-    let multiplier = 0;
+    const win = shouldWin();
     const reds = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
-    const isRed = reds.includes(winNumber);
-    const isBlack = winNumber !== 0 && !isRed;
-    const isGreen = winNumber === 0;
+    const blacks = [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35];
+    let winNumber = 0;
+    let multiplier = 0;
 
-    if (betOn === 'red' && isRed) multiplier = 2;
-    else if (betOn === 'black' && isBlack) multiplier = 2;
-    else if (betOn === 'green' && isGreen) multiplier = 14;
-
-    const winAmount = Math.floor(bet * multiplier);
-    return { winNumber, multiplier, winAmount };
+    if (win) {
+        if (betOn === 'red') { winNumber = reds[Math.floor(Math.random() * reds.length)]; multiplier = 2; }
+        else if (betOn === 'black') { winNumber = blacks[Math.floor(Math.random() * blacks.length)]; multiplier = 2; }
+        else { winNumber = 0; multiplier = 14; }
+    } else {
+        if (betOn === 'red') { winNumber = blacks[Math.floor(Math.random() * blacks.length)]; }
+        else if (betOn === 'black') { winNumber = reds[Math.floor(Math.random() * reds.length)]; }
+        else { winNumber = reds[Math.floor(Math.random() * reds.length)]; }
+    }
+    return { winNumber, multiplier, winAmount: Math.floor(bet * multiplier) };
 };
 
 const createDeck = () => {
@@ -77,34 +74,42 @@ const calculateHand = (hand) => {
 };
 
 const handleDice = (bet, target, type) => {
-    const roll = Math.floor(Math.random() * 100) + 1;
-    let win = false;
+    const win = shouldWin();
+    let roll = 0;
     let multiplier = 0;
-    if (type === 'under') {
-        win = roll < target;
-        multiplier = 98 / target;
+    if (win) {
+        if (type === 'under') { roll = Math.floor(Math.random() * target); multiplier = 98 / target; }
+        else { roll = Math.floor(Math.random() * (100 - target)) + target + 1; multiplier = 98 / (100 - target); }
     } else {
-        win = roll > target;
-        multiplier = 98 / (100 - target);
+        if (type === 'under') { roll = Math.floor(Math.random() * (100 - target + 1)) + target; }
+        else { roll = Math.floor(Math.random() * target) + 1; }
     }
-    const winAmount = win ? Math.floor(bet * multiplier) : 0;
-    return { roll, win, multiplier: win ? multiplier : 0, winAmount };
+    return { roll, win, multiplier, winAmount: Math.floor(bet * multiplier) };
 };
 
 const handleCoinFlip = (bet, betOn) => {
-    const result = Math.random() < 0.5 ? 'heads' : 'tails';
-    const win = result === betOn;
+    const win = shouldWin();
+    const result = win ? betOn : (betOn === 'heads' ? 'tails' : 'heads');
     return { result, win, multiplier: win ? 1.95 : 0, winAmount: win ? Math.floor(bet * 1.95) : 0 };
 };
 
 const handlePlinko = (bet, risk = 'medium') => {
+    const win = shouldWin();
     const buckets = risk === 'high' ? [50, 10, 2, 0.5, 0.2, 0.2, 0.5, 2, 10, 50] : [5, 2, 1.2, 1, 0.5, 0.5, 1, 1.2, 2, 5];
-    const bucketIdx = Math.floor(Math.random() * buckets.length);
+    let bucketIdx = 0;
+    if (win) {
+        const winIndices = buckets.map((v, i) => v > 1 ? i : -1).filter(i => i !== -1);
+        bucketIdx = winIndices[Math.floor(Math.random() * winIndices.length)] || 0;
+    } else {
+        const loseIndices = buckets.map((v, i) => v <= 1 ? i : -1).filter(i => i !== -1);
+        bucketIdx = loseIndices[Math.floor(Math.random() * loseIndices.length)] || Math.floor(buckets.length / 2);
+    }
     const multiplier = buckets[bucketIdx];
     return { bucketIdx, multiplier, winAmount: Math.floor(bet * multiplier) };
 };
 
 const handleMinesStart = (bet, mineCount) => {
+    const win = shouldWin();
     const grid = Array(25).fill(false);
     let buried = 0;
     while (buried < mineCount) {
@@ -114,20 +119,13 @@ const handleMinesStart = (bet, mineCount) => {
             buried++;
         }
     }
-    return { mines: grid, revealed: [], status: 'playing', bet };
+    return { mines: grid, revealed: [], status: 'playing', bet, forceWin: win };
 };
 
 const getMinesMultiplier = (revealedCount, mineCount) => {
-    // Basic combination formula for odds
     const n = 25;
     const m = mineCount;
     const k = revealedCount;
-    
-    // Multiplier = (n! / (n-k)!) / ((n-m)! / (n-m-k)!) * 0.98 (house edge)
-    const factorial = (num) => (num <= 1 ? 1 : num * factorial(num - 1));
-    const combinations = (n, k) => factorial(n) / (factorial(k) * factorial(n - k));
-    
-    // Simplification for small grids:
     let prob = 1;
     for (let i = 0; i < k; i++) {
         prob *= (n - m - i) / (n - i);
@@ -136,25 +134,34 @@ const getMinesMultiplier = (revealedCount, mineCount) => {
 };
 
 const handleCrashStart = (bet) => {
-    // Multiplier curve: 1 / (1 - random())
-    // 0.98 house edge: multiply result by 0.98
-    // Min 1.0, Max 1000.0
-    const r = Math.random();
-    let crashPoint = 0.98 / (1 - r);
-    if (crashPoint < 1) crashPoint = 1;
-    if (crashPoint > 1000) crashPoint = 1000;
-    return { crashPoint, startTime: Date.now(), status: 'playing', bet };
+    const win = shouldWin();
+    let crashPoint = 1.0;
+    if (win) {
+        crashPoint = 1.5 + Math.random() * 3.5;
+    } else {
+        crashPoint = 1.00 + Math.random() * 0.15;
+    }
+    return { crashPoint, startTime: Date.now(), status: 'playing', bet, forceWin: win };
 };
 
 const handleHiLoStart = (bet) => {
+    const win = shouldWin();
     const deck = createDeck();
     const currentCard = deck.pop();
-    return { currentCard, deck, status: 'playing', bet, multiplier: 1 };
+    return { currentCard, deck, status: 'playing', bet, multiplier: 1, forceWin: win };
 };
 
 const handleWheelSpin = (bet) => {
+    const win = shouldWin();
     const segments = [0, 1.2, 0.5, 2, 0, 1.5, 5, 0.2, 1.1, 0, 10, 0.5, 1.2, 0, 20];
-    const segmentIdx = Math.floor(Math.random() * segments.length);
+    let segmentIdx = 0;
+    if (win) {
+        const winIndices = segments.map((v, i) => v > 1 ? i : -1).filter(i => i !== -1);
+        segmentIdx = winIndices[Math.floor(Math.random() * winIndices.length)] || 1;
+    } else {
+        const loseIndices = segments.map((v, i) => v <= 1 ? i : -1).filter(i => i !== -1);
+        segmentIdx = loseIndices[Math.floor(Math.random() * loseIndices.length)] || 0;
+    }
     const multiplier = segments[segmentIdx];
     return { segmentIdx, segments, multiplier, winAmount: Math.floor(bet * multiplier) };
 };
@@ -172,5 +179,6 @@ export {
     handleCrashStart,
     handleHiLoStart,
     handleWheelSpin,
-    getCardValue
+    getCardValue,
+    shouldWin
 };

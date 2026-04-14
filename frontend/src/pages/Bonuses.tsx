@@ -171,7 +171,7 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
       });
       const data = await res.json();
       if (data.success) {
-        setBalance(data.newBalance);
+        setBalance(data.balance !== undefined ? data.balance : data.newBalance);
         if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
         fetchQuests(); // Refresh quests
       }

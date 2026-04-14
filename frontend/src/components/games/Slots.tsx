@@ -52,7 +52,7 @@ const Slots: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
       setTimeout(() => {
         setReels(outcome);
         setSpinning(false);
-        setBalance(data.newBalance);
+        setBalance(data.balance !== undefined ? data.balance : data.newBalance);
         if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
 
         if (data.winAmount > 0) {

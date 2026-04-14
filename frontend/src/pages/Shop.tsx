@@ -218,7 +218,7 @@ const Shop = ({ userId, balance, setBalance, setPurchases }: ShopProps) => {
       
       const data = await res.json();
       if (data.success) {
-        setBalance(data.newBalance);
+        setBalance(data.balance !== undefined ? data.balance : data.newBalance);
         if (data.purchases) setPurchases(data.purchases);
         setMessage(`Успешно куплено ${item.name}!`);
       } else {

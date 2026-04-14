@@ -41,7 +41,7 @@ const CoinFlip: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         setTimeout(() => {
           setFlipping(false);
           setResult(data.result);
-          setBalance(data.newBalance);
+          setBalance(data.balance !== undefined ? data.balance : data.newBalance);
           if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
           
           if (data.win) {

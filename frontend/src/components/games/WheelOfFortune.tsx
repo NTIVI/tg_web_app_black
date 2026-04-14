@@ -43,7 +43,7 @@ const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
         setTimeout(() => {
           setSpinning(false);
-          setBalance(data.newBalance);
+          setBalance(data.balance !== undefined ? data.balance : data.newBalance);
           if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
           
           if (data.winAmount > bet) {

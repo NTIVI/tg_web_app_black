@@ -40,7 +40,7 @@ const Dice: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         setMessage(data.error);
       } else {
         setResult(data);
-        setBalance(data.newBalance);
+        setBalance(data.balance !== undefined ? data.balance : data.newBalance);
         if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
         
         if (data.win) {

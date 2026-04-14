@@ -74,8 +74,8 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
         body: JSON.stringify({ telegramId: userId }),
       });
       const data = await res.json();
-      if (data.newBalance !== undefined) {
-        setBalance(data.newBalance);
+      if (data.balance !== undefined ? data.balance : data.newBalance !== undefined) {
+        setBalance(data.balance !== undefined ? data.balance : data.newBalance);
         if (setTgUser) {
           setTgUser((prev: any) => ({ ...prev, ...data }));
         }
@@ -132,7 +132,7 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
       });
       const data = await res.json();
       if (data.success) {
-        setBalance(data.newBalance);
+        setBalance(data.balance !== undefined ? data.balance : data.newBalance);
         if (setTgUser) {
           setTgUser((prev: any) => ({ ...prev, ...data }));
         }

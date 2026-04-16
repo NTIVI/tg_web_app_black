@@ -23,7 +23,7 @@ const Roulette: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [rotation, setRotation] = useState(0);
   const [history, setHistory] = useState<number[]>([]);
   const [showOverlay, setShowOverlay] = useState(false);
-  const [overlayData, setOverlayData] = useState({ win: false, title: '', subtitle: '' });
+  const [overlayData, setOverlayData] = useState<{ win: boolean; title: string; subtitle: string; amount?: number }>({ win: false, title: '', subtitle: '' });
   const tapeRef = useRef<HTMLDivElement>(null);
 
   const tapeNumbers = [...ROULETTE_NUMBERS, ...ROULETTE_NUMBERS, ...ROULETTE_NUMBERS, ...ROULETTE_NUMBERS, ...ROULETTE_NUMBERS];
@@ -75,9 +75,9 @@ const Roulette: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         setHistory(prev => [winNumber, ...prev].slice(0, 10));
 
         if (data.winAmount > 0) {
-          setOverlayData({ win: true, title: `+$${(data.winAmount / 100).toFixed(2)}`, subtitle: `Выпало ${winNumber}` });
+          setOverlayData({ win: true, title: 'ПОБЕДА!', subtitle: `Выпало ${winNumber}`, amount: data.winAmount });
         } else {
-          setOverlayData({ win: false, title: 'ПРОИГРЫШ', subtitle: `Выпало ${winNumber}` });
+          setOverlayData({ win: false, title: 'ПРОИГРЫШ', subtitle: `Выпало ${winNumber}`, amount: bet });
         }
         setShowOverlay(true);
       }, 3000);
@@ -90,7 +90,14 @@ const Roulette: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', width: '100%' }}>
-      <ResultOverlay show={showOverlay} win={overlayData.win} title={overlayData.title} subtitle={overlayData.subtitle} onClose={() => setShowOverlay(false)} />
+      <ResultOverlay 
+        show={showOverlay} 
+        win={overlayData.win} 
+        title={overlayData.title} 
+        subtitle={overlayData.subtitle} 
+        amount={overlayData.amount}
+        onClose={() => setShowOverlay(false)} 
+      />
       
       {/* Premium Roulette Tape */}
       <div style={{ 

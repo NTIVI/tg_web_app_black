@@ -50,7 +50,7 @@ const HiLo: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [multiplier, setMultiplier] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
-  const [overlayData, setOverlayData] = useState({ win: false, title: '', subtitle: '' });
+  const [overlayData, setOverlayData] = useState<{ win: boolean; title: string; subtitle: string; amount?: number }>({ win: false, title: '', subtitle: '' });
   const [message, setMessage] = useState('');
 
   const resetGame = () => {
@@ -121,7 +121,7 @@ const HiLo: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
       if (data.status === 'lose') {
         setStatus('lose');
         setCurrentCard(data.nextCard);
-        setOverlayData({ win: false, title: 'ПРОИГРЫШ!', subtitle: 'Неверный прогноз' });
+        setOverlayData({ win: false, title: 'ПРОИГРЫШ!', subtitle: 'Неверный прогноз', amount: bet });
         setShowOverlay(true);
       } else if (data.status === 'playing' || data.status === 'win') {
         setCurrentCard(data.currentCard);
@@ -159,7 +159,12 @@ const HiLo: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         setStatus('win');
         setBalance(data.balance);
         if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
-        setOverlayData({ win: true, title: `+$${(data.winAmount / 100).toFixed(2)}`, subtitle: `x${multiplier.toFixed(2)} — выведено ✅` });
+        setOverlayData({ 
+            win: true, 
+            title: 'ПОБЕДА!', 
+            subtitle: `Множитель x${multiplier.toFixed(2)}`,
+            amount: data.winAmount
+        });
         setShowOverlay(true);
       }
     } catch (e: any) {
@@ -171,7 +176,14 @@ const HiLo: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', width: '100%' }}>
-      <ResultOverlay show={showOverlay} win={overlayData.win} title={overlayData.title} subtitle={overlayData.subtitle} onClose={resetGame} />
+      <ResultOverlay 
+        show={showOverlay} 
+        win={overlayData.win} 
+        title={overlayData.title} 
+        subtitle={overlayData.subtitle} 
+        amount={overlayData.amount}
+        onClose={resetGame} 
+      />
       
       {/* Premium Playing Area */}
       <div style={{ 

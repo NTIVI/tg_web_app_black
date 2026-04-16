@@ -13,7 +13,7 @@ const Dice: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [result, setResult] = useState<any>(null);
   const [message, setMessage] = useState('');
   const [showOverlay, setShowOverlay] = useState(false);
-  const [overlayData, setOverlayData] = useState({ win: false, title: '', subtitle: '' });
+  const [overlayData, setOverlayData] = useState<{ win: boolean; title: string; subtitle: string; amount?: number }>({ win: false, title: '', subtitle: '' });
 
   const winChance = type === 'under' ? target : 100 - target;
   const multiplier = winChance > 0 ? (98 / winChance).toFixed(2) : '0.00';
@@ -53,10 +53,10 @@ const Dice: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
         
         if (data.win) {
-          setOverlayData({ win: true, title: `+$${(data.winAmount / 100).toFixed(2)}`, subtitle: `Выпало ${data.roll} — x${data.multiplier?.toFixed(2) || ''}` });
+          setOverlayData({ win: true, title: 'ПОБЕДА!', subtitle: `Выпало ${data.roll} — x${data.multiplier?.toFixed(2) || ''}`, amount: data.winAmount });
           setShowOverlay(true);
         } else {
-          setOverlayData({ win: false, title: 'МИМО!', subtitle: `Выпало ${data.roll}` });
+          setOverlayData({ win: false, title: 'ПРОИГРЫШ', subtitle: `Выпало ${data.roll}`, amount: bet });
           setShowOverlay(true);
         }
       }
@@ -69,7 +69,14 @@ const Dice: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', width: '100%' }}>
-      <ResultOverlay show={showOverlay} win={overlayData.win} title={overlayData.title} subtitle={overlayData.subtitle} onClose={() => setShowOverlay(false)} />
+      <ResultOverlay 
+        show={showOverlay} 
+        win={overlayData.win} 
+        title={overlayData.title} 
+        subtitle={overlayData.subtitle} 
+        amount={overlayData.amount}
+        onClose={() => setShowOverlay(false)} 
+      />
       
       {/* Visual Dice Display Panel */}
       <div style={{ 

@@ -61,7 +61,7 @@ const Blackjack: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
-  const [overlayData, setOverlayData] = useState({ win: false, title: '', subtitle: '' });
+  const [overlayData, setOverlayData] = useState<{ win: boolean; title: string; subtitle: string; amount?: number }>({ win: false, title: '', subtitle: '' });
 
   const resetGame = () => {
     setStatus('idle');
@@ -139,11 +139,11 @@ const Blackjack: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
             
             if (data.status !== 'playing') {
                 if (isWin) {
-                    setOverlayData({ win: true, title: `+$${(data.winAmount / 100).toFixed(2)}`, subtitle: `Блэкджек! Вы победили дилера 🎴` });
+                    setOverlayData({ win: true, title: 'БЛЭКДЖЕК!', subtitle: 'Вы победили дилера 🎴', amount: data.winAmount });
                 } else if (isPush) {
-                    setOverlayData({ win: true, title: 'НИЧЬЯ', subtitle: 'Ставка возвращена' });
+                    setOverlayData({ win: true, title: 'НИЧЬЯ', subtitle: 'Ставка возвращена', amount: 0 });
                 } else {
-                    setOverlayData({ win: false, title: 'ПРОИГРЫШ!', subtitle: `Дилер: ${data.dealerSum} vs ваш: ${data.playerSum}` });
+                    setOverlayData({ win: false, title: 'ПРОИГРЫШ', subtitle: `Дилер: ${data.dealerSum} vs Ваш: ${data.playerSum}`, amount: bet });
                 }
                 setShowOverlay(true);
             }
@@ -158,7 +158,14 @@ const Blackjack: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px', width: '100%' }}>
-      <ResultOverlay show={showOverlay} win={overlayData.win} title={overlayData.title} subtitle={overlayData.subtitle} onClose={resetGame} />
+      <ResultOverlay 
+        show={showOverlay} 
+        win={overlayData.win} 
+        title={overlayData.title} 
+        subtitle={overlayData.subtitle} 
+        amount={overlayData.amount}
+        onClose={resetGame} 
+      />
       
       {/* Table Area */}
       <div style={{ 
@@ -177,7 +184,7 @@ const Blackjack: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
       }}>
         {/* Table Logo/Marking */}
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: 0.1, pointerEvents: 'none', textAlign: 'center' }}>
-            <div style={{ fontSize: '40px', fontWeight: '950', letterSpacing: '8px', color: '#fff' }}>RINGO</div>
+            <div style={{ fontSize: '32px', fontWeight: '950', letterSpacing: '4px', color: 'rgba(255,255,255,0.05)' }}>YOURTURN</div>
             <div style={{ fontSize: '10px', color: '#fff', textTransform: 'uppercase' }}>Dealer must stand on 17</div>
         </div>
 

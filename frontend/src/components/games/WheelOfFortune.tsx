@@ -15,7 +15,7 @@ const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
-  const [overlayData, setOverlayData] = useState({ win: false, title: '', subtitle: '' });
+  const [overlayData, setOverlayData] = useState<{ win: boolean; title: string; subtitle: string; amount?: number }>({ win: false, title: '', subtitle: '' });
 
   const handleSpin = async () => {
     const token = sessionStorage.getItem('auth_token');
@@ -63,13 +63,13 @@ const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
           if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
           
           if (data.winAmount > bet) {
-            setOverlayData({ win: true, title: `JACKPOT! x${data.multiplier}`, subtitle: `+$${(data.winAmount / 100).toFixed(2)} 🎉` });
+            setOverlayData({ win: true, title: 'ДЖЕКПОТ!', subtitle: `Множитель x${data.multiplier}`, amount: data.winAmount });
             setShowOverlay(true);
           } else if (data.winAmount > 0) {
-            setOverlayData({ win: true, title: `x${data.multiplier}`, subtitle: `+$${(data.winAmount / 100).toFixed(2)}` });
+            setOverlayData({ win: true, title: 'ПОБЕДА!', subtitle: `Множитель x${data.multiplier}`, amount: data.winAmount });
             setShowOverlay(true);
           } else {
-            setOverlayData({ win: false, title: 'ПРОИГРЫШ', subtitle: 'В следующий раз повезёт!' });
+            setOverlayData({ win: false, title: 'ПРОИГРЫШ', subtitle: 'Повезёт в следующий раз!', amount: bet });
             setShowOverlay(true);
           }
         }, 4000);
@@ -84,7 +84,14 @@ const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', width: '100%' }}>
-      <ResultOverlay show={showOverlay} win={overlayData.win} title={overlayData.title} subtitle={overlayData.subtitle} onClose={() => setShowOverlay(false)} />
+      <ResultOverlay 
+        show={showOverlay} 
+        win={overlayData.win} 
+        title={overlayData.title} 
+        subtitle={overlayData.subtitle} 
+        amount={overlayData.amount}
+        onClose={() => setShowOverlay(false)} 
+      />
       
       {/* Premium Wheel Visualization */}
       <div style={{ 

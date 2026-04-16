@@ -24,6 +24,7 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, setTgUser }) => {
   const [overlayWin, setOverlayWin] = useState(false);
   const [overlayTitle, setOverlayTitle] = useState('');
   const [overlaySubtitle, setOverlaySubtitle] = useState('');
+  const [overlayAmount, setOverlayAmount] = useState<number | undefined>(undefined);
 
   // Clear message after 3s if not terminal state
   useEffect(() => {
@@ -104,6 +105,7 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, setTgUser }) => {
         // Show overlay after short delay so mine reveal animates
         setTimeout(() => {
           setOverlayWin(false);
+          setOverlayAmount(bet);
           setOverlayTitle('ВЗРЫВ!');
           setOverlaySubtitle('Вы наступили на мину 💣');
           setShowOverlay(true);
@@ -143,8 +145,9 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, setTgUser }) => {
         setMines(data.mines || []);
         if (setTgUser) setTgUser(prev => ({ ...prev, ...data }));
         setOverlayWin(true);
-        setOverlayTitle(`+$${(data.winAmount / 100).toFixed(2)}`);
-        setOverlaySubtitle(`x${currentMultiplier.toFixed(2)} × $${(bet / 100).toFixed(2)}`);
+        setOverlayAmount(data.winAmount);
+        setOverlayTitle('ПОБЕДА!');
+        setOverlaySubtitle(`Множитель x${currentMultiplier.toFixed(2)}`);
         setShowOverlay(true);
       }
     } catch {
@@ -189,6 +192,7 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, setTgUser }) => {
         win={overlayWin}
         title={overlayTitle}
         subtitle={overlaySubtitle}
+        amount={overlayAmount}
         onClose={resetGame}
       />
 

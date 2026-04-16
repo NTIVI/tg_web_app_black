@@ -5,10 +5,11 @@ interface ResultOverlayProps {
   win: boolean;
   title: string;
   subtitle?: string;
+  amount?: number;
   onClose: () => void;
 }
 
-const ResultOverlay = ({ show, win, title, subtitle, onClose }: ResultOverlayProps) => (
+const ResultOverlay = ({ show, win, title, subtitle, amount, onClose }: ResultOverlayProps) => (
   <AnimatePresence>
     {show && (
       <motion.div
@@ -60,11 +61,33 @@ const ResultOverlay = ({ show, win, title, subtitle, onClose }: ResultOverlayPro
               fontSize: '32px', fontWeight: '950', lineHeight: 1,
               color: win ? '#10b981' : '#ef4444',
               textShadow: win ? '0 0 30px rgba(16,185,129,0.5)' : '0 0 30px rgba(239,68,68,0.5)',
-              marginBottom: '8px'
+              marginBottom: amount !== undefined ? '8px' : '24px'
             }}
           >
             {title}
           </motion.div>
+
+          {/* Amount Display */}
+          {amount !== undefined && (
+             <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.35, type: 'spring', stiffness: 200 }}
+              style={{
+                fontSize: '42px', 
+                fontWeight: '950', 
+                color: '#fff',
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+             >
+                <span style={{ color: win ? '#10b981' : '#ef4444' }}>{win ? '+' : '-'}</span>
+                <span>${(Math.abs(amount) / 100).toFixed(2)}</span>
+             </motion.div>
+          )}
 
           {subtitle && (
             <motion.div

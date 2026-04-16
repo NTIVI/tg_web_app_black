@@ -16,6 +16,7 @@ const Crash: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [overlayWin, setOverlayWin] = useState(false);
   const [overlayTitle, setOverlayTitle] = useState('');
   const [overlaySubtitle, setOverlaySubtitle] = useState('');
+  const [overlayAmount, setOverlayAmount] = useState<number | undefined>(undefined);
   const [autoCashout, setAutoCashout] = useState(false);
   const [autoCashoutAt, setAutoCashoutAt] = useState(2.0);
 
@@ -68,8 +69,9 @@ const Crash: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         const mult = data.multiplier ?? multiplier;
         setHistory(h => [{ mult, win: true }, ...h].slice(0, 12));
         setOverlayWin(true);
-        setOverlayTitle(`+$${(data.winAmount / 100).toFixed(2)}`);
-        setOverlaySubtitle(`x${(data.multiplier ?? multiplier).toFixed(2)} выведено 🚀`);
+        setOverlayAmount(data.winAmount);
+        setOverlayTitle('ВЫВЕДЕНО!');
+        setOverlaySubtitle(`Множитель x${(data.multiplier ?? multiplier).toFixed(2)}`);
         setShowOverlay(true);
       } else if (data.status === 'crashed') {
         // Already crashed on server when we tried to cash out
@@ -77,6 +79,7 @@ const Crash: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         const cp = data.crashPoint ?? crashPointRef.current;
         setHistory(h => [{ mult: cp, win: false }, ...h].slice(0, 12));
         setOverlayWin(false);
+        setOverlayAmount(bet);
         setOverlayTitle('КРЭШ!');
         setOverlaySubtitle(`Взрыв на x${cp.toFixed(2)}`);
         setShowOverlay(true);
@@ -189,6 +192,7 @@ const Crash: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         win={overlayWin}
         title={overlayTitle}
         subtitle={overlaySubtitle}
+        amount={overlayAmount}
         onClose={resetGame}
       />
 

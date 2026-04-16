@@ -179,8 +179,37 @@ app.post('/api/auth', authLimiter, async (req, res) => {
 });
 
 // QUEST HELPERS
+const checkAndResetQuests = async (telegramId) => {
+    try {
+        // Reset DAILY quests if last update was before today
+        await DB.run(`
+            UPDATE user_quests 
+            SET current_value = 0, 
+                is_completed = FALSE, 
+                claimed_at = NULL, 
+                updated_at = CURRENT_TIMESTAMP
+            WHERE telegram_id = ? 
+            AND updated_at < CURRENT_DATE 
+            AND quest_id IN (SELECT id FROM quests WHERE type = 'daily')
+        `, [telegramId]);
+
+        // Reset WEEKLY quests if last update was before this week
+        await DB.run(`
+            UPDATE user_quests 
+            SET current_value = 0, 
+                is_completed = FALSE, 
+                claimed_at = NULL, 
+                updated_at = CURRENT_TIMESTAMP
+            WHERE telegram_id = ? 
+            AND updated_at < DATE_TRUNC('week', CURRENT_DATE) 
+            AND quest_id IN (SELECT id FROM quests WHERE type = 'weekly')
+        `, [telegramId]);
+    } catch (err) { console.error('Quest reset error:', err); }
+};
+
 const updateQuestProgress = async (telegramId, category, increment = 1) => {
     try {
+        await checkAndResetQuests(telegramId);
         const activeQuests = await DB.all('SELECT id, target_value FROM quests WHERE category = ?', [category]);
         for (const quest of activeQuests) {
             await DB.run(`
@@ -344,6 +373,7 @@ app.post('/api/surf-ad', requireAuth, limiter, async (req, res) => {
 app.get('/api/quests', requireAuth, async (req, res) => {
     const telegramId = req.user.id;
     try {
+        await checkAndResetQuests(telegramId);
         const quests = await DB.all(`
             SELECT q.*, uq.current_value, uq.is_completed, uq.claimed_at 
             FROM quests q 

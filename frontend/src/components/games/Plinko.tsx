@@ -16,7 +16,7 @@ const Plinko: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [ballPos, setBallPos] = useState({ x: 50, y: 5 });
   const [activeBucket, setActiveBucket] = useState<number | null>(null);
   const [showOverlay, setShowOverlay] = useState(false);
-  const [overlayData, setOverlayData] = useState({ win: false, title: '', subtitle: '' });
+  const [overlayData, setOverlayData] = useState<{ win: boolean; title: string; subtitle: string; amount?: number }>({ win: false, title: '', subtitle: '' });
 
   const handleDrop = async () => {
     const token = sessionStorage.getItem('auth_token');
@@ -75,10 +75,10 @@ const Plinko: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
         
         if (data.winAmount > bet) {
-           setOverlayData({ win: true, title: `+$${(data.winAmount / 100).toFixed(2)}`, subtitle: `x${data.multiplier} — вам повезло! 🎉` });
+           setOverlayData({ win: true, title: 'ПОБЕДА!', subtitle: `Множитель x${data.multiplier}`, amount: data.winAmount });
            setShowOverlay(true);
         } else {
-           setOverlayData({ win: false, title: 'x' + data.multiplier, subtitle: `-$${(bet / 100).toFixed(2)}` });
+           setOverlayData({ win: false, title: 'МНОЖИТЕЛЬ x' + data.multiplier, subtitle: 'Повезет в следующий раз!', amount: bet });
            setShowOverlay(true);
         }
         return;
@@ -99,7 +99,14 @@ const Plinko: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', width: '100%' }}>
-      <ResultOverlay show={showOverlay} win={overlayData.win} title={overlayData.title} subtitle={overlayData.subtitle} onClose={() => setShowOverlay(false)} />
+      <ResultOverlay 
+        show={showOverlay} 
+        win={overlayData.win} 
+        title={overlayData.title} 
+        subtitle={overlayData.subtitle} 
+        amount={overlayData.amount}
+        onClose={() => setShowOverlay(false)} 
+      />
       
       {/* Plinko Board Visual */}
       <div style={{ 

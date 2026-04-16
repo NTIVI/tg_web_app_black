@@ -192,104 +192,92 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
         </div>
       </motion.div>
 
-      {/* ── BANK CARD BALANCE ── */}
+      {/* ── COMPACT BANK CARD ── */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.5 }}
         style={{
           position: 'relative',
-          borderRadius: '32px',
+          borderRadius: '24px',
           padding: '1px',
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.2) 100%)',
-          marginBottom: '26px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.15) 100%)',
+          marginBottom: '20px',
+          boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.4)',
         }}
       >
         <div style={{
-          background: 'linear-gradient(135deg, #1a1a2e 0%, #0d0d15 100%)',
-          borderRadius: '31px',
-          padding: '28px',
+          background: 'linear-gradient(135deg, #161625 0%, #0a0a0f 100%)',
+          borderRadius: '23px',
+          padding: '20px 24px',
           position: 'relative',
           overflow: 'hidden',
-          minHeight: '220px',
+          minHeight: '170px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between'
         }}>
-          {/* Holographic Overlays */}
-          <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '150px', height: '150px', background: 'radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%)', filter: 'blur(40px)' }} />
-          <div style={{ position: 'absolute', bottom: '-20%', left: '-10%', width: '120px', height: '120px', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%)', filter: 'blur(30px)' }} />
+          {/* Subtle Glows */}
+          <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: '120px', height: '120px', background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 70%)', filter: 'blur(30px)' }} />
           
-          {/* Card Top Row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 2 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '40px', height: '28px', background: 'linear-gradient(135deg, #d4af37, #f5d76e)', borderRadius: '6px', position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ position: 'absolute', top: '20%', left: 0, right: 0, height: '1px', background: 'rgba(0,0,0,0.1)' }} />
-                  <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'rgba(0,0,0,0.1)' }} />
-                  <div style={{ position: 'absolute', top: '80%', left: 0, right: 0, height: '1px', background: 'rgba(0,0,0,0.1)' }} />
-                  <div style={{ position: 'absolute', top: 0, bottom: 0, left: '33%', width: '1px', background: 'rgba(0,0,0,0.1)' }} />
-                  <div style={{ position: 'absolute', top: 0, bottom: 0, left: '66%', width: '1px', background: 'rgba(0,0,0,0.1)' }} />
-                </div>
-                <span style={{ fontSize: '14px', fontWeight: '900', letterSpacing: '2px', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase' }}>Platinum</span>
+          {/* Top Row: Mini Chip & Level */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '32px', height: '22px', background: 'linear-gradient(135deg, #d4af37, #f5d76e)', borderRadius: '4px', position: 'relative' }}>
+                <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'rgba(0,0,0,0.1)' }} />
+                <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '1px', background: 'rgba(0,0,0,0.1)' }} />
               </div>
-              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: '700', letterSpacing: '1px', marginTop: '4px' }}>YOURTURN DEBIT</div>
+              <span style={{ fontSize: '11px', fontWeight: '900', letterSpacing: '1.5px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>YourTurn Platinum</span>
             </div>
             
             <div style={{ 
-              background: 'rgba(255,255,255,0.08)', 
-              padding: '6px 14px', 
-              borderRadius: '12px', 
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(168,85,247,0.1)', 
+              padding: '4px 10px', 
+              borderRadius: '8px', 
+              border: '1px solid rgba(168,85,247,0.2)',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '4px'
             }}>
-              <TrendingUp size={14} color="var(--primary-color)" />
-              <span style={{ fontSize: '12px', fontWeight: '900', color: '#fff' }}>LVL {tgUser?.level || 1}</span>
+              <TrendingUp size={10} color="#a855f7" />
+              <span style={{ fontSize: '10px', fontWeight: '900', color: '#a855f7' }}>LVL {tgUser?.level || 1}</span>
             </div>
           </div>
 
-          {/* Card Middle: Balance */}
-          <div style={{ zIndex: 2, margin: '20px 0' }}>
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '8px' }}>
-              CURRENT BALANCE
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <span style={{ fontSize: '24px', fontWeight: '700', color: 'var(--gold-color)' }}>$</span>
+          {/* Middle: Prominent Balance */}
+          <div style={{ zIndex: 2, margin: '8px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+              <span style={{ fontSize: '20px', fontWeight: '700', color: 'var(--gold-color)', opacity: 0.8 }}>$</span>
               <motion.span
                 key={displayBalance}
-                initial={{ scale: 0.9, opacity: 0.5 }}
-                animate={{ scale: 1, opacity: 1 }}
-                style={{ fontSize: '48px', fontWeight: '950', color: '#fff', lineHeight: 1, letterSpacing: '-1px' }}
+                initial={{ opacity: 0.8 }}
+                animate={{ opacity: 1 }}
+                style={{ fontSize: '40px', fontWeight: '950', color: '#fff', lineHeight: 1, letterSpacing: '-1px' }}
               >
                 {displayBalance}
               </motion.span>
             </div>
           </div>
 
-          {/* Card Bottom Row */}
+          {/* Bottom: Info Row */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', zIndex: 2 }}>
-            <div style={{ flex: 1 }}>
+            <div>
               <div style={{ 
                 fontFamily: 'monospace', 
-                fontSize: '18px', 
-                color: 'rgba(255,255,255,0.7)', 
-                letterSpacing: '3px',
-                marginBottom: '12px'
+                fontSize: '14px', 
+                color: 'rgba(255,255,255,0.4)', 
+                letterSpacing: '2px',
+                marginBottom: '4px'
               }}>
-                **** **** **** {(tgUser?.telegram_id || tgUser?.id || '0000').toString().slice(-4)}
+                **** {(tgUser?.telegram_id || tgUser?.id || '0000').toString().slice(-4)}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Card Holder</span>
-                <span style={{ fontSize: '15px', fontWeight: '800', color: '#fff', textTransform: 'uppercase' }}>{tgUser?.first_name || 'USER'}</span>
+              <div style={{ fontSize: '13px', fontWeight: '800', color: '#fff', textTransform: 'uppercase', opacity: 0.9 }}>
+                {tgUser?.first_name || 'USER'}
               </div>
             </div>
             
-            <div style={{ textAlign: 'right' }}>
-               <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>User ID</div>
-               <div style={{ fontSize: '14px', fontWeight: '900', color: 'rgba(255,255,255,0.5)' }}>#{tgUser?.telegram_id || tgUser?.id || '00000'}</div>
+            <div style={{ textAlign: 'right', opacity: 0.5 }}>
+               <div style={{ fontSize: '11px', fontWeight: '900' }}>#{tgUser?.telegram_id || tgUser?.id || '00000'}</div>
             </div>
           </div>
         </div>

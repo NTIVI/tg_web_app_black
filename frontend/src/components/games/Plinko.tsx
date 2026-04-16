@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
-import { Trophy, AlertCircle, CircleDot } from 'lucide-react';
+import { Trophy, AlertCircle } from 'lucide-react';
 
 const ROWS = 8;
 const BUCKETS = [10, 5, 2, 0.5, 0.2, 0.2, 0.5, 2, 5, 10];

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DollarSign, PlayCircle, CheckCircle, Trophy, Sparkles, Gem, Zap } from 'lucide-react';
+import { DollarSign, PlayCircle, CheckCircle, Trophy, Sparkles, Gem, Zap, AlertCircle } from 'lucide-react';
 import { API_URL } from '../config';
 
 interface StartProps {

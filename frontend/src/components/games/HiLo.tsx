@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
-import { Club, Spade, Heart, Diamond, ArrowUp, ArrowDown, HelpCircle, Trophy, Sparkles, AlertCircle } from 'lucide-react';
+import { Club, Spade, Heart, Diamond, ArrowUp, ArrowDown, HelpCircle, Trophy, AlertCircle } from 'lucide-react';
 
 const SuitIcon = ({ suit, size = 20 }: { suit: string, size?: number }) => {
   switch (suit) {

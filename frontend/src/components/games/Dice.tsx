@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
-import { Dice6, ChevronLeft, ChevronRight, Trophy, Sparkles, AlertCircle } from 'lucide-react';
+import { Dice6, Trophy, Sparkles, AlertCircle } from 'lucide-react';
 
 const Dice: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [bet, setBet] = useState(100);

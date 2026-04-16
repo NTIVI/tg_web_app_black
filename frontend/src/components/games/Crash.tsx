@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
-import { Zap, Rocket, AlertTriangle, CheckCircle2, History, TrendingUp, AlertCircle } from 'lucide-react';
+import { Zap, Rocket, AlertTriangle, CheckCircle2, History } from 'lucide-react';
 
 const Crash: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [bet, setBet] = useState(100);

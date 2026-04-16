@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
-import { Trophy, Star, Sparkles, Zap, AlertCircle } from 'lucide-react';
+import { Sparkles, Zap, AlertCircle } from 'lucide-react';
 
 const SEGMENTS = [0, 1.2, 0.5, 2, 0, 1.5, 5, 0.2, 1.1, 0, 10, 0.5, 1.2, 0, 20];
 const SEGMENT_ANGLE = 360 / SEGMENTS.length;

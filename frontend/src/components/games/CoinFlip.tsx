@@ -2,23 +2,28 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
+import { Trophy, AlertCircle, Coins, Sparkles } from 'lucide-react';
 
 const CoinFlip: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [bet, setBet] = useState(100);
-  const [betOn, setBetOn] = useState<'heads' | 'tails'>('heads');
-  const [loading, setLoading] = useState(false);
-  const [flipping, setFlipping] = useState(false);
-  const [result, setResult] = useState<'heads' | 'tails' | null>(null);
+  const [side, setSide] = useState<'heads' | 'tails'>('heads');
+  const [spinning, setSpinning] = useState(false);
   const [message, setMessage] = useState('');
+  const [result, setResult] = useState<string | null>(null);
 
   const handleFlip = async () => {
+    const token = sessionStorage.getItem('auth_token');
+    if (!token) {
+        setMessage('⚠️ Пожалуйста, войдите снова');
+        return;
+    }
+
     if (balance < bet) {
-      setMessage('Недостаточно баланса');
+      setMessage('❌ Недостаточно баланса');
       return;
     }
 
-    setLoading(true);
-    setFlipping(true);
+    setSpinning(true);
     setMessage('');
     setResult(null);
 
@@ -27,139 +32,180 @@ const CoinFlip: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ game: 'coinflip', bet, betOn }),
+        body: JSON.stringify({ game: 'coinflip', bet, side }),
       });
       const data = await res.json();
 
       if (data.error) {
-        setMessage(data.error);
-        setFlipping(false);
+        setMessage('⚠️ ' + data.error);
+        setSpinning(false);
       } else {
-        // Animation delay
         setTimeout(() => {
-          setFlipping(false);
           setResult(data.result);
+          setSpinning(false);
           setBalance(data.balance !== undefined ? data.balance : data.newBalance);
           if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
           
           if (data.win) {
-            setMessage(`WIN! x1.95 (+$${(data.winAmount / 100).toFixed(2)})`);
+            setMessage(`WIN! +$${(data.winAmount / 100).toFixed(2)}`);
           } else {
-            setMessage('LОSE! Попробуйте еще раз');
+            setMessage('LОSE. Попробуйте еще раз');
           }
         }, 2000);
       }
     } catch (e: any) {
-            if (e.message.includes('Недостаточно баланса')) {
-        setMessage('Ошибка: Недостаточно баланса');
-      } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
-        setMessage('Ошибка: Сессия истекла');
-      } else {
-        setMessage(e.message === 'Failed to fetch' ? 'Ошибка сети' : e.message);
-      }
-      setFlipping(false);
-    } finally {
-      setLoading(false);
+      setMessage('⚠️ Ошибка сети');
+      setSpinning(false);
     }
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', width: '100%' }}>
       
-      {/* 3D Coin Visualization */}
-      <div style={{ position: 'relative', width: '150px', height: '150px', perspective: '1000px' }}>
-        <div className={`coin ${flipping ? 'spinning' : ''} ${result ? result : ''}`} style={{
-            width: '100%',
-            height: '100%',
-            position: 'absolute',
-            transformStyle: 'preserve-3d',
-            transition: 'transform 0.5s ease-out',
-            transform: result === 'tails' ? 'rotateY(180deg)' : 'rotateY(0)'
-        }}>
+      {/* Premium Coin Visual */}
+      <div style={{ 
+        width: '100%', 
+        maxWidth: '400px', 
+        height: '350px', 
+        background: 'radial-gradient(circle at center, #121214 0%, #0d0d0f 100%)',
+        borderRadius: '40px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: '1px solid rgba(255,255,255,0.05)',
+        position: 'relative',
+        boxShadow: '0 30px 60px rgba(0,0,0,0.5)'
+      }}>
+        {/* Glow behind coin */}
+        <div style={{ position: 'absolute', width: '150px', height: '150px', background: 'var(--gold-glow)', opacity: 0.1, filter: 'blur(60px)', borderRadius: '50%' }} />
+
+        <motion.div
+            animate={spinning ? { 
+                rotateY: [0, 1800], 
+                y: [0, -100, 0],
+                scale: [1, 1.2, 1]
+            } : { 
+                rotateY: result === 'tails' ? 180 : 0 
+            }}
+            transition={spinning ? { duration: 2, ease: "easeInOut" } : { type: "spring", stiffness: 100 }}
+            style={{
+                width: '160px',
+                height: '160px',
+                position: 'relative',
+                transformStyle: 'preserve-3d',
+                cursor: 'pointer'
+            }}
+        >
+            {/* Front (Heads / Gold) */}
             <div style={{
                 position: 'absolute', width: '100%', height: '100%',
-                background: 'linear-gradient(135deg, #fbbf24, #d97706)',
-                borderRadius: '50%',
-                border: '4px solid #b45309',
-                boxShadow: '0 0 20px rgba(251, 191, 36, 0.4)',
+                background: 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)',
+                borderRadius: '50%', border: '8px solid #b45309',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 backfaceVisibility: 'hidden',
-                zIndex: 2
+                boxShadow: 'inset 0 0 20px rgba(0,0,0,0.2)'
             }}>
-                <span style={{ fontSize: '40px', fontWeight: '900', color: '#b45309' }}>H</span>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '10px', fontWeight: '900', color: '#78350f', textTransform: 'uppercase' }}>Ringo</div>
+                    <Coins size={64} color="#78350f" strokeWidth={1.5} />
+                    <div style={{ fontSize: '10px', fontWeight: '900', color: '#78350f', textTransform: 'uppercase' }}>Heads</div>
+                </div>
             </div>
+
+            {/* Back (Tails / Silver) */}
             <div style={{
                 position: 'absolute', width: '100%', height: '100%',
-                background: 'linear-gradient(135deg, #fbbf24, #d97706)',
-                borderRadius: '50%',
-                border: '4px solid #b45309',
-                boxShadow: '0 0 20px rgba(251, 191, 36, 0.4)',
+                background: 'linear-gradient(135deg, #94a3b8 0%, #475569 100%)',
+                borderRadius: '50%', border: '8px solid #1e293b',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 backfaceVisibility: 'hidden',
                 transform: 'rotateY(180deg)',
-                zIndex: 1
+                boxShadow: 'inset 0 0 20px rgba(0,0,0,0.2)'
             }}>
-                <span style={{ fontSize: '40px', fontWeight: '900', color: '#b45309' }}>T</span>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase' }}>Casino</div>
+                    <Trophy size={64} color="#0f172a" strokeWidth={1.5} />
+                    <div style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase' }}>Tails</div>
+                </div>
             </div>
-        </div>
-      </div>
+        </motion.div>
 
-      {/* Mode Selection */}
-      <div style={{ display: 'flex', gap: '15px', width: '100%', maxWidth: '300px' }}>
-          <button 
-            onClick={() => setBetOn('heads')}
-            disabled={loading || flipping}
-            style={{ flex: 1, padding: '15px', borderRadius: '16px', background: betOn === 'heads' ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', fontWeight: '800', cursor: 'pointer' }}
-          >
-              ОРЕЛ
-          </button>
-          <button 
-            onClick={() => setBetOn('tails')}
-            disabled={loading || flipping}
-            style={{ flex: 1, padding: '15px', borderRadius: '16px', background: betOn === 'tails' ? 'var(--primary-color)' : 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', fontWeight: '800', cursor: 'pointer' }}
-          >
-              РЕШКА
-          </button>
-      </div>
-
-      <div style={{ height: '24px', textAlign: 'center' }}>
-        <AnimatePresence mode="wait">
-          {message && (
-             <motion.div
-               key={message}
-               initial={{ scale: 0.5, opacity: 0 }}
-               animate={{ scale: 1, opacity: 1 }}
-               exit={{ scale: 0.5, opacity: 0 }}
-               style={{
- height: '24px', textAlign: 'center', fontSize: '18px', fontWeight: '900', color: result ? (message.includes('WIN') ? 'var(--success-color)' : '#ef4444') : '#fff' 
-               }}
-             >
-               {message}
-             </motion.div>
-          )}
+        {/* Win Sparkles */}
+        <AnimatePresence>
+            {result && !spinning && (
+                <motion.div 
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    style={{ position: 'absolute', top: '20%' }}
+                >
+                    <Sparkles size={40} color="var(--gold-color)" />
+                </motion.div>
+            )}
         </AnimatePresence>
       </div>
 
-      <BetControls 
-        bet={bet} 
-        setBet={setBet} 
-        minBet={10} 
-        maxBet={100000} 
-        onPlay={handleFlip} 
-        loading={loading || flipping}
-      />
+      {/* Choice Panel */}
+      <div style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <button 
+                onClick={() => setSide('heads')}
+                disabled={spinning}
+                style={{ 
+                    padding: '24px', borderRadius: '24px', 
+                    background: side === 'heads' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${side === 'heads' ? 'var(--gold-color)' : 'rgba(255,255,255,0.05)'}`,
+                    color: side === 'heads' ? 'var(--gold-color)' : 'rgba(255,255,255,0.4)',
+                    fontWeight: '950', fontSize: '16px', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s'
+                }}
+              >
+                  HEADS
+              </button>
+              <button 
+                onClick={() => setSide('tails')}
+                disabled={spinning}
+                style={{ 
+                    padding: '24px', borderRadius: '24px', 
+                    background: side === 'tails' ? 'rgba(71, 85, 105, 0.15)' : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${side === 'tails' ? '#94a3b8' : 'rgba(255,255,255,0.05)'}`,
+                    color: side === 'tails' ? '#94a3b8' : 'rgba(255,255,255,0.4)',
+                    fontWeight: '950', fontSize: '16px', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s'
+                }}
+              >
+                  TAILS
+              </button>
+          </div>
 
-      <style>{`
-        @keyframes spin {
-            0% { transform: rotateY(0); }
-            100% { transform: rotateY(1800deg); }
-        }
-        .coin.spinning {
-            animation: spin 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-        }
-      `}</style>
+          {/* Result Message Overlay */}
+          <div style={{ height: '30px', textAlign: 'center' }}>
+            <AnimatePresence mode="wait">
+                {message && (
+                    <motion.div
+                        key={message}
+                        initial={{ scale: 0.8, opacity: 0, y: 10 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.8, opacity: 0, y: -10 }}
+                        style={{ fontSize: '18px', fontWeight: '950', color: message.includes('WIN') ? 'var(--success-color)' : '#fff', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
+                    >
+                        {message.includes('WIN') && <Trophy size={18} />}
+                        {message.includes('⚠️') && <AlertCircle size={18} color="var(--casino-red)" />}
+                        {message}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+          </div>
+
+          <BetControls 
+            bet={bet} 
+            setBet={setBet} 
+            minBet={100} 
+            maxBet={100000} 
+            onPlay={handleFlip} 
+            loading={spinning}
+          />
+      </div>
     </div>
   );
 };

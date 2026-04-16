@@ -12,19 +12,19 @@ import Mines from '../components/games/Mines';
 import Dice from '../components/games/Dice';
 import CoinFlip from '../components/games/CoinFlip';
 import HiLo from '../components/games/HiLo';
-import Wheel from '../components/games/WheelOfFortune';
+import WheelOfFortune from '../components/games/WheelOfFortune';
 
 const GAME_INFO: Record<string, { name: string, color: string }> = {
-  slots: { name: 'Слоты', color: '#f59e0b' },
-  roulette: { name: 'Рулетка', color: '#ef4444' },
-  blackjack: { name: 'Блэкджек', color: '#3b82f6' },
-  crash: { name: 'Crash', color: '#10b981' },
-  plinko: { name: 'Plinko', color: '#a855f7' },
-  mines: { name: 'Mines', color: '#f43f5e' },
-  dice: { name: 'Dice', color: '#6366f1' },
-  coinflip: { name: 'Coin Flip', color: '#fbbf24' },
+  slots: { name: 'Royal Slots', color: '#f59e0b' },
+  roulette: { name: 'Galaxy Roulette', color: '#ef4444' },
+  blackjack: { name: 'Blackjack', color: '#3b82f6' },
+  crash: { name: 'Neon Crash', color: '#10b981' },
+  plinko: { name: 'Plinko Master', color: '#a855f7' },
+  mines: { name: 'Cyber Mines', color: '#f43f5e' },
+  dice: { name: 'Quantum Dice', color: '#6366f1' },
+  coinflip: { name: 'Flip & Win', color: '#fbbf24' },
   hilo: { name: 'Hi-Lo', color: '#2dd4bf' },
-  wheel: { name: 'Wheel', color: '#8b5cf6' },
+  wheel: { name: 'Wheel of Luck', color: '#8b5cf6' },
 };
 
 const GamePage = ({ balance, setBalance, tgUser, setTgUser }: any) => {
@@ -36,7 +36,6 @@ const GamePage = ({ balance, setBalance, tgUser, setTgUser }: any) => {
 
   useEffect(() => {
     if (!game) navigate('/games');
-    // Fetch game history here if needed
   }, [gameId, game, navigate]);
 
   if (!game) return null;
@@ -53,27 +52,41 @@ const GamePage = ({ balance, setBalance, tgUser, setTgUser }: any) => {
       case 'dice': return <Dice {...props} />;
       case 'coinflip': return <CoinFlip {...props} />;
       case 'hilo': return <HiLo {...props} />;
-      case 'wheel': return <Wheel {...props} />;
+      case 'wheel': return <WheelOfFortune {...props} />;
       default: return <div style={{ textAlign: 'center', padding: '40px' }}>Game not found</div>;
     }
   };
 
   return (
-    <div className="game-page-container" style={{ 
+    <div className="game-page-container casino-gradient-bg" style={{ 
       minHeight: '100vh', 
-      background: '#0a0a0c', 
       color: '#fff',
-      paddingBottom: '80px'
+      paddingBottom: '80px',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
+      {/* Background Glow */}
+      <div style={{ 
+        position: 'absolute', 
+        top: '-10%', 
+        left: '50%', 
+        transform: 'translateX(-50%)', 
+        width: '100%', 
+        height: '400px', 
+        background: `radial-gradient(circle, ${game.color}15 0%, transparent 70%)`,
+        zIndex: 0,
+        pointerEvents: 'none'
+      }} />
+
       {/* Premium Header */}
       <header style={{ 
-        padding: '20px', 
+        padding: '24px 20px', 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between',
-        background: 'rgba(255,255,255,0.02)',
+        background: 'rgba(0,0,0,0.4)',
         borderBottom: '1px solid rgba(255,255,255,0.05)',
-        backdropFilter: 'blur(10px)',
+        backdropFilter: 'blur(15px)',
         position: 'sticky',
         top: 0,
         zIndex: 100
@@ -81,21 +94,26 @@ const GamePage = ({ balance, setBalance, tgUser, setTgUser }: any) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <button 
             onClick={() => navigate('/games')}
-            style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', width: '42px', height: '42px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
           >
             <ChevronLeft size={24} />
           </button>
-          <h2 style={{ fontSize: '20px', fontWeight: '800', margin: 0 }}>{game.name}</h2>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Ringo Casino</span>
+            <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0, color: '#fff' }}>{game.name}</h2>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '8px 16px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)' }}>
-          <Wallet size={16} color="var(--gold-color)" />
-          <span style={{ fontWeight: '800', color: 'var(--gold-color)' }}>${((balance || 0) / 100).toFixed(2)}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '10px 18px', borderRadius: '16px', border: '1px solid var(--gold-glow)', boxShadow: '0 4px 15px rgba(245, 158, 11, 0.1)' }}>
+                <Wallet size={16} color="var(--gold-color)" />
+                <span style={{ fontWeight: '900', color: 'var(--gold-color)', fontSize: '17px' }}>${((balance || 0) / 100).toFixed(2)}</span>
+            </div>
         </div>
       </header>
 
       {/* Game Area */}
-      <main style={{ padding: '20px' }}>
+      <main style={{ padding: '20px', position: 'relative', zIndex: 1 }}>
         {renderGame()}
       </main>
 
@@ -103,43 +121,67 @@ const GamePage = ({ balance, setBalance, tgUser, setTgUser }: any) => {
       <div style={{ 
         position: 'fixed', 
         bottom: '30px', 
-        right: '20px', 
+        right: '25px', 
         display: 'flex', 
         flexDirection: 'column', 
-        gap: '12px',
-        zIndex: 50
+        gap: '15px',
+        zIndex: 150
       }}>
         <button 
           onClick={() => setShowHistory(!showHistory)}
-          style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }}
+          style={{ width: '54px', height: '54px', borderRadius: '18px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', transition: 'all 0.2s' }}
         >
-          <History size={20} />
+          <History size={24} />
         </button>
         <button 
-          style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }}
+          style={{ width: '54px', height: '54px', borderRadius: '18px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', transition: 'all 0.2s' }}
         >
-          <Info size={20} />
+          <Info size={24} />
         </button>
       </div>
 
-      {/* History Modal (Simple Overlay) */}
+      {/* History Modal (Sleek Overlay) */}
       {showHistory && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-            <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '24px', position: 'relative' }}>
-                <h3 style={{ marginTop: 0 }}>История раундов</h3>
-                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                    <p style={{ opacity: 0.5 }}>Функционал истории скоро появится...</p>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
+            <div className="casino-card" style={{ width: '100%', borderBottomLeftRadius: 0, borderBottomRightRadius: 0, padding: '32px 24px', animation: 'slideUp 0.3s ease-out', background: '#0a0a0c', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '900' }}>История раундов</h3>
+                    <div style={{ background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '10px', fontSize: '12px', color: 'var(--text-secondary)' }}>Последние 20</div>
                 </div>
+                
+                <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {[1, 2, 3].map((_, i) => (
+                             <div key={i} style={{ padding: '16px', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>12.04.2026 14:32</div>
+                                    <div style={{ fontWeight: '800' }}>Ставка: $1.00</div>
+                                </div>
+                                <div style={{ color: i === 0 ? 'var(--casino-green)' : 'var(--casino-red)', fontWeight: '900', fontSize: '18px' }}>
+                                    {i === 0 ? '+$2.50' : '-$1.00'}
+                                </div>
+                             </div>
+                        ))}
+                    </div>
+                </div>
+                
                 <button 
                     onClick={() => setShowHistory(false)}
                     className="btn-primary" 
-                    style={{ width: '100%', marginTop: '20px' }}
+                    style={{ width: '100%', marginTop: '32px', height: '60px' }}
                 >
                     Закрыть
                 </button>
             </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 };

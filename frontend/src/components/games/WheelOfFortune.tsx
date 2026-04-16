@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
+import { Trophy, Star, Sparkles, Zap, AlertCircle } from 'lucide-react';
+
+const SEGMENTS = [0, 1.2, 0.5, 2, 0, 1.5, 5, 0.2, 1.1, 0, 10, 0.5, 1.2, 0, 20];
+const SEGMENT_ANGLE = 360 / SEGMENTS.length;
 
 const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [bet, setBet] = useState(100);
@@ -10,12 +14,15 @@ const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const SEGMENTS = [0, 1.2, 0.5, 2, 0, 1.5, 5, 0.2, 1.1, 0, 10, 0.5, 1.2, 0, 20];
-  const SEGMENT_ANGLE = 360 / SEGMENTS.length;
-
   const handleSpin = async () => {
+    const token = sessionStorage.getItem('auth_token');
+    if (!token) {
+        setMessage('⚠️ Пожалуйста, войдите снова');
+        return;
+    }
+
     if (balance < bet) {
-      setMessage('Недостаточно баланса');
+      setMessage('❌ Недостаточно баланса');
       return;
     }
 
@@ -28,18 +35,24 @@ const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ game: 'wheel', bet }),
       });
       const data = await res.json();
 
       if (data.error) {
-        setMessage(data.error);
+        setMessage('⚠️ ' + data.error);
         setSpinning(false);
       } else {
-        const targetRotation = 360 * 5 + (data.segmentIdx * SEGMENT_ANGLE); // 5 full spins + target
-        setRotation(prev => prev + (360 - (prev % 360)) + targetRotation);
+        // Calculate target rotation: multiple full spins + target segment
+        // The index in data.segmentIdx is the winning index
+        const targetAngle = data.segmentIdx * SEGMENT_ANGLE;
+        const extraSpins = 360 * 5;
+        // Total rotation to reach the target segment at 0 angle (the top pointer)
+        const totalNewRotation = extraSpins + (360 - targetAngle) - (rotation % 360);
+        
+        setRotation(prev => prev + totalNewRotation);
 
         setTimeout(() => {
           setSpinning(false);
@@ -47,22 +60,16 @@ const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
           if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
           
           if (data.winAmount > bet) {
-            setMessage(`WIN! x${data.multiplier} (+$${(data.winAmount / 100).toFixed(2)})`);
+            setMessage(`JACKPOT! x${data.multiplier} (+$${(data.winAmount / 100).toFixed(2)})`);
           } else if (data.winAmount > 0) {
-            setMessage(`Return: x${data.multiplier}`);
+            setMessage(`ПОБЕДА: x${data.multiplier}`);
           } else {
             setMessage('LОSE. Попробуйте еще раз');
           }
         }, 4000);
       }
     } catch (e: any) {
-            if (e.message.includes('Недостаточно баланса')) {
-        setMessage('Ошибка: Недостаточно баланса');
-      } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
-        setMessage('Ошибка: Сессия истекла');
-      } else {
-        setMessage(e.message === 'Failed to fetch' ? 'Ошибка сети' : e.message);
-      }
+      setMessage('⚠️ Ошибка сети');
       setSpinning(false);
     } finally {
       setLoading(false);
@@ -70,37 +77,40 @@ const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '40px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', width: '100%' }}>
       
-      {/* Wheel Visualization */}
-      <div style={{ position: 'relative', width: '280px', height: '280px' }}>
-        {/* Indicator Arrow */}
+      {/* Premium Wheel Visualization */}
+      <div style={{ 
+        position: 'relative', 
+        width: '300px', 
+        height: '300px',
+        padding: '10px',
+        background: 'radial-gradient(circle, #1a1a1c 0%, #0d0d0f 70%, #000 100%)',
+        borderRadius: '50%',
+        boxShadow: '0 20px 50px rgba(0,0,0,0.6), 0 0 30px rgba(168, 85, 247, 0.1)',
+        border: '4px solid #1a1a1c'
+      }}>
+        {/* Outer Glowing Ring */}
         <div style={{ 
-            position: 'absolute', top: '-15px', left: '50%', transform: 'translateX(-50%)', 
-            width: '0', height: '0', borderLeft: '15px solid transparent', borderRight: '15px solid transparent', borderTop: '25px solid var(--primary-color)',
-            zIndex: 10, filter: 'drop-shadow(0 0 10px var(--primary-color))'
+            position: 'absolute', top: '-5px', left: '-5px', right: '-5px', bottom: '-5px', 
+            borderRadius: '50%', border: '2px solid var(--gold-glow)', opacity: 0.2 
         }} />
 
+        {/* Center Pivot Indicator */}
         <div style={{ 
-          width: '100%', 
-          height: '100%', 
-          borderRadius: '50%', 
-          border: '8px solid rgba(255,255,255,0.05)',
-          background: 'rgba(0,0,0,0.3)',
-          position: 'relative',
-          overflow: 'hidden',
-          transition: 'transform 4s cubic-bezier(0.1, 0, 0.1, 1)',
-          transform: `rotate(-${rotation}px)` // Wait, rotation should be in degrees
+            position: 'absolute', top: '-15px', left: '50%', transform: 'translateX(-50%)', 
+            zIndex: 10, filter: 'drop-shadow(0 0 10px var(--gold-glow))' 
         }}>
-           {/* Wait, the rotation state should be in degrees. Fixed below in CSS transform */}
+            <Zap size={32} color="var(--gold-color)" fill="var(--gold-color)" />
         </div>
 
-        {/* Real Wheel with SVG for sectors */}
-        <svg viewBox="0 0 200 200" style={{
-            width: '100%', height: '100%',
-            transition: 'transform 4s cubic-bezier(0.1, 0, 0.1, 1)',
-            transform: `rotate(${-rotation}deg)` 
-        }}>
+        {/* Real Dynamic Wheel SVG */}
+        <motion.svg 
+            viewBox="0 0 200 200" 
+            animate={{ rotate: rotation }}
+            transition={{ duration: 4, ease: [0.1, 0, 0.1, 1] }} // Custom cubic-bezier for wheel stop
+            style={{ width: '100%', height: '100%', borderRadius: '50%' }}
+        >
             {SEGMENTS.map((m, i) => {
                 const angle = i * SEGMENT_ANGLE;
                 const radians = (angle - 90) * Math.PI / 180;
@@ -110,59 +120,81 @@ const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
                 const x2 = 100 + 100 * Math.cos(nextRadians);
                 const y2 = 100 + 100 * Math.sin(nextRadians);
 
+                const color = i % 2 === 0 ? 'rgba(168, 85, 247, 0.15)' : 'rgba(255, 255, 255, 0.03)';
+                const textColor = m >= 5 ? 'var(--gold-color)' : m >= 1.5 ? '#fff' : 'rgba(255,255,255,0.4)';
+
                 return (
                     <g key={i}>
                         <path 
                             d={`M 100 100 L ${x1} ${y1} A 100 100 0 0 1 ${x2} ${y2} Z`} 
-                            fill={i % 2 === 0 ? 'rgba(168, 85, 247, 0.1)' : 'rgba(255, 255, 255, 0.02)'}
+                            fill={color}
                             stroke="rgba(255,255,255,0.05)"
-                            strokeWidth="0.5"
+                            strokeWidth="1"
                         />
                         <text 
-                            x={100 + 75 * Math.cos(radians + (SEGMENT_ANGLE * Math.PI / 360))}
-                            y={100 + 75 * Math.sin(radians + (SEGMENT_ANGLE * Math.PI / 360))}
-                            fill="#fff"
-                            fontSize="8"
-                            fontWeight="900"
+                            x={100 + 70 * Math.cos(radians + (SEGMENT_ANGLE * Math.PI / 360))}
+                            y={100 + 70 * Math.sin(radians + (SEGMENT_ANGLE * Math.PI / 360))}
+                            fill={textColor}
+                            fontSize={m >= 10 ? "10" : "8"}
+                            fontWeight="950"
                             textAnchor="middle"
                             dominantBaseline="middle"
-                            transform={`rotate(${angle + SEGMENT_ANGLE/2}, ${100 + 75 * Math.cos(radians + (SEGMENT_ANGLE * Math.PI / 360))}, ${100 + 75 * Math.sin(radians + (SEGMENT_ANGLE * Math.PI / 360))})`}
+                            // Rotate text to point to center
+                            transform={`rotate(${angle + SEGMENT_ANGLE/2 + 90}, ${100 + 70 * Math.cos(radians + (SEGMENT_ANGLE * Math.PI / 360))}, ${100 + 70 * Math.sin(radians + (SEGMENT_ANGLE * Math.PI / 360))})`}
                         >
                             {m}x
                         </text>
                     </g>
                 );
             })}
+            {/* Center Cap */}
+            <circle cx="100" cy="100" r="15" fill="#121214" stroke="rgba(255,255,255,0.1)" strokeWidth="2" />
             <circle cx="100" cy="100" r="10" fill="var(--primary-color)" />
-        </svg>
+        </motion.svg>
       </div>
 
-      <div style={{ height: '24px', textAlign: 'center' }}>
+      {/* Message & Win Indicator */}
+      <div style={{ height: '40px', textAlign: 'center' }}>
         <AnimatePresence mode="wait">
           {message && (
              <motion.div
                key={message}
-               initial={{ scale: 0.5, opacity: 0 }}
-               animate={{ scale: 1, opacity: 1 }}
-               exit={{ scale: 0.5, opacity: 0 }}
+               initial={{ scale: 0.5, opacity: 0, y: 10 }}
+               animate={{ scale: 1, opacity: 1, y: 0 }}
+               exit={{ scale: 0.5, opacity: 0, y: -10 }}
                style={{
- height: '24px', textAlign: 'center', fontSize: '18px', fontWeight: '900', color: message.includes('WIN') ? 'var(--success-color)' : '#fff' 
+                    display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center',
+                    fontSize: '20px', fontWeight: '950', 
+                    color: message.includes('WIN') || message.includes('JACKPOT') ? 'var(--gold-color)' : '#fff' 
                }}
              >
+               {message.includes('JACKPOT') ? <Sparkles size={24} /> : null}
+               {message.includes('⚠️') ? <AlertCircle size={20} color="var(--casino-red)" /> : null}
                {message}
              </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      <BetControls 
-        bet={bet} 
-        setBet={setBet} 
-        minBet={10} 
-        maxBet={100000} 
-        onPlay={handleSpin} 
-        loading={loading || spinning}
-      />
+      <div style={{ width: '100%', maxWidth: '400px' }}>
+          <BetControls 
+            bet={bet} 
+            setBet={setBet} 
+            minBet={100} 
+            maxBet={100000} 
+            onPlay={handleSpin} 
+            loading={loading || spinning}
+          />
+      </div>
+
+      {/* Probability Legend */}
+      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          {[['x20', '5%'], ['x10', '10%'], ['x5', '15%']].map(([x, p]) => (
+              <div key={x} style={{ fontSize: '11px', fontWeight: '900', color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase' }}>
+                  {x}: <span style={{ color: 'rgba(255,255,255,0.4)' }}>{p}</span>
+              </div>
+          ))}
+      </div>
     </div>
   );
 };

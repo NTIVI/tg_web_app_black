@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
-import { Club, Spade, Heart, Diamond } from 'lucide-react';
+import { Club, Spade, Heart, Diamond, User, ShieldCheck } from 'lucide-react';
 
 const SuitIcon = ({ suit, size = 20 }: { suit: string, size?: number }) => {
   switch (suit) {
@@ -14,39 +14,45 @@ const SuitIcon = ({ suit, size = 20 }: { suit: string, size?: number }) => {
   }
 };
 
-const Card = ({ card, hidden }: { card: any, hidden?: boolean }) => (
+const Card = ({ card, hidden, index }: { card: any, hidden?: boolean, index: number }) => (
   <motion.div 
-    initial={{ scale: 0.8, opacity: 0, y: -20, rotateY: hidden ? 180 : 0 }}
-    animate={{ scale: 1, opacity: 1, y: 0, rotateY: hidden ? 180 : 0 }}
-    transition={{ type: 'spring', damping: 15, stiffness: 100 }}
+    initial={{ x: -200, y: -200, rotate: -20, opacity: 0 }}
+    animate={{ x: 0, y: 0, rotate: 0, opacity: 1 }}
+    transition={{ delay: index * 0.1, type: 'spring', damping: 20, stiffness: 100 }}
     style={{
-      width: '60px',
-      height: '90px',
-      background: hidden ? 'linear-gradient(135deg, #1e40af, #a855f7)' : '#fff',
-      borderRadius: '10px',
+      width: '70px',
+      height: '100px',
+      background: hidden ? 'linear-gradient(135deg, #1e40af 0%, #a855f7 100%)' : '#fff',
+      borderRadius: '12px',
       border: '1px solid rgba(0,0,0,0.1)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
+      boxShadow: '0 8px 16px rgba(0,0,0,0.3)',
       position: 'relative',
       color: '#000',
-      perspective: '1000px',
-      transformStyle: 'preserve-3d'
+      marginLeft: index > 0 ? '-40px' : '0',
+      zIndex: index
     }}>
     {!hidden && (
-      <div style={{ position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ position: 'absolute', top: '5px', left: '5px', fontSize: '12px', fontWeight: '900' }}>{card.value}</div>
-        <SuitIcon suit={card.suit} size={28} />
-        <div style={{ position: 'absolute', bottom: '5px', right: '5px', fontSize: '12px', fontWeight: '900', transform: 'rotate(180deg)' }}>{card.value}</div>
+      <div style={{ position: 'absolute', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', top: '6px', left: '6px', fontSize: '14px', fontWeight: '900', lineHeight: 1 }}>{card.value}</div>
+        <SuitIcon suit={card.suit} size={32} />
+        <div style={{ position: 'absolute', bottom: '6px', right: '6px', fontSize: '14px', fontWeight: '900', transform: 'rotate(180deg)', lineHeight: 1 }}>{card.value}</div>
       </div>
     )}
-    {hidden && <div style={{ color: '#fff', fontSize: '24px', fontWeight: '900', opacity: 0.3, transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }}>?</div>}
+    {hidden && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+            <div style={{ width: '80%', height: '80%', border: '2px dashed rgba(255,255,255,0.2)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <ShieldCheck size={24} color="rgba(255,255,255,0.3)" />
+            </div>
+        </div>
+    )}
   </motion.div>
 );
 
-const Blackjack: React.FC<any> = ({ balance, setBalance }) => {
+const Blackjack: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [status, setStatus] = useState<'idle' | 'playing' | 'win' | 'lose' | 'push' | 'bust'>('idle');
   const [playerHand, setPlayerHand] = useState<any[]>([]);
@@ -55,8 +61,14 @@ const Blackjack: React.FC<any> = ({ balance, setBalance }) => {
   const [loading, setLoading] = useState(false);
 
   const startLevel = async () => {
+    const token = sessionStorage.getItem('auth_token');
+    if (!token) {
+        setMessage('⚠️ Пожалуйста, войдите снова');
+        return;
+    }
+
     if (balance < bet) {
-      setMessage('Недостаточно баланса');
+      setMessage('❌ Недостаточно баланса');
       return;
     }
 
@@ -67,28 +79,23 @@ const Blackjack: React.FC<any> = ({ balance, setBalance }) => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ game: 'blackjack', bet }),
       });
       const data = await res.json();
 
       if (data.error) {
-        setMessage(data.error);
+        setMessage('⚠️ ' + data.error);
       } else {
         setPlayerHand(data.playerHand);
         setDealerHand(data.dealerHand);
         setStatus('playing');
-        setBalance((prev: number) => prev - bet);
+        setBalance(data.balance !== undefined ? data.balance : data.newBalance);
+        if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
       }
     } catch (e: any) {
-            if (e.message.includes('Недостаточно баланса')) {
-        setMessage('Ошибка: Недостаточно баланса');
-      } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
-        setMessage('Ошибка: Сессия истекла');
-      } else {
-        setMessage(e.message === 'Failed to fetch' ? 'Ошибка сети' : e.message);
-      }
+      setMessage('⚠️ Ошибка сети');
     } finally {
       setLoading(false);
     }
@@ -108,12 +115,13 @@ const Blackjack: React.FC<any> = ({ balance, setBalance }) => {
       const data = await res.json();
 
       if (data.error) {
-          setMessage(data.error);
+          setMessage('⚠️ ' + data.error);
       } else {
           if (data.playerHand) setPlayerHand(data.playerHand);
           if (data.dealerHand) setDealerHand(data.dealerHand);
           if (data.status) setStatus(data.status);
           if (data.balance !== undefined) setBalance(data.balance);
+          if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
 
           if (data.status === 'bust') setMessage('ПЕРЕБОР! ВЫ ПРОИГРАЛИ');
           else if (data.status === 'win') setMessage('ПОБЕДА! +$' + (data.winAmount / 100).toFixed(2));
@@ -121,53 +129,68 @@ const Blackjack: React.FC<any> = ({ balance, setBalance }) => {
           else if (data.status === 'push') setMessage('НИЧЬЯ (PUSH)');
       }
     } catch (e: any) {
-            if (e.message.includes('Недостаточно баланса')) {
-        setMessage('Ошибка: Недостаточно баланса');
-      } else if (e.message.includes('Unauthorized') || e.message.includes('token')) {
-        setMessage('Ошибка: Сессия истекла');
-      } else {
-        setMessage(e.message === 'Failed to fetch' ? 'Ошибка сети' : e.message);
-      }
+      setMessage('⚠️ Ошибка сети');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px', width: '100%' }}>
       
+      {/* Table Area */}
       <div style={{ 
         width: '100%', 
         maxWidth: '400px', 
-        height: '350px', 
-        background: 'rgba(255,255,255,0.02)', 
-        borderRadius: '32px', 
-        padding: '24px',
-        border: '1px solid rgba(255,255,255,0.05)',
+        height: '420px', 
+        background: 'radial-gradient(circle at center, #064e3b 0%, #064e3b 40%, #022c22 100%)', 
+        borderRadius: '160px 160px 40px 40px', 
+        padding: '40px 24px',
+        border: '8px solid #1a1a1c',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        position: 'relative'
+        position: 'relative',
+        boxShadow: '0 30px 60px rgba(0,0,0,0.5), inset 0 0 100px rgba(0,0,0,0.3)'
       }}>
-        {/* Dealer Hand */}
-        <div>
-          <div style={{ fontSize: '11px', opacity: 0.5, textTransform: 'uppercase', textAlign: 'center', marginBottom: '10px' }}>Дилер</div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
-            {dealerHand.map((c, i) => <Card key={i} card={c} hidden={c.hidden} />)}
-            {dealerHand.length === 0 && <div style={{ color: 'rgba(255,255,255,0.05)', fontSize: '40px' }}><Club size={60} /></div>}
-          </div>
+        {/* Table Logo/Marking */}
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: 0.1, pointerEvents: 'none', textAlign: 'center' }}>
+            <div style={{ fontSize: '40px', fontWeight: '950', letterSpacing: '8px', color: '#fff' }}>RINGO</div>
+            <div style={{ fontSize: '10px', color: '#fff', textTransform: 'uppercase' }}>Dealer must stand on 17</div>
         </div>
 
-        {/* Message Overlay */}
-        <div style={{ textAlign: 'center', minHeight: '30px' }}>
+        {/* Dealer Side */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '4px', height: '110px' }}>
+            {dealerHand.map((c, i) => <Card key={i} card={c} hidden={c.hidden} index={i} />)}
+            {dealerHand.length === 0 && (
+                <div style={{ width: '70px', height: '100px', borderRadius: '12px', border: '2px dashed rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ShieldCheck size={32} color="rgba(255,255,255,0.05)" />
+                </div>
+            )}
+          </div>
+          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginTop: '12px', fontWeight: '800' }}>Дилер</div>
+        </div>
+
+        {/* Result Overlay */}
+        <div style={{ textAlign: 'center', minHeight: '40px', zIndex: 20 }}>
           <AnimatePresence mode="wait">
             {message && (
               <motion.div 
                 key={message}
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.5, opacity: 0 }}
-                style={{ fontSize: '18px', fontWeight: '900', color: status === 'win' ? 'var(--success-color)' : status === 'playing' ? '#fff' : '#ef4444' }}
+                initial={{ scale: 0.5, opacity: 0, y: 10 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.5, opacity: 0, y: -10 }}
+                style={{ 
+                    padding: '8px 16px',
+                    borderRadius: '12px',
+                    background: 'rgba(0,0,0,0.6)',
+                    backdropFilter: 'blur(10px)',
+                    fontSize: '16px', 
+                    fontWeight: '950', 
+                    color: status === 'win' ? 'var(--success-color)' : status === 'playing' ? '#fff' : 'var(--casino-red)',
+                    boxShadow: '0 10px 20px rgba(0,0,0,0.3)'
+                }}
               >
                 {message}
               </motion.div>
@@ -175,13 +198,17 @@ const Blackjack: React.FC<any> = ({ balance, setBalance }) => {
           </AnimatePresence>
         </div>
 
-        {/* Player Hand */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '10px' }}>
-            {playerHand.map((c, i) => <Card key={i} card={c} />)}
-            {playerHand.length === 0 && <div style={{ color: 'rgba(255,255,255,0.05)', fontSize: '40px' }}><Heart size={60} /></div>}
+        {/* Player Side */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: '12px', fontWeight: '800' }}>Вы</div>
+          <div style={{ display: 'flex', gap: '4px', height: '110px' }}>
+            {playerHand.map((c, i) => <Card key={i} card={c} index={i} />)}
+            {playerHand.length === 0 && (
+                <div style={{ width: '70px', height: '100px', borderRadius: '12px', border: '2px dashed rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <User size={32} color="rgba(255,255,255,0.05)" />
+                </div>
+            )}
           </div>
-          <div style={{ fontSize: '11px', opacity: 0.5, textTransform: 'uppercase', textAlign: 'center' }}>Вы</div>
         </div>
       </div>
 
@@ -191,7 +218,15 @@ const Blackjack: React.FC<any> = ({ balance, setBalance }) => {
             className="btn-primary" 
             onClick={() => handleAction('hit')}
             disabled={loading}
-            style={{ flex: 1, height: '60px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}
+            style={{ 
+                flex: 1, 
+                height: '70px', 
+                borderRadius: '24px',
+                background: 'rgba(255,255,255,0.05)', 
+                border: '1px solid rgba(255,255,255,0.1)',
+                fontSize: '18px',
+                fontWeight: '950'
+            }}
           >
             ЕЩЁ (HIT)
           </button>
@@ -199,32 +234,41 @@ const Blackjack: React.FC<any> = ({ balance, setBalance }) => {
             className="btn-primary" 
             onClick={() => handleAction('stand')}
             disabled={loading}
-            style={{ flex: 1, height: '60px', background: 'var(--primary-color)' }}
+            style={{ 
+                flex: 1, 
+                height: '70px', 
+                borderRadius: '24px',
+                background: 'var(--primary-color)',
+                fontSize: '18px',
+                fontWeight: '950'
+            }}
           >
             ХВАТИТ (STAND)
           </button>
         </div>
       ) : (
-        <BetControls 
-          bet={bet} 
-          setBet={setBet} 
-          minBet={100} 
-          maxBet={100000} 
-          onPlay={startLevel} 
-          loading={loading}
-        />
-      )}
-
-      {status !== 'idle' && status !== 'playing' && (
-          <button 
-            onClick={() => { setStatus('idle'); setPlayerHand([]); setDealerHand([]); setMessage(''); }}
-            style={{ padding: '10px 20px', background: 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', borderRadius: '12px', fontSize: '14px', fontWeight: '800' }}
-          >
-            Новая игра
-          </button>
+        <div style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <BetControls 
+              bet={bet} 
+              setBet={setBet} 
+              minBet={100} 
+              maxBet={100000} 
+              onPlay={startLevel} 
+              loading={loading}
+            />
+            {status !== 'idle' && (
+                <button 
+                    onClick={() => { setStatus('idle'); setPlayerHand([]); setDealerHand([]); setMessage(''); }}
+                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '13px', fontWeight: '800' }}
+                >
+                    НОВАЯ РАЗДАЧА
+                </button>
+            )}
+        </div>
       )}
     </div>
   );
 };
 
 export default Blackjack;
+

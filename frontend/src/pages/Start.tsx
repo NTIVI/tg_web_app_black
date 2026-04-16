@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DollarSign, PlayCircle, CheckCircle, Trophy, Sparkles, Gem, Zap, AlertCircle, TrendingUp, Star } from 'lucide-react';
+import { PlayCircle, CheckCircle, Trophy, Sparkles, Gem, Zap, AlertCircle, TrendingUp, Star } from 'lucide-react';
 import { API_URL } from '../config';
 
 interface StartProps {
@@ -192,95 +192,105 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
         </div>
       </motion.div>
 
-      {/* ── BALANCE CARD ── */}
+      {/* ── BANK CARD BALANCE ── */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.5 }}
         style={{
           position: 'relative',
-          borderRadius: '28px',
+          borderRadius: '32px',
           padding: '1px',
-          background: 'linear-gradient(135deg, rgba(168,85,247,0.6) 0%, rgba(99,102,241,0.4) 50%, rgba(59,130,246,0.6) 100%)',
-          marginBottom: '20px',
-          overflow: 'hidden',
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.2) 100%)',
+          marginBottom: '26px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
         }}
       >
-        {/* inner card */}
         <div style={{
-          background: 'linear-gradient(135deg, #13131a 0%, #0f0f17 100%)',
-          borderRadius: '27px',
-          padding: '24px 24px 20px',
+          background: 'linear-gradient(135deg, #1a1a2e 0%, #0d0d15 100%)',
+          borderRadius: '31px',
+          padding: '28px',
           position: 'relative',
           overflow: 'hidden',
+          minHeight: '220px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between'
         }}>
-          {/* decorative orbs */}
-          <div style={{ position: 'absolute', top: '-30px', right: '-20px', width: '120px', height: '120px', background: 'rgba(168,85,247,0.12)', filter: 'blur(40px)', borderRadius: '50%' }} />
-          <div style={{ position: 'absolute', bottom: '-20px', left: '-10px', width: '80px', height: '80px', background: 'rgba(59,130,246,0.1)', filter: 'blur(30px)', borderRadius: '50%' }} />
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
-            <div>
-              <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '2px', color: 'rgba(255,255,255,0.4)', marginBottom: '6px' }}>
-                Ваш баланс
+          {/* Holographic Overlays */}
+          <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '150px', height: '150px', background: 'radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%)', filter: 'blur(40px)' }} />
+          <div style={{ position: 'absolute', bottom: '-20%', left: '-10%', width: '120px', height: '120px', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%)', filter: 'blur(30px)' }} />
+          
+          {/* Card Top Row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 2 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '40px', height: '28px', background: 'linear-gradient(135deg, #d4af37, #f5d76e)', borderRadius: '6px', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: '20%', left: 0, right: 0, height: '1px', background: 'rgba(0,0,0,0.1)' }} />
+                  <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'rgba(0,0,0,0.1)' }} />
+                  <div style={{ position: 'absolute', top: '80%', left: 0, right: 0, height: '1px', background: 'rgba(0,0,0,0.1)' }} />
+                  <div style={{ position: 'absolute', top: 0, bottom: 0, left: '33%', width: '1px', background: 'rgba(0,0,0,0.1)' }} />
+                  <div style={{ position: 'absolute', top: 0, bottom: 0, left: '66%', width: '1px', background: 'rgba(0,0,0,0.1)' }} />
+                </div>
+                <span style={{ fontSize: '14px', fontWeight: '900', letterSpacing: '2px', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase' }}>Platinum</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                <span style={{ fontSize: '14px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', marginBottom: '2px' }}>$</span>
-                <motion.span
-                  key={displayBalance}
-                  initial={{ opacity: 0.5, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  style={{ fontSize: '40px', fontWeight: '950', color: '#fff', lineHeight: 1 }}
-                >
-                  {displayBalance}
-                </motion.span>
-              </div>
-              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.25)', marginTop: '4px', fontWeight: '600' }}>
-                ≈ {(balance).toLocaleString()} монет
-              </div>
+              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: '700', letterSpacing: '1px', marginTop: '4px' }}>YOURTURN DEBIT</div>
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-              <div style={{
-                width: '52px', height: '52px', borderRadius: '16px',
-                background: 'linear-gradient(135deg, rgba(168,85,247,0.2), rgba(99,102,241,0.2))',
-                border: '1px solid rgba(168,85,247,0.2)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                <DollarSign size={24} color="#a855f7" />
-              </div>
-              {/* mini stats */}
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)',
-                padding: '4px 10px', borderRadius: '10px', fontSize: '11px', fontWeight: '800',
-                color: '#10b981'
-              }}>
-                <TrendingUp size={11} /> LVL {tgUser?.level || 1}
-              </div>
+            
+            <div style={{ 
+              background: 'rgba(255,255,255,0.08)', 
+              padding: '6px 14px', 
+              borderRadius: '12px', 
+              border: '1px solid rgba(255,255,255,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <TrendingUp size={14} color="var(--primary-color)" />
+              <span style={{ fontSize: '12px', fontWeight: '900', color: '#fff' }}>LVL {tgUser?.level || 1}</span>
             </div>
           </div>
 
-          {/* divider */}
-          <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '16px 0 14px' }} />
+          {/* Card Middle: Balance */}
+          <div style={{ zIndex: 2, margin: '20px 0' }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '8px' }}>
+              CURRENT BALANCE
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+              <span style={{ fontSize: '24px', fontWeight: '700', color: 'var(--gold-color)' }}>$</span>
+              <motion.span
+                key={displayBalance}
+                initial={{ scale: 0.9, opacity: 0.5 }}
+                animate={{ scale: 1, opacity: 1 }}
+                style={{ fontSize: '48px', fontWeight: '950', color: '#fff', lineHeight: 1, letterSpacing: '-1px' }}
+              >
+                {displayBalance}
+              </motion.span>
+            </div>
+          </div>
 
-          {/* stats row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            {[
-              { label: 'Побед', value: tgUser?.total_bets_count || 0, icon: <Trophy size={14} color="#f59e0b" />, color: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.2)' },
-              { label: 'Монет заработано', value: `$${((tgUser?.total_profit || 0) / 100).toFixed(0)}`, icon: <Sparkles size={14} color="#a855f7" />, color: 'rgba(168,85,247,0.1)', border: 'rgba(168,85,247,0.2)' },
-            ].map((s, i) => (
-              <div key={i} style={{
-                background: s.color, border: `1px solid ${s.border}`,
-                borderRadius: '14px', padding: '10px 12px',
-                display: 'flex', alignItems: 'center', gap: '8px'
+          {/* Card Bottom Row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', zIndex: 2 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ 
+                fontFamily: 'monospace', 
+                fontSize: '18px', 
+                color: 'rgba(255,255,255,0.7)', 
+                letterSpacing: '3px',
+                marginBottom: '12px'
               }}>
-                {s.icon}
-                <div>
-                  <div style={{ fontSize: '10px', opacity: 0.5, textTransform: 'uppercase', fontWeight: '800' }}>{s.label}</div>
-                  <div style={{ fontSize: '15px', fontWeight: '900' }}>{s.value}</div>
-                </div>
+                **** **** **** {(tgUser?.telegram_id || tgUser?.id || '0000').toString().slice(-4)}
               </div>
-            ))}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Card Holder</span>
+                <span style={{ fontSize: '15px', fontWeight: '800', color: '#fff', textTransform: 'uppercase' }}>{tgUser?.first_name || 'USER'}</span>
+              </div>
+            </div>
+            
+            <div style={{ textAlign: 'right' }}>
+               <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>User ID</div>
+               <div style={{ fontSize: '14px', fontWeight: '900', color: 'rgba(255,255,255,0.5)' }}>#{tgUser?.telegram_id || tgUser?.id || '00000'}</div>
+            </div>
           </div>
         </div>
       </motion.div>

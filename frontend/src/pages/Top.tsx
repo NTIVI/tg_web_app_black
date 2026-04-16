@@ -7,26 +7,42 @@ const Top = () => {
     const cached = localStorage.getItem('cached_top');
     return cached ? JSON.parse(cached) : [];
   });
-  const [loading, setLoading] = useState(() => !localStorage.getItem('cached_top'));
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTopUsers = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = sessionStorage.getItem('auth_token');
+      if (!token) {
+        // If no token, wait a bit and retry once (could be initializing)
+        setError("Авторизация...");
+        return;
+      }
+
+      const headers = {
+        'Authorization': `Bearer ${token}`
+      };
+
+      const res = await fetch(`${API_URL}/top`, { headers });
+      if (!res.ok) throw new Error(`Ошибка: ${res.status}`);
+      
+      const data = await res.json();
+      const users = data.users || [];
+      setTopUsers(users);
+      localStorage.setItem('cached_top', JSON.stringify(users));
+      setError(null);
+    } catch (err: any) {
+      console.error("Error fetching top users:", err);
+      setError("Не удалось загрузить данные. Проверьте соединение.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const headers = {
-      'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
-    };
-
-    fetch(`${API_URL}/top`, { headers })
-      .then(res => res.json())
-      .then(data => {
-        const users = data.users || [];
-        setTopUsers(users);
-        localStorage.setItem('cached_top', JSON.stringify(users));
-      })
-      .catch(err => {
-        console.error("Error fetching top users:", err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    fetchTopUsers();
   }, []);
 
   const formatBalance = (amount: number) => {
@@ -35,8 +51,23 @@ const Top = () => {
 
   if (loading) {
     return (
-      <div className="page" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+      <div className="page" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', gap: '20px' }}>
         <div className="spinner"></div>
+        <p style={{ opacity: 0.6, fontSize: '14px' }}>Загрузка чемпионов...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', gap: '20px', textAlign: 'center', padding: '0 40px' }}>
+        <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '20px', borderRadius: '24px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+          <Trophy size={48} color="#ef4444" style={{ marginBottom: '16px', opacity: 0.5 }} />
+          <p style={{ margin: 0, fontWeight: '700' }}>{error}</p>
+        </div>
+        <button className="btn-primary" onClick={fetchTopUsers} style={{ padding: '12px 24px' }}>
+          Попробовать снова
+        </button>
       </div>
     );
   }

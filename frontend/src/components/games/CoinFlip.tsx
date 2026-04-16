@@ -114,7 +114,7 @@ const CoinFlip: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
                 boxShadow: 'inset 0 0 20px rgba(0,0,0,0.2)'
             }}>
                 <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '10px', fontWeight: '900', color: '#78350f', textTransform: 'uppercase' }}>Ringo</div>
+                    <div style={{ fontSize: '10px', fontWeight: '900', color: '#78350f', textTransform: 'uppercase' }}>YT</div>
                     <Coins size={64} color="#78350f" strokeWidth={1.5} />
                     <div style={{ fontSize: '10px', fontWeight: '900', color: '#78350f', textTransform: 'uppercase' }}>Heads</div>
                 </div>

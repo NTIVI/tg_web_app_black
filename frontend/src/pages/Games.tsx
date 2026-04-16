@@ -10,7 +10,7 @@ import {
   Gamepad2,
   Trophy,
   History,
-  Sparkles,
+  Star,
   Flame
 } from 'lucide-react';
 
@@ -36,39 +36,62 @@ const Games: React.FC<any> = ({ balance }) => {
         position: 'relative',
         paddingTop: '20px'
       }}>
-        <div style={{ 
-          position: 'absolute', 
-          top: '-20px', 
-          left: '50%', 
-          transform: 'translateX(-50%)', 
-          width: '280px', 
-          height: '100px', 
-          background: 'var(--gold-glow)', 
-          filter: 'blur(60px)', 
-          opacity: 0.2,
-          zIndex: 0 
+        {/* ambient glow */}
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '260px', height: '120px',
+          background: 'radial-gradient(ellipse, rgba(168,85,247,0.25) 0%, transparent 70%)',
+          filter: 'blur(30px)',
+          pointerEvents: 'none',
+          zIndex: 0
         }} />
-        
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '12px' }}>
-            <Sparkles size={24} color="var(--gold-color)" />
-            <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-color)', textTransform: 'uppercase', letterSpacing: '4px' }}>Welcome to</span>
-            <Sparkles size={24} color="var(--gold-color)" />
+
+        {/* badge */}
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: '6px',
+          background: 'rgba(168,85,247,0.12)',
+          border: '1px solid rgba(168,85,247,0.3)',
+          borderRadius: '999px',
+          padding: '5px 14px',
+          fontSize: '11px', fontWeight: '800',
+          color: 'rgba(168,85,247,1)',
+          textTransform: 'uppercase', letterSpacing: '2px',
+          marginBottom: '14px',
+          position: 'relative', zIndex: 1
+        }}>
+          <Star size={11} fill="currentColor" /> Elite Gaming Platform
         </div>
 
-        <h1 style={{ 
-          fontSize: '42px', 
-          fontWeight: '950', 
-          margin: '0', 
-          background: 'var(--gold-gradient)', 
-          WebkitBackgroundClip: 'text', 
+        <h1 style={{
+          fontSize: '48px',
+          fontWeight: '950',
+          letterSpacing: '-2px',
+          lineHeight: 1,
+          margin: '0 0 6px 0',
+          background: 'linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.75) 100%)',
+          WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           position: 'relative',
-          zIndex: 1,
-          letterSpacing: '-1px',
-          textTransform: 'uppercase'
-        }}>Ringo Casino</h1>
-        <p style={{ color: 'var(--text-secondary)', marginTop: '12px', fontSize: '16px', maxWidth: '280px', margin: '12px auto 0', fontWeight: '500', lineHeight: '1.4' }}>
-          Испытай удачу в лучших играх и выиграй <span className="gold-text">Джекпот</span> прямо сейчас!
+          zIndex: 1
+        }}>
+          Your<span style={{
+            background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 60%, #3b82f6 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>Turn</span>
+        </h1>
+        <p style={{
+          fontSize: '13px',
+          color: 'rgba(255,255,255,0.35)',
+          fontWeight: '700',
+          textTransform: 'uppercase',
+          letterSpacing: '4px',
+          marginBottom: 0,
+          position: 'relative',
+          zIndex: 1
+        }}>
+          Make your move
         </p>
       </header>
 

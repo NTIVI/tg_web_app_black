@@ -248,7 +248,7 @@ function App() {
         <div className="onboarding-card">
           <div className="onboarding-logo-wrap">
             <div className="onboarding-logo">
-              <div className="logo-text-gradient">Ringo Casino</div>
+              <div className="logo-text-gradient">YourTurn</div>
             </div>
             <p className="onboarding-bio">
               Ваш путь в мир элитного азарта и крупных выигрышей 🎰. Зарабатывайте банкролл 💰, играйте в захватывающие игры 🃏 и обменивайте выигрыши на реальные призы ✨.
@@ -266,10 +266,10 @@ function App() {
         </div>
       ) : (
         <div className="onboarding-card">
-          <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '24px', textAlign: 'center' }}>Элитное Казино Ringo</h2>
+          <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '24px', textAlign: 'center' }}>Элитная Платформа YourTurn</h2>
           <div className="onboarding-info-scroll">
             <h3>Что это за приложение?</h3>
-            <p>Ringo Casino — это инновационная игровая платформа, превращающая вашу удачу и активность в реальные гаджеты и призы.</p>
+            <p>YourTurn — это инновационная игровая платформа, превращающая вашу удачу и активность в реальные гаджеты и призы.</p>
             
             <h3>Как оно работает?</h3>
             <p>Вы пополняете свой банкролл: смотрите рекламу или посещаете сайты партнеров. За это вы мгновенно получаете виртуальные доллары и статус (XP).</p>

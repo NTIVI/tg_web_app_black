@@ -99,7 +99,7 @@ const GamePage = ({ balance, setBalance, tgUser, setTgUser }: any) => {
             <ChevronLeft size={24} />
           </button>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Ringo Casino</span>
+            <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>YourTurn GAMING</span>
             <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0, color: '#fff' }}>{game.name}</h2>
           </div>
         </div>

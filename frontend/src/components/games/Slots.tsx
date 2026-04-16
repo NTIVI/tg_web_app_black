@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
+import ResultOverlay from './ResultOverlay';
 import { Star, Zap, Gem, Bell, Apple, Cherry, Trophy, Heart, Coins, AlertTriangle } from 'lucide-react';
 
 const SYMBOLS = [
@@ -20,6 +21,8 @@ const Slots: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [reels, setReels] = useState([[0, 1, 2], [1, 2, 0], [2, 0, 1], [0, 2, 1], [1, 0, 2]]);
   const [message, setMessage] = useState('');
   const [winAmount, setWinAmount] = useState(0);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [overlayData, setOverlayData] = useState({ win: false, title: '', subtitle: '' });
 
   const spinReels = async () => {
     const token = sessionStorage.getItem('auth_token');
@@ -81,9 +84,11 @@ const Slots: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
         if (data.winAmount > 0) {
           setWinAmount(data.winAmount);
-          setMessage(`WIN! +$${(data.winAmount / 100).toFixed(2)}`);
+          setOverlayData({ win: true, title: `+$${(data.winAmount / 100).toFixed(2)}`, subtitle: '🍪 БОЛьШОЙ ВЫИГРЫШ!' });
+          setShowOverlay(true);
         } else {
-          setMessage('Попробуйте еще раз!');
+          setOverlayData({ win: false, title: 'НЕ Повезло', subtitle: 'Попробуйте ещё раз!' });
+          setShowOverlay(true);
         }
       }, 2000);
 
@@ -95,6 +100,7 @@ const Slots: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', width: '100%' }}>
+      <ResultOverlay show={showOverlay} win={overlayData.win} title={overlayData.title} subtitle={overlayData.subtitle} onClose={() => setShowOverlay(false)} />
       
       {/* Premium Jackpot Counter */}
       <div style={{ 

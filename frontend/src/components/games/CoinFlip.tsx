@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
+import ResultOverlay from './ResultOverlay';
 import { Trophy, AlertCircle, Coins, Sparkles } from 'lucide-react';
 
 const CoinFlip: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
@@ -10,6 +11,8 @@ const CoinFlip: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [spinning, setSpinning] = useState(false);
   const [message, setMessage] = useState('');
   const [result, setResult] = useState<string | null>(null);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [overlayData, setOverlayData] = useState({ win: false, title: '', subtitle: '' });
 
   const handleFlip = async () => {
     const token = sessionStorage.getItem('auth_token');
@@ -49,10 +52,11 @@ const CoinFlip: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
           if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
           
           if (data.win) {
-            setMessage(`WIN! +$${(data.winAmount / 100).toFixed(2)}`);
+            setOverlayData({ win: true, title: `+$${(data.winAmount / 100).toFixed(2)}`, subtitle: `${data.result?.toUpperCase()} — Вы угадали! 🎯` });
           } else {
-            setMessage('LОSE. Попробуйте еще раз');
+            setOverlayData({ win: false, title: 'ПРОИГРЫШ', subtitle: `Выпало ${data.result?.toUpperCase()}` });
           }
+          setShowOverlay(true);
         }, 2000);
       }
     } catch (e: any) {
@@ -63,6 +67,7 @@ const CoinFlip: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', width: '100%' }}>
+      <ResultOverlay show={showOverlay} win={overlayData.win} title={overlayData.title} subtitle={overlayData.subtitle} onClose={() => { setShowOverlay(false); setResult(null); setMessage(''); }} />
       
       {/* Premium Coin Visual */}
       <div style={{ 

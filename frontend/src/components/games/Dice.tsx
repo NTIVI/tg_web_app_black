@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
+import ResultOverlay from './ResultOverlay';
 import { Dice6, Trophy, Sparkles, AlertCircle } from 'lucide-react';
 
 const Dice: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
@@ -11,6 +12,8 @@ const Dice: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [message, setMessage] = useState('');
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [overlayData, setOverlayData] = useState({ win: false, title: '', subtitle: '' });
 
   const winChance = type === 'under' ? target : 100 - target;
   const multiplier = winChance > 0 ? (98 / winChance).toFixed(2) : '0.00';
@@ -50,9 +53,11 @@ const Dice: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
         
         if (data.win) {
-          setMessage(`WIN! +$${(data.winAmount / 100).toFixed(2)}`);
+          setOverlayData({ win: true, title: `+$${(data.winAmount / 100).toFixed(2)}`, subtitle: `Выпало ${data.roll} — x${data.multiplier?.toFixed(2) || ''}` });
+          setShowOverlay(true);
         } else {
-          setMessage('MISS! Попробуйте еще раз');
+          setOverlayData({ win: false, title: 'МИМО!', subtitle: `Выпало ${data.roll}` });
+          setShowOverlay(true);
         }
       }
     } catch (e: any) {
@@ -64,6 +69,7 @@ const Dice: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', width: '100%' }}>
+      <ResultOverlay show={showOverlay} win={overlayData.win} title={overlayData.title} subtitle={overlayData.subtitle} onClose={() => setShowOverlay(false)} />
       
       {/* Visual Dice Display Panel */}
       <div style={{ 

@@ -1,64 +1,109 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
-import { Zap, Rocket, AlertTriangle, CheckCircle2, History } from 'lucide-react';
+import ResultOverlay from './ResultOverlay';
+import { Zap, Rocket, History, AlertCircle } from 'lucide-react';
 
 const Crash: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [bet, setBet] = useState(100);
-  const [status, setStatus] = useState<'idle' | 'playing' | 'crashed' | 'win'>('idle');
+  const [status, setStatus] = useState<'idle' | 'playing' | 'cashedOut' | 'crashed'>('idle');
   const [multiplier, setMultiplier] = useState(1.00);
-  const [startTime, setStartTime] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [history, setHistory] = useState<number[]>([]);
-  
-  const timerRef = useRef<any>(null);
-  const pointsRef = useRef<{x: number, y: number}[]>([]);
+  const [history, setHistory] = useState<{ mult: number; win: boolean }[]>([]);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [overlayWin, setOverlayWin] = useState(false);
+  const [overlayTitle, setOverlayTitle] = useState('');
+  const [overlaySubtitle, setOverlaySubtitle] = useState('');
+  const [autoCashout, setAutoCashout] = useState(false);
+  const [autoCashoutAt, setAutoCashoutAt] = useState(2.0);
 
-  useEffect(() => {
-    if (status === 'playing' && startTime) {
-      pointsRef.current = [{x: 0, y: 100}];
-      timerRef.current = setInterval(() => {
-        const elapsed = (Date.now() - startTime) / 1000;
-        const currentMult = Math.pow(Math.E, 0.06 * elapsed);
-        setMultiplier(currentMult);
-        
-        // Add point for the chart
-        if (pointsRef.current.length < 100) {
-            pointsRef.current.push({
-                x: elapsed * 10,
-                y: 100 / currentMult
-            });
-        }
-      }, 50);
-    } else {
+  const startTimeRef = useRef<number | null>(null);
+  const crashPointRef = useRef<number>(2.0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const hashedCashedOutRef = useRef(false);
+  const currentBetRef = useRef(bet);
+
+  useEffect(() => { currentBetRef.current = bet; }, [bet]);
+
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) {
       clearInterval(timerRef.current);
+      timerRef.current = null;
     }
-    return () => clearInterval(timerRef.current);
-  }, [status, startTime]);
+  }, []);
+
+  const resetGame = () => {
+    stopTimer();
+    setStatus('idle');
+    setMultiplier(1.00);
+    setMessage('');
+    setShowOverlay(false);
+    hashedCashedOutRef.current = false;
+  };
+
+  // Cashout action — called either manually or by auto-cashout
+  const doCashout = useCallback(async () => {
+    if (hashedCashedOutRef.current) return;
+    hashedCashedOutRef.current = true;
+    stopTimer();
+
+    const token = sessionStorage.getItem('auth_token');
+    try {
+      const res = await fetch(`${API_URL}/games/action`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ action: 'cashout' }),
+      });
+      const data = await res.json();
+
+      if (data.status === 'win') {
+        setStatus('cashedOut');
+        setBalance(data.balance);
+        if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
+        const mult = data.multiplier ?? multiplier;
+        setHistory(h => [{ mult, win: true }, ...h].slice(0, 12));
+        setOverlayWin(true);
+        setOverlayTitle(`+$${(data.winAmount / 100).toFixed(2)}`);
+        setOverlaySubtitle(`x${(data.multiplier ?? multiplier).toFixed(2)} выведено 🚀`);
+        setShowOverlay(true);
+      } else if (data.status === 'crashed') {
+        // Already crashed on server when we tried to cash out
+        setStatus('crashed');
+        const cp = data.crashPoint ?? crashPointRef.current;
+        setHistory(h => [{ mult: cp, win: false }, ...h].slice(0, 12));
+        setOverlayWin(false);
+        setOverlayTitle('КРЭШ!');
+        setOverlaySubtitle(`Взрыв на x${cp.toFixed(2)}`);
+        setShowOverlay(true);
+      } else if (data.error) {
+        setMessage('⚠️ ' + data.error);
+        hashedCashedOutRef.current = false;
+      }
+    } catch {
+      setMessage('⚠️ Ошибка сети');
+      hashedCashedOutRef.current = false;
+    }
+  }, [multiplier, setBalance, setTgUser, stopTimer]);
 
   const startGame = async () => {
     const token = sessionStorage.getItem('auth_token');
-    if (!token) {
-        setMessage('⚠️ Пожалуйста, войдите снова');
-        return;
-    }
-
-    if (balance < bet) {
-      setMessage('❌ Недостаточно баланса');
-      return;
-    }
+    if (!token) { setMessage('⚠️ Войдите снова'); return; }
+    if (balance < bet) { setMessage('❌ Недостаточно баланса'); return; }
 
     setLoading(true);
     setMessage('');
     setMultiplier(1.00);
-    pointsRef.current = [{x: 0, y: 100}];
-    
+    hashedCashedOutRef.current = false;
+
     try {
       const res = await fetch(`${API_URL}/games/play`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
@@ -69,253 +114,279 @@ const Crash: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
       if (data.error) {
         setMessage('⚠️ ' + data.error);
         setLoading(false);
-      } else {
-        setStartTime(data.startTime);
-        setStatus('playing');
-        setBalance(data.balance !== undefined ? data.balance : data.newBalance);
-        if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
-        setLoading(false);
+        return;
       }
-    } catch (e: any) {
+
+      // Balance already deducted on server
+      setBalance(data.balance !== undefined ? data.balance : balance - bet);
+
+      // Derive crash point from startTime — server stores crashPoint in state
+      // The server uses: crashPoint stored in state, formula: Math.pow(E, 0.06 * elapsed)
+      // We run the animation client‑side and cashout manually or auto
+      startTimeRef.current = data.startTime ?? Date.now();
+
+      // We don't know crashPoint here, so we track time and server will tell us on cashout
+      // To know when it crashes without cashout, use a local simulation with a conservative max
+      // The server's crashPoint is random 1–20x. We store a safe local max.
+      crashPointRef.current = 20; // pessimistic max for animation
+
+      setStatus('playing');
+      setLoading(false);
+
+      // Start multiplier animation
+      timerRef.current = setInterval(() => {
+        if (!startTimeRef.current) return;
+        const elapsed = (Date.now() - startTimeRef.current) / 1000;
+        const mult = Math.pow(Math.E, 0.06 * elapsed);
+        setMultiplier(mult);
+
+        // Auto cashout
+        if (autoCashout && mult >= autoCashoutAt && !hashedCashedOutRef.current) {
+          doCashout();
+        }
+
+        // Safety stop animation after 5 minutes
+        if (elapsed > 300) {
+          stopTimer();
+        }
+      }, 50);
+
+    } catch {
       setMessage('⚠️ Ошибка сети');
       setLoading(false);
     }
   };
 
-  const handleCashout = async () => {
-    if (status !== 'playing' || loading) return;
-
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_URL}/games/action`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
-        },
-        body: JSON.stringify({ action: 'cashout' }),
-      });
-      const data = await res.json();
-
-      if (data.status === 'win') {
-        setStatus('win');
-        setBalance(data.balance);
-        if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
-        setMessage(`WIN! +$${(data.winAmount / 100).toFixed(2)}`);
-        setHistory(prev => [data.multiplier, ...prev].slice(0, 10));
-      } else if (data.status === 'crashed') {
-        setStatus('crashed');
-        setMessage(`CRASHED AT x${data.crashPoint.toFixed(2)}`);
-        setHistory(prev => [data.crashPoint, ...prev].slice(0, 10));
-      }
-    } catch (e: any) {
-      setMessage('⚠️ Ошибка при выводе');
-    } finally {
-      setLoading(false);
-    }
+  const handleManualCashout = () => {
+    if (status !== 'playing' || loading || hashedCashedOutRef.current) return;
+    doCashout();
   };
 
+  // Color by multiplier
+  const multColor = multiplier >= 5 ? '#f59e0b' : multiplier >= 2 ? '#10b981' : '#fff';
+
+  // Points for the SVG chart
+  const chartPoints = useCallback(() => {
+    if (!startTimeRef.current || status !== 'playing') return '';
+    const elapsed = (Date.now() - startTimeRef.current) / 1000;
+    const points: string[] = [];
+    const steps = 40;
+    for (let i = 0; i <= steps; i++) {
+      const t = (elapsed * i) / steps;
+      const m = Math.pow(Math.E, 0.06 * t);
+      const x = (i / steps) * 340;
+      const y = 200 - Math.min((m - 1) * 30, 180);
+      points.push(`${x},${y}`);
+    }
+    return points.join(' ');
+  }, [multiplier, status]); // eslint-disable-line
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', width: '100%' }}>
-      
-      {/* Visual Crash Area */}
-      <div style={{ 
-        width: '100%', 
-        height: '320px', 
-        background: '#0d0d0f', 
-        borderRadius: '32px', 
-        padding: '24px',
-        border: '1px solid rgba(255,255,255,0.05)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', width: '100%' }}>
+
+      <ResultOverlay
+        show={showOverlay}
+        win={overlayWin}
+        title={overlayTitle}
+        subtitle={overlaySubtitle}
+        onClose={resetGame}
+      />
+
+      {/* ── CRASH VISUAL ── */}
+      <div style={{
+        width: '100%', height: '280px',
+        background: '#0a0a0f',
+        borderRadius: '28px',
+        border: '1px solid rgba(255,255,255,0.06)',
         position: 'relative',
         overflow: 'hidden',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(168, 85, 247, 0.05)'
+        boxShadow: '0 20px 50px rgba(0,0,0,0.5), inset 0 0 40px rgba(168,85,247,0.03)'
       }}>
-        {/* Background Grid */}
-        <div style={{ 
-            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
-            opacity: 0.05, 
-            backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', 
-            backgroundSize: '40px 40px',
-            transform: status === 'playing' ? `translateY(${(multiplier * 10) % 40}px)` : 'none'
-        }} />
-        
-        {/* Multiplier Display */}
-        <div style={{ zIndex: 10, textAlign: 'center' }}>
-          <motion.div 
-            animate={status === 'playing' ? { scale: [1, 1.02, 1] } : { scale: 1 }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            style={{ 
-              fontSize: '84px', 
-              fontWeight: '950', 
-              color: status === 'crashed' ? 'var(--casino-red)' : status === 'win' ? 'var(--success-color)' : '#fff',
-              textShadow: status === 'playing' ? `0 0 30px ${multiplier > 2 ? 'var(--success-color)' : 'rgba(255,255,255,0.2)'}` : 'none',
-              fontFamily: 'monospace',
-              letterSpacing: '-2px'
+        {/* Grid lines */}
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.04 }}>
+          {[0, 1, 2, 3, 4].map(i => (
+            <line key={`h${i}`} x1="0" y1={`${i * 25}%`} x2="100%" y2={`${i * 25}%`} stroke="#fff" strokeWidth="1" />
+          ))}
+          {[1, 2, 3, 4].map(i => (
+            <line key={`v${i}`} x1={`${i * 25}%`} y1="0" x2={`${i * 25}%`} y2="100%" stroke="#fff" strokeWidth="1" />
+          ))}
+        </svg>
+
+        {/* Chart line */}
+        {status === 'playing' && (
+          <svg style={{ position: 'absolute', bottom: '40px', left: '20px', right: '20px', height: '200px', width: 'calc(100% - 40px)' }}>
+            <defs>
+              <linearGradient id="cg" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="transparent" />
+                <stop offset="100%" stopColor={multColor} />
+              </linearGradient>
+            </defs>
+            <polyline
+              points={chartPoints()}
+              fill="none"
+              stroke="url(#cg)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+
+        {/* Big multiplier */}
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+          <motion.div
+            animate={status === 'playing' ? { scale: [1, 1.015, 1] } : {}}
+            transition={{ repeat: Infinity, duration: 0.4 }}
+            style={{
+              fontSize: '80px', fontWeight: '950', fontFamily: 'monospace',
+              lineHeight: 1, letterSpacing: '-3px',
+              color: status === 'crashed' ? '#ef4444' : status === 'cashedOut' ? '#10b981' : multColor,
+              textShadow: `0 0 40px ${status === 'crashed' ? 'rgba(239,68,68,0.4)' : `${multColor}44`}`
             }}
           >
             {multiplier.toFixed(2)}x
           </motion.div>
-          
+
           <AnimatePresence>
             {status === 'playing' && (
-                <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    style={{ fontSize: '12px', color: 'var(--success-color)', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '4px', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginTop: '-10px' }}
-                >
-                    <Zap size={14} fill="currentColor" /> Набираем высоту
-                </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                style={{ fontSize: '12px', fontWeight: '800', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '3px', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Zap size={12} fill="currentColor" /> ЛЕТИМ ВВЕРХ...
+              </motion.div>
+            )}
+            {status === 'crashed' && (
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                style={{ fontSize: '14px', fontWeight: '900', color: '#ef4444', marginTop: '8px' }}>
+                💥 КРЭШ
+              </motion.div>
+            )}
+            {status === 'cashedOut' && (
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                style={{ fontSize: '14px', fontWeight: '900', color: '#10b981', marginTop: '8px' }}>
+                ✅ ВЫВЕДЕНО
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Dynamic Chart Path */}
-        <svg style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '100%', zIndex: 1, pointerEvents: 'none' }}>
-            <defs>
-                <linearGradient id="chartGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="transparent" />
-                    <stop offset="100%" stopColor="var(--gold-color)" />
-                </linearGradient>
-            </defs>
-            {status === 'playing' && (
-                <motion.path 
-                    d={`M 0 320 ${pointsRef.current.map(p => `L ${Math.min(p.x * 10, 400)} ${Math.max(p.y * 3, 50)}`).join(' ')}`} 
-                    fill="none" 
-                    stroke="url(#chartGradient)" 
-                    strokeWidth="4" 
-                    strokeLinecap="round"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                />
-            )}
-        </svg>
-
-        {/* Rocket Visual */}
+        {/* Rocket */}
         {status === 'playing' && (
-            <motion.div
-                animate={{ 
-                    x: [0, 2, -2, 0],
-                    y: [0, -2, 2, 0],
-                    bottom: [`${Math.min(30 + (multiplier - 1) * 20, 80)}%`],
-                    left: [`${Math.min(10 + (multiplier - 1) * 30, 85)}%`]
-                }}
-                style={{
-                    position: 'absolute',
-                    color: 'var(--gold-color)',
-                    zIndex: 5,
-                    filter: 'drop-shadow(0 0 15px var(--gold-glow))',
-                    transform: 'rotate(45deg)'
-                }}
-            >
-                <Rocket size={44} fill="currentColor" />
-                {/* Engine Flame */}
-                <motion.div 
-                    animate={{ scaleY: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
-                    transition={{ repeat: Infinity, duration: 0.1 }}
-                    style={{ position: 'absolute', bottom: '-20px', left: '50%', transform: 'translateX(-50%)', width: '8px', height: '20px', background: 'linear-gradient(to bottom, var(--gold-color), transparent)', borderRadius: '0 0 4px 4px' }}
-                />
-            </motion.div>
+          <motion.div
+            animate={{
+              x: [0, 3, -3, 3, 0],
+              y: [0, -3, 3, -3, 0],
+            }}
+            transition={{ repeat: Infinity, duration: 0.5 }}
+            style={{
+              position: 'absolute', bottom: '60px', right: '40px',
+              color: multColor, filter: `drop-shadow(0 0 12px ${multColor})`,
+              transform: 'rotate(45deg)',
+              zIndex: 5
+            }}
+          >
+            <Rocket size={40} fill="currentColor" />
+          </motion.div>
         )}
       </div>
 
-      {/* Control / Info Area */}
-      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <AnimatePresence mode="wait">
-          {message && (
-             <motion.div
-               key={message}
-               initial={{ opacity: 0, scale: 0.9, y: 10 }}
-               animate={{ opacity: 1, scale: 1, y: 0 }}
-               exit={{ opacity: 0, scale: 0.9, y: -10 }}
-               style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '12px',
-                    padding: '20px',
-                    borderRadius: '24px',
-                    background: status === 'win' ? 'rgba(16, 185, 129, 0.15)' : status === 'crashed' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${status === 'win' ? 'var(--success-color)' : status === 'crashed' ? 'var(--casino-red)' : 'rgba(255,255,255,0.1)'}`,
-                    color: status === 'win' ? 'var(--success-color)' : status === 'crashed' ? 'var(--casino-red)' : '#fff',
-                    fontWeight: '950',
-                    fontSize: '18px',
-                    textAlign: 'center',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
-               }}
-             >
-               {status === 'win' ? <CheckCircle2 size={24} /> : status === 'crashed' ? <AlertTriangle size={24} /> : null}
-               {message}
-             </motion.div>
-          )}
-        </AnimatePresence>
+      {/* Message */}
+      <AnimatePresence>
+        {message && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '10px 20px', borderRadius: '14px',
+              background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
+              fontSize: '14px', fontWeight: '800', color: '#ef4444'
+            }}
+          >
+            <AlertCircle size={16} /> {message}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
+      {/* Controls */}
+      <div style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {status === 'playing' ? (
-            <button 
-                className="btn-primary" 
-                onClick={handleCashout}
-                disabled={loading}
-                style={{ 
-                    width: '100%', 
-                    height: '80px', 
-                    borderRadius: '24px', 
-                    fontSize: '24px',
-                    fontWeight: '950',
-                    background: 'var(--success-color)',
-                    boxShadow: '0 15px 30px rgba(16, 185, 129, 0.4)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px'
-                }}
-            >
-                {loading ? <div className="spinner" style={{ width: '28px', height: '28px' }} /> : (
-                    <>
-                        <span style={{ fontSize: '12px', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '2px' }}>Вывести профит</span>
-                        <span>${((bet * multiplier) / 100).toFixed(2)}</span>
-                    </>
-                )}
-            </button>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={handleManualCashout}
+            disabled={loading || hashedCashedOutRef.current}
+            style={{
+              width: '100%', height: '80px', borderRadius: '22px',
+              background: 'var(--success-color)',
+              border: 'none', color: '#fff', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px',
+              boxShadow: '0 15px 35px rgba(16,185,129,0.4)',
+              fontSize: '24px', fontWeight: '950',
+            }}
+          >
+            <span style={{ fontSize: '11px', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '2px' }}>Вывести прямо сейчас</span>
+            <span>${((currentBetRef.current * multiplier) / 100).toFixed(2)}</span>
+          </motion.button>
         ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <BetControls bet={bet} setBet={setBet} minBet={100} maxBet={100000} onPlay={startGame} loading={loading} />
-                
-                {history.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflowX: 'auto', padding: '10px 0' }}>
-                        <History size={16} opacity={0.3} />
-                        {history.map((m, i) => (
-                            <div key={i} style={{ 
-                                padding: '6px 14px', 
-                                borderRadius: '12px', 
-                                background: 'rgba(255,255,255,0.03)', 
-                                border: '1px solid rgba(255,255,255,0.05)',
-                                color: m > 2 ? 'var(--success-color)' : m > 1.2 ? 'var(--gold-color)' : 'rgba(255,255,255,0.4)',
-                                fontSize: '12px',
-                                fontWeight: '900',
-                                flexShrink: 0
-                            }}>
-                                {m.toFixed(2)}x
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {status !== 'idle' && (
-                    <button 
-                        onClick={() => { setStatus('idle'); setMultiplier(1.00); setMessage(''); }} 
-                        style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', padding: '10px', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}
-                    >
-                        НОВЫЙ ПОЛЁТ
-                    </button>
-                )}
+          <>
+            {/* Auto cashout toggle */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '12px',
+              background: 'rgba(255,255,255,0.03)', padding: '12px 16px',
+              borderRadius: '16px', border: '1px solid rgba(255,255,255,0.07)'
+            }}>
+              <button
+                onClick={() => setAutoCashout(v => !v)}
+                style={{
+                  width: '44px', height: '24px', borderRadius: '12px',
+                  background: autoCashout ? '#10b981' : 'rgba(255,255,255,0.1)',
+                  border: 'none', cursor: 'pointer', position: 'relative',
+                  transition: 'background 0.3s'
+                }}
+              >
+                <div style={{
+                  width: '18px', height: '18px', background: '#fff', borderRadius: '50%',
+                  position: 'absolute', top: '3px',
+                  left: autoCashout ? '22px' : '3px',
+                  transition: 'left 0.3s'
+                }} />
+              </button>
+              <span style={{ fontSize: '13px', fontWeight: '800', flex: 1 }}>
+                Авто-вывод при x{autoCashoutAt.toFixed(1)}
+              </span>
+              {autoCashout && (
+                <input
+                  type="range" min="1.2" max="10" step="0.1" value={autoCashoutAt}
+                  onChange={e => setAutoCashoutAt(parseFloat(e.target.value))}
+                  style={{ width: '80px', accentColor: '#10b981' }}
+                />
+              )}
             </div>
+
+            <BetControls bet={bet} setBet={setBet} minBet={100} maxBet={100000} onPlay={startGame} loading={loading} />
+          </>
         )}
       </div>
+
+      {/* History */}
+      {history.length > 0 && (
+        <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+          <History size={14} style={{ opacity: 0.25, flexShrink: 0 }} />
+          {history.map((h, i) => (
+            <div key={i} style={{
+              padding: '5px 12px', borderRadius: '10px', flexShrink: 0,
+              background: h.win ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+              border: `1px solid ${h.win ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`,
+              color: h.win ? '#10b981' : '#ef4444',
+              fontSize: '12px', fontWeight: '900'
+            }}>
+              {h.win ? '✓' : '✗'} {h.mult.toFixed(2)}x
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
+import ResultOverlay from './ResultOverlay';
 import { Sparkles, Zap, AlertCircle } from 'lucide-react';
 
 const SEGMENTS = [0, 1.2, 0.5, 2, 0, 1.5, 5, 0.2, 1.1, 0, 10, 0.5, 1.2, 0, 20];
@@ -13,6 +14,8 @@ const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [rotation, setRotation] = useState(0);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [overlayData, setOverlayData] = useState({ win: false, title: '', subtitle: '' });
 
   const handleSpin = async () => {
     const token = sessionStorage.getItem('auth_token');
@@ -60,11 +63,14 @@ const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
           if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
           
           if (data.winAmount > bet) {
-            setMessage(`JACKPOT! x${data.multiplier} (+$${(data.winAmount / 100).toFixed(2)})`);
+            setOverlayData({ win: true, title: `JACKPOT! x${data.multiplier}`, subtitle: `+$${(data.winAmount / 100).toFixed(2)} 🎉` });
+            setShowOverlay(true);
           } else if (data.winAmount > 0) {
-            setMessage(`ПОБЕДА: x${data.multiplier}`);
+            setOverlayData({ win: true, title: `x${data.multiplier}`, subtitle: `+$${(data.winAmount / 100).toFixed(2)}` });
+            setShowOverlay(true);
           } else {
-            setMessage('LОSE. Попробуйте еще раз');
+            setOverlayData({ win: false, title: 'ПРОИГРЫШ', subtitle: 'В следующий раз повезёт!' });
+            setShowOverlay(true);
           }
         }, 4000);
       }
@@ -78,6 +84,7 @@ const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', width: '100%' }}>
+      <ResultOverlay show={showOverlay} win={overlayData.win} title={overlayData.title} subtitle={overlayData.subtitle} onClose={() => setShowOverlay(false)} />
       
       {/* Premium Wheel Visualization */}
       <div style={{ 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
+import ResultOverlay from './ResultOverlay';
 import { Club, Spade, Heart, Diamond, User, ShieldCheck } from 'lucide-react';
 
 const SuitIcon = ({ suit, size = 20 }: { suit: string, size?: number }) => {
@@ -59,6 +60,16 @@ const Blackjack: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [dealerHand, setDealerHand] = useState<any[]>([]);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [overlayData, setOverlayData] = useState({ win: false, title: '', subtitle: '' });
+
+  const resetGame = () => {
+    setStatus('idle');
+    setPlayerHand([]);
+    setDealerHand([]);
+    setMessage('');
+    setShowOverlay(false);
+  };
 
   const startLevel = async () => {
     const token = sessionStorage.getItem('auth_token');
@@ -119,14 +130,24 @@ const Blackjack: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
       } else {
           if (data.playerHand) setPlayerHand(data.playerHand);
           if (data.dealerHand) setDealerHand(data.dealerHand);
-          if (data.status) setStatus(data.status);
-          if (data.balance !== undefined) setBalance(data.balance);
-          if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
-
-          if (data.status === 'bust') setMessage('ПЕРЕБОР! ВЫ ПРОИГРАЛИ');
-          else if (data.status === 'win') setMessage('ПОБЕДА! +$' + (data.winAmount / 100).toFixed(2));
-          else if (data.status === 'lose') setMessage('ДИЛЕР ВЫИГРАЛ');
-          else if (data.status === 'push') setMessage('НИЧЬЯ (PUSH)');
+          if (data.status) {
+            const isWin = data.status === 'win';
+            const isPush = data.status === 'push';
+            setStatus(data.status);
+            setBalance(data.balance);
+            if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
+            
+            if (data.status !== 'playing') {
+                if (isWin) {
+                    setOverlayData({ win: true, title: `+$${(data.winAmount / 100).toFixed(2)}`, subtitle: `Блэкджек! Вы победили дилера 🎴` });
+                } else if (isPush) {
+                    setOverlayData({ win: true, title: 'НИЧЬЯ', subtitle: 'Ставка возвращена' });
+                } else {
+                    setOverlayData({ win: false, title: 'ПРОИГРЫШ!', subtitle: `Дилер: ${data.dealerSum} vs ваш: ${data.playerSum}` });
+                }
+                setShowOverlay(true);
+            }
+          }
       }
     } catch (e: any) {
       setMessage('⚠️ Ошибка сети');
@@ -137,6 +158,7 @@ const Blackjack: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px', width: '100%' }}>
+      <ResultOverlay show={showOverlay} win={overlayData.win} title={overlayData.title} subtitle={overlayData.subtitle} onClose={resetGame} />
       
       {/* Table Area */}
       <div style={{ 
@@ -258,7 +280,7 @@ const Blackjack: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
             />
             {status !== 'idle' && (
                 <button 
-                    onClick={() => { setStatus('idle'); setPlayerHand([]); setDealerHand([]); setMessage(''); }}
+                    onClick={resetGame}
                     style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '13px', fontWeight: '800' }}
                 >
                     НОВАЯ РАЗДАЧА

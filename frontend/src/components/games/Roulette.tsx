@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
+import ResultOverlay from './ResultOverlay';
 import { Trophy, AlertCircle } from 'lucide-react';
 
 const ROULETTE_NUMBERS = [
@@ -21,6 +22,8 @@ const Roulette: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [message, setMessage] = useState('');
   const [rotation, setRotation] = useState(0);
   const [history, setHistory] = useState<number[]>([]);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [overlayData, setOverlayData] = useState({ win: false, title: '', subtitle: '' });
   const tapeRef = useRef<HTMLDivElement>(null);
 
   const tapeNumbers = [...ROULETTE_NUMBERS, ...ROULETTE_NUMBERS, ...ROULETTE_NUMBERS, ...ROULETTE_NUMBERS, ...ROULETTE_NUMBERS];
@@ -72,10 +75,11 @@ const Roulette: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         setHistory(prev => [winNumber, ...prev].slice(0, 10));
 
         if (data.winAmount > 0) {
-          setMessage(`WIN! +$${(data.winAmount / 100).toFixed(2)}`);
+          setOverlayData({ win: true, title: `+$${(data.winAmount / 100).toFixed(2)}`, subtitle: `Выпало ${winNumber}` });
         } else {
-          setMessage(`ВЫПАЛО: ${winNumber}`);
+          setOverlayData({ win: false, title: 'ПРОИГРЫШ', subtitle: `Выпало ${winNumber}` });
         }
+        setShowOverlay(true);
       }, 3000);
 
     } catch (e: any) {
@@ -86,6 +90,7 @@ const Roulette: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', width: '100%' }}>
+      <ResultOverlay show={showOverlay} win={overlayData.win} title={overlayData.title} subtitle={overlayData.subtitle} onClose={() => setShowOverlay(false)} />
       
       {/* Premium Roulette Tape */}
       <div style={{ 

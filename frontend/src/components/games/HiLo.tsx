@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
+import ResultOverlay from './ResultOverlay';
 import { Club, Spade, Heart, Diamond, ArrowUp, ArrowDown, HelpCircle, Trophy, AlertCircle } from 'lucide-react';
 
 const SuitIcon = ({ suit, size = 20 }: { suit: string, size?: number }) => {
@@ -46,9 +47,19 @@ const HiLo: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [status, setStatus] = useState<'idle' | 'playing' | 'win' | 'lose'>('idle');
   const [currentCard, setCurrentCard] = useState<any>(null);
-  const [multiplier, setMultiplier] = useState(1.0);
+  const [multiplier, setMultiplier] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [overlayData, setOverlayData] = useState({ win: false, title: '', subtitle: '' });
   const [message, setMessage] = useState('');
+
+  const resetGame = () => {
+    setStatus('idle');
+    setCurrentCard(null);
+    setMultiplier(1);
+    setMessage('');
+    setShowOverlay(false);
+  };
 
   const startGame = async () => {
     const token = sessionStorage.getItem('auth_token');
@@ -110,7 +121,8 @@ const HiLo: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
       if (data.status === 'lose') {
         setStatus('lose');
         setCurrentCard(data.nextCard);
-        setMessage(`LOSE! Карта: ${data.nextCard.value}`);
+        setOverlayData({ win: false, title: 'ПРОИГРЫШ!', subtitle: 'Неверный прогноз' });
+        setShowOverlay(true);
       } else if (data.status === 'playing' || data.status === 'win') {
         setCurrentCard(data.currentCard);
         setMultiplier(data.currentMultiplier);
@@ -147,7 +159,8 @@ const HiLo: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         setStatus('win');
         setBalance(data.balance);
         if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
-        setMessage(`WIN! +$${(data.winAmount / 100).toFixed(2)}`);
+        setOverlayData({ win: true, title: `+$${(data.winAmount / 100).toFixed(2)}`, subtitle: `x${multiplier.toFixed(2)} — выведено ✅` });
+        setShowOverlay(true);
       }
     } catch (e: any) {
       setMessage('⚠️ Ошибка подключения');
@@ -157,7 +170,8 @@ const HiLo: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px', width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', width: '100%' }}>
+      <ResultOverlay show={showOverlay} win={overlayData.win} title={overlayData.title} subtitle={overlayData.subtitle} onClose={resetGame} />
       
       {/* Premium Playing Area */}
       <div style={{ 
@@ -276,7 +290,7 @@ const HiLo: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
               
               {status !== 'idle' && (
                   <button 
-                    onClick={() => { setStatus('idle'); setCurrentCard(null); setMessage(''); setMultiplier(1.0); }} 
+                    onClick={resetGame} 
                     style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '13px', fontWeight: '800' }}
                   >
                       СБРОСИТЬ СТОЛ

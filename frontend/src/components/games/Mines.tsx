@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
-import { Gem, Bomb, Shield, Trophy, AlertCircle } from 'lucide-react';
+import ResultOverlay from './ResultOverlay';
+import { Gem, Bomb, AlertCircle, Trophy, TrendingUp } from 'lucide-react';
 
 interface MinesProps {
   balance: number;
@@ -19,37 +20,43 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, setTgUser }) => {
   const [currentMultiplier, setCurrentMultiplier] = useState(1);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [overlayWin, setOverlayWin] = useState(false);
+  const [overlayTitle, setOverlayTitle] = useState('');
+  const [overlaySubtitle, setOverlaySubtitle] = useState('');
 
-  // Clear message after 3s if not win/lose
+  // Clear message after 3s if not terminal state
   useEffect(() => {
     if (message && status !== 'win' && status !== 'lose') {
       const t = setTimeout(() => setMessage(''), 3000);
       return () => clearTimeout(t);
     }
-  }, [message, status, setMessage]);
+  }, [message, status]);
+
+  const resetGame = () => {
+    setStatus('idle');
+    setRevealed([]);
+    setMines([]);
+    setCurrentMultiplier(1);
+    setMessage('');
+    setShowOverlay(false);
+  };
 
   const startGame = async () => {
     const token = sessionStorage.getItem('auth_token');
-    if (!token) {
-        setMessage('⚠️ Пожалуйста, войдите снова');
-        return;
-    }
-
-    if (balance < bet) {
-      setMessage('❌ Недостаточно баланса');
-      return;
-    }
+    if (!token) { setMessage('⚠️ Пожалуйста, войдите снова'); return; }
+    if (balance < bet) { setMessage('❌ Недостаточно баланса'); return; }
 
     setLoading(true);
     setRevealed([]);
     setMines([]);
     setCurrentMultiplier(1);
     setMessage('');
-    
+
     try {
       const res = await fetch(`${API_URL}/games/play`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
@@ -64,8 +71,7 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, setTgUser }) => {
         setBalance(data.balance !== undefined ? data.balance : data.newBalance);
         if (setTgUser) setTgUser(prev => ({ ...prev, ...data }));
       }
-    } catch (err) {
-      console.error('Mines startGame error:', err);
+    } catch {
       setMessage('⚠️ Ошибка сети. Попробуйте снова.');
     } finally {
       setLoading(false);
@@ -73,13 +79,13 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, setTgUser }) => {
   };
 
   const handleOpen = async (index: number) => {
-    if (status !== 'playing' || revealed.includes(index) || loading) return;
+    if (status !== 'playing' || revealed.includes(index) || mines.length > 0 || loading) return;
 
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/games/action`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
         },
@@ -88,22 +94,27 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, setTgUser }) => {
       const data = await res.json();
 
       if (data.error) {
-          setMessage('⚠️ ' + data.error);
-          return;
+        setMessage('⚠️ ' + data.error);
+        return;
       }
 
       if (data.status === 'lose') {
         setStatus('lose');
-        setMines(data.mines);
-        setMessage('БОМБА! ВЫ ПРОИГРАЛИ');
+        setMines(data.mines || []);
+        // Show overlay after short delay so mine reveal animates
+        setTimeout(() => {
+          setOverlayWin(false);
+          setOverlayTitle('ВЗРЫВ!');
+          setOverlaySubtitle('Вы наступили на мину 💣');
+          setShowOverlay(true);
+        }, 600);
       } else if (data.status === 'playing') {
         setRevealed(data.revealed);
         setCurrentMultiplier(data.currentMultiplier);
         if (setTgUser) setTgUser(prev => ({ ...prev, ...data }));
       }
-    } catch (err) {
-       console.error('Mines handleAction error:', err);
-       setMessage('⚠️ Ошибка сети');
+    } catch {
+      setMessage('⚠️ Ошибка сети');
     } finally {
       setLoading(false);
     }
@@ -116,7 +127,7 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, setTgUser }) => {
     try {
       const res = await fetch(`${API_URL}/games/action`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
         },
@@ -124,244 +135,251 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, setTgUser }) => {
       });
       const data = await res.json();
 
-      if (data.error) {
-          setMessage('⚠️ ' + data.error);
-          return;
-      }
+      if (data.error) { setMessage('⚠️ ' + data.error); return; }
 
       if (data.status === 'win') {
         setStatus('win');
         setBalance(data.balance);
-        setMines(data.mines);
+        setMines(data.mines || []);
         if (setTgUser) setTgUser(prev => ({ ...prev, ...data }));
-        setMessage(`WIN! +$${(data.winAmount / 100).toFixed(2)}`);
+        setOverlayWin(true);
+        setOverlayTitle(`+$${(data.winAmount / 100).toFixed(2)}`);
+        setOverlaySubtitle(`x${currentMultiplier.toFixed(2)} × $${(bet / 100).toFixed(2)}`);
+        setShowOverlay(true);
       }
     } catch {
-        setMessage('⚠️ Ошибка при выводе');
+      setMessage('⚠️ Ошибка при выводе');
     } finally {
       setLoading(false);
     }
   };
 
+  const getCellState = (i: number): 'gem' | 'mine' | 'hidden' | 'unrevealed' => {
+    if (revealed.includes(i)) return 'gem';
+    if (mines.length > 0 && mines[i]) return 'mine';
+    if (mines.length > 0 && !mines[i]) return 'hidden'; // safe unrevealed after game
+    return 'unrevealed';
+  };
+
+  const cellStyle = (state: ReturnType<typeof getCellState>): React.CSSProperties => {
+    const base: React.CSSProperties = {
+      aspectRatio: '1',
+      borderRadius: '12px',
+      cursor: status === 'playing' && state === 'unrevealed' && !loading ? 'pointer' : 'default',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      border: '1px solid',
+      transition: 'all 0.2s ease',
+      position: 'relative',
+      overflow: 'hidden',
+    };
+    switch (state) {
+      case 'gem': return { ...base, background: 'rgba(16,185,129,0.15)', borderColor: 'rgba(16,185,129,0.4)' };
+      case 'mine': return { ...base, background: 'rgba(239,68,68,0.2)', borderColor: 'rgba(239,68,68,0.5)' };
+      case 'hidden': return { ...base, background: 'rgba(16,185,129,0.05)', borderColor: 'rgba(16,185,129,0.1)' };
+      default: return { ...base, background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' };
+    }
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', width: '100%' }}>
-      
-      {/* Game Header HUD */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        width: '100%', 
-        maxWidth: '350px',
-        padding: '0 10px',
-        marginBottom: '10px'
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', width: '100%' }}>
+
+      {/* Win/Loss overlay */}
+      <ResultOverlay
+        show={showOverlay}
+        win={overlayWin}
+        title={overlayTitle}
+        subtitle={overlaySubtitle}
+        onClose={resetGame}
+      />
+
+      {/* HUD */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', width: '100%',
+        maxWidth: '360px', padding: '16px 20px',
+        background: 'rgba(255,255,255,0.03)', borderRadius: '20px',
+        border: '1px solid rgba(255,255,255,0.08)'
       }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ fontSize: '10px', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '1px' }}>Множитель</div>
-              <div style={{ fontSize: '24px', fontWeight: '950', color: 'var(--gold-color)' }}>x{currentMultiplier.toFixed(2)}</div>
+        <div>
+          <div style={{ fontSize: '10px', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '1px' }}>Множитель</div>
+          <div style={{ fontSize: '26px', fontWeight: '950', color: 'var(--gold-color)' }}>
+            x{currentMultiplier.toFixed(2)}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-              <div style={{ fontSize: '10px', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '1px' }}>Профит</div>
-              <div style={{ fontSize: '24px', fontWeight: '950', color: 'var(--success-color)' }}>
-                  +${((bet * (currentMultiplier - 1)) / 100).toFixed(2)}
-              </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: '10px', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '1px' }}>Профит</div>
+          <div style={{ fontSize: '26px', fontWeight: '950', color: 'var(--success-color)' }}>
+            +${((bet * Math.max(currentMultiplier - 1, 0)) / 100).toFixed(2)}
           </div>
+        </div>
       </div>
 
-      {/* 5x5 Premium Grid */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(5, 1fr)', 
-        gap: '10px', 
-        width: '100%', 
-        maxWidth: '360px',
-        background: 'rgba(255,255,255,0.03)',
-        padding: '16px',
-        borderRadius: '28px',
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.4), inset 0 0 20px rgba(255,255,255,0.02)'
+      {/* Status message */}
+      <AnimatePresence mode="wait">
+        {message && (
+          <motion.div
+            key={message}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '10px 20px', borderRadius: '14px',
+              background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
+              fontSize: '14px', fontWeight: '800', color: '#ef4444'
+            }}
+          >
+            <AlertCircle size={16} /> {message}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 5×5 GRID */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
+        gap: '8px', width: '100%', maxWidth: '360px',
+        background: 'rgba(255,255,255,0.02)', padding: '14px',
+        borderRadius: '24px', border: '1px solid rgba(255,255,255,0.06)',
       }}>
         {Array.from({ length: 25 }).map((_, i) => {
-          const isRevealed = revealed.includes(i);
-          const isMine = mines[i];
-          const isClickable = status === 'playing' && !isRevealed && !loading;
+          const state = getCellState(i);
+          const isClickable = status === 'playing' && state === 'unrevealed' && !loading;
 
           return (
-            <motion.div 
+            <motion.div
               key={i}
               onClick={() => handleOpen(i)}
-              whileHover={isClickable ? { scale: 1.05, backgroundColor: 'rgba(255,255,255,0.1)' } : {}}
-              whileTap={isClickable ? { scale: 0.95 } : {}}
+              whileHover={isClickable ? { scale: 1.08, backgroundColor: 'rgba(255,255,255,0.1)' } : {}}
+              whileTap={isClickable ? { scale: 0.92 } : {}}
               initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ 
-                opacity: 1, 
-                scale: 1,
-                rotateY: isRevealed || mines.length > 0 ? 180 : 0,
-                backgroundColor: isRevealed 
-                    ? 'rgba(16, 185, 129, 0.15)' 
-                    : isMine 
-                        ? 'rgba(239, 68, 68, 0.2)' 
-                        : 'rgba(255,255,255,0.05)',
-                borderColor: isRevealed 
-                    ? 'rgba(16, 185, 129, 0.4)' 
-                    : isMine 
-                        ? 'rgba(239, 68, 68, 0.4)' 
-                        : 'rgba(255,255,255,0.1)'
-              }}
-              transition={{ duration: 0.5, type: 'spring', bounce: 0.3 }}
-              style={{ 
-                aspectRatio: '1',
-                borderRadius: '14px',
-                cursor: isClickable ? 'pointer' : 'default',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '1px solid',
-                perspective: '1000px',
-                transformStyle: 'preserve-3d',
-                position: 'relative'
-              }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.015, duration: 0.2 }}
+              style={cellStyle(state)}
             >
-              <div style={{ 
-                  position: 'absolute', 
-                  backfaceVisibility: 'hidden',
-                  width: '100%', height: '100%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                   {/* Front side (Unrevealed) */}
-                   <Shield size={18} color="rgba(255,255,255,0.1)" />
-              </div>
-
-              <div style={{ 
-                  position: 'absolute', 
-                  backfaceVisibility: 'hidden',
-                  transform: 'rotateY(180deg)',
-                  width: '100%', height: '100%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                   {/* Back side (Revealed) */}
-                   {isRevealed && !isMine && (
-                       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                           <Gem size={24} color="#10b981" fill="#10b981" style={{ filter: 'drop-shadow(0 0 8px #10b981)' }} />
-                       </motion.div>
-                   )}
-                   {isMine && (
-                       <motion.div 
-                         initial={{ scale: 0 }} 
-                         animate={{ scale: [0, 1.2, 1], x: [0, -2, 2, -2, 2, 0] }}
-                         transition={{ duration: 0.4 }}
-                       >
-                           <Bomb size={24} color="#ef4444" fill="#ef4444" style={{ filter: 'drop-shadow(0 0 10px #ef4444)' }} />
-                       </motion.div>
-                   )}
-                   {!isRevealed && isMine && mines.length > 0 && (
-                       <Bomb size={20} color="rgba(239, 68, 68, 0.3)" />
-                   )}
-              </div>
+              <AnimatePresence mode="wait">
+                {state === 'gem' && (
+                  <motion.div
+                    key="gem"
+                    initial={{ scale: 0, rotate: -30 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                  >
+                    <Gem size={22} color="#10b981" fill="#10b981"
+                      style={{ filter: 'drop-shadow(0 0 8px #10b981)' }} />
+                  </motion.div>
+                )}
+                {state === 'mine' && (
+                  <motion.div
+                    key="mine"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: [0, 1.3, 1] }}
+                    transition={{ duration: 0.4, times: [0, 0.6, 1] }}
+                  >
+                    <Bomb size={22} color="#ef4444" fill="#ef4444"
+                      style={{ filter: 'drop-shadow(0 0 10px #ef4444)' }} />
+                  </motion.div>
+                )}
+                {state === 'unrevealed' && (
+                  <motion.div key="q" style={{ fontSize: '16px', opacity: 0.15 }}>?</motion.div>
+                )}
+                {state === 'hidden' && (
+                  <motion.div key="safe" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <Gem size={16} color="rgba(16,185,129,0.2)" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           );
         })}
       </div>
 
-      {/* Status Message Overlay */}
-      <div style={{ textAlign: 'center', height: '30px' }}>
-         <AnimatePresence mode="wait">
-            {message && (
-                <motion.div 
-                    initial={{ scale: 0.8, opacity: 0, y: 10 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0.8, opacity: 0, y: -10 }}
-                    key={message}
-                    style={{ 
-                        fontSize: '16px', 
-                        fontWeight: '900', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '8px',
-                        color: status === 'win' ? 'var(--success-color)' : status === 'lose' ? 'var(--casino-red)' : '#fff' 
-                    }}
-                >
-                    {status === 'win' && <Trophy size={18} />}
-                    {message.includes('⚠️') || message.includes('❌') ? <AlertCircle size={18} /> : null}
-                    {message}
-                </motion.div>
-            )}
-         </AnimatePresence>
-      </div>
+      {/* Controls */}
+      <div style={{ width: '100%', maxWidth: '360px' }}>
+        {status === 'playing' ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {/* Cashout */}
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={cashOut}
+              disabled={revealed.length === 0 || loading}
+              style={{
+                width: '100%', height: '64px', borderRadius: '20px',
+                background: revealed.length === 0 ? 'rgba(255,255,255,0.05)' : 'var(--success-color)',
+                border: 'none', color: '#fff', cursor: revealed.length === 0 ? 'not-allowed' : 'pointer',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px',
+                boxShadow: revealed.length > 0 ? '0 10px 25px rgba(16,185,129,0.35)' : 'none',
+                opacity: revealed.length === 0 ? 0.5 : 1,
+                transition: 'all 0.3s ease'
+              }}
+            >
+              {loading ? (
+                <div style={{ width: '24px', height: '24px', border: '3px solid rgba(255,255,255,0.3)', borderTop: '3px solid #fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              ) : (
+                <>
+                  <span style={{ fontSize: '11px', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Trophy size={12} /> Забрать выигрыш
+                  </span>
+                  <span style={{ fontSize: '20px', fontWeight: '950' }}>
+                    ${((bet * currentMultiplier) / 100).toFixed(2)}
+                  </span>
+                </>
+              )}
+            </motion.button>
 
-      {/* Controls Container */}
-      <div style={{ width: '100%', maxWidth: '360px', marginTop: '10px' }}>
-          {status === 'playing' ? (
-              <button 
-                className="btn-primary" 
-                onClick={cashOut}
-                disabled={revealed.length === 0 || loading}
-                style={{ 
-                    width: '100%', 
-                    height: '64px', 
-                    borderRadius: '20px',
-                    background: 'var(--success-color)',
-                    boxShadow: '0 10px 25px rgba(16, 185, 129, 0.3)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '2px'
-                }}
-              >
-                {loading ? <div className="spinner" style={{ width: '24px', height: '24px' }} /> : (
-                    <>
-                        <span style={{ fontSize: '11px', opacity: 0.8, textTransform: 'uppercase' }}>Забрать выигрыш</span>
-                        <span style={{ fontSize: '20px', fontWeight: '950' }}>${((bet * currentMultiplier) / 100).toFixed(2)}</span>
-                    </>
-                )}
-              </button>
-          ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {/* Mine Count Selector */}
-                  <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '12px', 
-                      background: 'rgba(255,255,255,0.03)', 
-                      padding: '12px 20px', 
-                      borderRadius: '18px', 
-                      border: '1px solid rgba(255,255,255,0.08)' 
-                  }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                          <span style={{ fontSize: '10px', opacity: 0.5, textTransform: 'uppercase' }}>Кол-во мин</span>
-                          <span style={{ fontSize: '18px', fontWeight: '900', color: 'var(--casino-red)' }}>{mineCount}</span>
-                      </div>
-                      <input 
-                        type="range" min="1" max="24" value={mineCount} 
-                        onChange={(e) => setMineCount(parseInt(e.target.value))}
-                        disabled={loading}
-                        style={{ flex: 3 }}
-                      />
-                  </div>
-
-                  <BetControls 
-                    bet={bet} 
-                    setBet={setBet} 
-                    minBet={50} 
-                    maxBet={100000} 
-                    onPlay={startGame} 
-                    loading={loading} 
-                  />
-                  
-                  {status !== 'idle' && (
-                      <button 
-                        onClick={() => { setStatus('idle'); setMessage(''); }} 
-                        style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontWeight: '800', cursor: 'pointer' }}
-                      >
-                          СБРОСИТЬ ПОЛЕ
-                      </button>
-                  )}
+            {/* Progress bar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '0 4px' }}>
+              <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                <motion.div
+                  animate={{ width: `${(revealed.length / (25 - mineCount)) * 100}%` }}
+                  transition={{ duration: 0.3 }}
+                  style={{ height: '100%', background: 'linear-gradient(90deg, #10b981, #34d399)', borderRadius: '4px' }}
+                />
               </div>
-          )}
+              <span style={{ fontSize: '11px', fontWeight: '800', opacity: 0.5 }}>
+                {revealed.length}/{25 - mineCount}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* Mine count */}
+            <div style={{
+              background: 'rgba(255,255,255,0.03)',
+              padding: '14px 18px', borderRadius: '18px',
+              border: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex', alignItems: 'center', gap: '12px'
+            }}>
+              <Bomb size={18} color="#ef4444" />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '10px', opacity: 0.5, textTransform: 'uppercase', marginBottom: '2px' }}>
+                  Мины: <span style={{ color: '#ef4444', fontWeight: '900' }}>{mineCount}</span>
+                </div>
+                <input
+                  type="range" min="1" max="24" value={mineCount}
+                  onChange={e => setMineCount(parseInt(e.target.value))}
+                  disabled={loading}
+                  style={{ width: '100%', accentColor: '#ef4444' }}
+                />
+              </div>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '4px',
+                fontSize: '11px', fontWeight: '800', color: 'var(--success-color)',
+                background: 'rgba(16,185,129,0.1)', padding: '4px 10px', borderRadius: '10px'
+              }}>
+                <TrendingUp size={12} />
+                x{(1 + mineCount * 0.15).toFixed(2)}
+              </div>
+            </div>
+
+            <BetControls bet={bet} setBet={setBet} minBet={50} maxBet={100000} onPlay={startGame} loading={loading} />
+          </div>
+        )}
       </div>
+
+      <style>{`
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 };
 
 export default Mines;
-

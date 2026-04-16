@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../config';
 import BetControls from './BetControls';
+import ResultOverlay from './ResultOverlay';
 import { Trophy, AlertCircle } from 'lucide-react';
 
 const ROWS = 8;
@@ -14,6 +15,8 @@ const Plinko: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [message, setMessage] = useState('');
   const [ballPos, setBallPos] = useState({ x: 50, y: 5 });
   const [activeBucket, setActiveBucket] = useState<number | null>(null);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [overlayData, setOverlayData] = useState({ win: false, title: '', subtitle: '' });
 
   const handleDrop = async () => {
     const token = sessionStorage.getItem('auth_token');
@@ -72,9 +75,11 @@ const Plinko: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
         
         if (data.winAmount > bet) {
-           setMessage(`WIN! x${data.multiplier} (+$${(data.winAmount / 100).toFixed(2)})`);
+           setOverlayData({ win: true, title: `+$${(data.winAmount / 100).toFixed(2)}`, subtitle: `x${data.multiplier} — вам повезло! 🎉` });
+           setShowOverlay(true);
         } else {
-           setMessage(`x${data.multiplier}`);
+           setOverlayData({ win: false, title: 'x' + data.multiplier, subtitle: `-$${(bet / 100).toFixed(2)}` });
+           setShowOverlay(true);
         }
         return;
       }
@@ -94,6 +99,7 @@ const Plinko: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', width: '100%' }}>
+      <ResultOverlay show={showOverlay} win={overlayData.win} title={overlayData.title} subtitle={overlayData.subtitle} onClose={() => setShowOverlay(false)} />
       
       {/* Plinko Board Visual */}
       <div style={{ 

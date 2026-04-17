@@ -46,11 +46,17 @@ const Crash: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
   // Cashout action — called either manually or by auto-cashout
   const doCashout = useCallback(async () => {
-    if (hashedCashedOutRef.current) return;
+    if (hashedCashedOutRef.current || status !== 'playing') return;
     hashedCashedOutRef.current = true;
     stopTimer();
 
     const token = sessionStorage.getItem('auth_token');
+    if (!token) {
+        setMessage('⚠️ Пожалуйста, войдите снова');
+        hashedCashedOutRef.current = false;
+        return;
+    }
+
     try {
       const res = await fetch(`${API_URL}/games/action`, {
         method: 'POST',
@@ -73,10 +79,10 @@ const Crash: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
         setOverlayTitle('ВЫВЕДЕНО!');
         setOverlaySubtitle(`Множитель x${(data.multiplier ?? multiplier).toFixed(2)}`);
         setShowOverlay(true);
-      } else if (data.status === 'crashed') {
+      } else if (data.status === 'crashed' || data.error?.includes('crashed')) {
         // Already crashed on server when we tried to cash out
         setStatus('crashed');
-        const cp = data.crashPoint ?? crashPointRef.current;
+        const cp = data.crashPoint || multiplier;
         setHistory(h => [{ mult: cp, win: false }, ...h].slice(0, 12));
         setOverlayWin(false);
         setOverlayAmount(bet);
@@ -86,12 +92,13 @@ const Crash: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
       } else if (data.error) {
         setMessage('⚠️ ' + data.error);
         hashedCashedOutRef.current = false;
+        // Resume timer if it wasn't a crash? No, better restart or just show error.
       }
     } catch {
       setMessage('⚠️ Ошибка сети');
       hashedCashedOutRef.current = false;
     }
-  }, [multiplier, setBalance, setTgUser, stopTimer]);
+  }, [multiplier, setBalance, setTgUser, stopTimer, status, bet]);
 
   const startGame = async () => {
     const token = sessionStorage.getItem('auth_token');

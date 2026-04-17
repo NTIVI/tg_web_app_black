@@ -60,37 +60,41 @@ const Slots: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
       // Backend outcome (spread into 5 reels for premium look, though backend might return 3)
       // If backend returns 3, we fill others randomly
       let outcome = data.outcome;
-      if (!Array.isArray(outcome)) outcome = [0, 0, 0];
+      if (!Array.isArray(outcome) || outcome.length < 5) {
+          // Fallback if backend returned 3 or something else
+          outcome = Array.from({ length: 5 }, (_, i) => outcome[i] ?? Math.floor(Math.random() * SYMBOLS.length));
+      }
       
-      // Expand to 5 reels visual
-      const visualOutcome = [
-          outcome[0], 
-          outcome[1], 
-          outcome[2], 
-          Math.floor(Math.random() * SYMBOLS.length), 
-          Math.floor(Math.random() * SYMBOLS.length)
-      ];
+      const visualOutcome = outcome;
 
       // Sequential Reel Stop Animation
-      setTimeout(() => {
-        setReels(visualOutcome.map(o => [
-            (o + 1) % SYMBOLS.length,
-            o,
-            (o - 1 + SYMBOLS.length) % SYMBOLS.length
-        ]));
-        setSpinning(false);
-        setBalance(data.balance !== undefined ? data.balance : data.newBalance);
-        if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
+      visualOutcome.forEach((o: number, i: number) => {
+        setTimeout(() => {
+            setReels(prev => {
+                const next = [...prev];
+                next[i] = [
+                    (o + 1) % SYMBOLS.length,
+                    o,
+                    (o - 1 + SYMBOLS.length) % SYMBOLS.length
+                ];
+                return next;
+            });
+            if (i === visualOutcome.length - 1) {
+                setSpinning(false);
+                setBalance(data.balance !== undefined ? data.balance : data.newBalance);
+                if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
 
-        if (data.winAmount > 0) {
-          setWinAmount(data.winAmount);
-          setOverlayData({ win: true, title: 'ПОБЕДА!', subtitle: 'Крупный выигрыш!', amount: data.winAmount });
-          setShowOverlay(true);
-        } else {
-          setOverlayData({ win: false, title: 'ПРОИГРЫШ', subtitle: 'Попробуйте ещё раз!', amount: bet });
-          setShowOverlay(true);
-        }
-      }, 2000);
+                if (data.winAmount > 0) {
+                  setWinAmount(data.winAmount);
+                  setOverlayData({ win: true, title: 'ПОБЕДА!', subtitle: 'Крупный выигрыш!', amount: data.winAmount });
+                  setShowOverlay(true);
+                } else {
+                  setOverlayData({ win: false, title: 'ПРОИГРЫШ', subtitle: 'Попробуйте ещё раз!', amount: bet });
+                  setShowOverlay(true);
+                }
+            }
+        }, 1500 + (i * 300));
+      });
 
     } catch (e: any) {
       setMessage('⚠️ Ошибка сети');

@@ -13,6 +13,10 @@ import Dice from '../components/games/Dice';
 import CoinFlip from '../components/games/CoinFlip';
 import HiLo from '../components/games/HiLo';
 import WheelOfFortune from '../components/games/WheelOfFortune';
+import Tower from '../components/games/Tower';
+import Keno from '../components/games/Keno';
+import Scratch from '../components/games/Scratch';
+import Baccarat from '../components/games/Baccarat';
 
 const GAME_INFO: Record<string, { name: string, color: string }> = {
   slots: { name: 'Royal Slots', color: '#f59e0b' },
@@ -25,6 +29,10 @@ const GAME_INFO: Record<string, { name: string, color: string }> = {
   coinflip: { name: 'Flip & Win', color: '#fbbf24' },
   hilo: { name: 'Hi-Lo', color: '#2dd4bf' },
   wheel: { name: 'Wheel of Luck', color: '#8b5cf6' },
+  tower: { name: 'Dragon Tower', color: '#ea580c' },
+  keno: { name: 'Keno Classic', color: '#06b6d4' },
+  scratch: { name: 'Gold Rush', color: '#fbbf24' },
+  baccarat: { name: 'Royal Baccarat', color: '#db2777' },
 };
 
 const GamePage = ({ balance, setBalance, tgUser, setTgUser }: any) => {
@@ -53,6 +61,10 @@ const GamePage = ({ balance, setBalance, tgUser, setTgUser }: any) => {
       case 'coinflip': return <CoinFlip {...props} />;
       case 'hilo': return <HiLo {...props} />;
       case 'wheel': return <WheelOfFortune {...props} />;
+      case 'tower': return <Tower {...props} />;
+      case 'keno': return <Keno {...props} />;
+      case 'scratch': return <Scratch {...props} />;
+      case 'baccarat': return <Baccarat {...props} />;
       default: return <div style={{ textAlign: 'center', padding: '40px' }}>Game not found</div>;
     }
   };

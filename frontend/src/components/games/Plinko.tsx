@@ -62,39 +62,49 @@ const Plinko: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   };
 
   const animateBall = (targetBucket: number, data: any) => {
-    const duration = 2000;
-    const interval = duration / (ROWS + 1);
-    let step = 0;
+    const startTime = performance.now();
+    const duration = 2500;
     
-    const t = setInterval(() => {
-      if (step > ROWS) {
-        clearInterval(t);
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      if (progress < 1) {
+        // Horizontal: ease towards target bucket center
+        const startX = 50;
+        const targetX = 50 + ((targetBucket - 4.5) * 8.5);
+        const currentX = startX + (targetX - startX) * progress;
+        
+        // Vertical: parabolic arc for each bounce
+        const ROWS_COUNT = 8;
+        const subProgress = (progress * ROWS_COUNT) % 1;
+        const peakHeight = 5;
+        const yOffset = Math.sin(subProgress * Math.PI) * peakHeight;
+        const currentY = 5 + (progress * 85) - yOffset;
+        
+        setBallPos({ 
+          x: currentX + (Math.sin(elapsed * 0.01) * 0.5), // Subtle jitter
+          y: currentY 
+        });
+        
+        requestAnimationFrame(animate);
+      } else {
         setDropping(false);
         setActiveBucket(targetBucket);
         setBalance(data.balance !== undefined ? data.balance : data.newBalance);
         if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
         
-        if (data.winAmount > bet) {
-           setOverlayData({ win: true, title: 'ПОБЕДА!', subtitle: `Множитель x${data.multiplier}`, amount: data.winAmount });
-           setShowOverlay(true);
-        } else {
-           setOverlayData({ win: false, title: 'МНОЖИТЕЛЬ x' + data.multiplier, subtitle: 'Повезет в следующий раз!', amount: bet });
-           setShowOverlay(true);
-        }
-        return;
+        setOverlayData({ 
+            win: data.winAmount > bet, 
+            title: data.winAmount > bet ? 'ПОБЕДА!' : 'МНОЖИТЕЛЬ x' + data.multiplier, 
+            subtitle: data.winAmount > bet ? `Множитель x${data.multiplier}` : 'Повезет в следующий раз!', 
+            amount: data.winAmount > bet ? data.winAmount : bet 
+        });
+        setShowOverlay(true);
       }
-
-      // Physics-like jitter
-      const jitter = (Math.random() - 0.5) * 2;
-      // Target bucket is index 0-9. Center is 4.5
-      const targetX = 50 + ((targetBucket - 4.5) * 8.5 * (step / ROWS));
-      
-      setBallPos({ 
-        x: targetX + (step < ROWS ? jitter : 0), 
-        y: 10 + (step * (80 / ROWS)) 
-      });
-      step++;
-    }, interval);
+    };
+    
+    requestAnimationFrame(animate);
   };
 
   return (

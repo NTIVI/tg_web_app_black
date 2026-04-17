@@ -11,7 +11,11 @@ import {
   Trophy,
   History,
   Star,
-  Flame
+  Flame,
+  Castle,
+  LayoutGrid,
+  FileText,
+  Shield
 } from 'lucide-react';
 
 const GAME_LIST = [
@@ -23,6 +27,10 @@ const GAME_LIST = [
   { id: 'dice', name: 'Quantum Dice', icon: <Flame size={32} />, color: '#6366f1', desc: 'Угадай число на костях' },
   { id: 'coinflip', name: 'Flip & Win', icon: <Coins size={32} />, color: '#fbbf24', desc: 'Орел или Решка?' },
   { id: 'wheel', name: 'Wheel of Luck', icon: <Zap size={32} />, color: '#8b5cf6', desc: 'Колесо фортуны' },
+  { id: 'tower', name: 'Dragon Tower', icon: <Castle size={32} />, color: '#ea580c', desc: 'Покори вершину башни' },
+  { id: 'keno', name: 'Keno Classic', icon: <LayoutGrid size={32} />, color: '#06b6d4', desc: 'Угадай счастливые числа' },
+  { id: 'scratch', name: 'Gold Rush', icon: <FileText size={32} />, color: '#fbbf24', desc: 'Сотри и выиграй ' },
+  { id: 'baccarat', name: 'Royal Baccarat', icon: <Shield size={32} />, color: '#db2777', desc: 'Статусная карточная игра' },
 ];
 
 const Games: React.FC<any> = ({ balance }) => {

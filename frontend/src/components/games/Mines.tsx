@@ -158,9 +158,9 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, setTgUser }) => {
   };
 
   const getCellState = (i: number): 'gem' | 'mine' | 'hidden' | 'unrevealed' => {
-    if (revealed.includes(i)) return 'gem';
-    if (mines.length > 0 && mines[i]) return 'mine';
-    if (mines.length > 0 && !mines[i]) return 'hidden'; // safe unrevealed after game
+    if (revealed && revealed.includes(i)) return 'gem';
+    if (mines && mines.length > 0 && mines[i]) return 'mine';
+    if (mines && mines.length > 0 && !mines[i]) return 'hidden'; // safe unrevealed after game
     return 'unrevealed';
   };
 
@@ -184,7 +184,7 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, setTgUser }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', width: '100%', minHeight: '500px' }}>
 
       {/* Win/Loss overlay */}
       <ResultOverlay

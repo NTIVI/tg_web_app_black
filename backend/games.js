@@ -13,13 +13,14 @@ const SLOTS_PAYTABLE = {
 const handleSlots = (bet) => {
     const win = shouldWin();
     if (!win) {
-        // Force lose: return mismatching symbols
-        const outcome = [0, 1, 2].sort(() => Math.random() - 0.5);
+        // Force lose: return mismatching symbols (5 reels)
+        const outcome = [0, 1, 2, 3, 4].sort(() => Math.random() - 0.5);
         return { outcome, multiplier: 0, winAmount: 0 };
     }
     const s = Math.floor(Math.random() * SYMBOLS.length);
     const multiplier = SLOTS_PAYTABLE[SYMBOLS[s]] || 1.5;
-    return { outcome: [s, s, s], multiplier, winAmount: Math.floor(bet * multiplier) };
+    // 5 reels win: [s, s, s, s, s] or similar. Let's do 5 for jackpot feel.
+    return { outcome: [s, s, s, s, s], multiplier, winAmount: Math.floor(bet * multiplier) };
 };
 
 const handleRoulette = (bet, betOn) => {
@@ -134,14 +135,20 @@ const getMinesMultiplier = (revealedCount, mineCount) => {
 };
 
 const handleCrashStart = (bet) => {
-    const win = shouldWin();
+    // Standard Crash Point formula: 1 / (1 - X) with 3% house edge
+    // But we still respect shouldWin for user experience if needed, 
+    // OR we can make it purely random. User asked for "random".
+    const rand = Math.random();
     let crashPoint = 1.0;
-    if (win) {
-        crashPoint = 1.5 + Math.random() * 3.5;
+    if (rand < 0.03) { // 3% instant crash at 1.00
+        crashPoint = 1.00;
     } else {
-        crashPoint = 1.00 + Math.random() * 0.15;
+        crashPoint = Math.floor((100 / (1 - Math.random())) / 1) / 100;
+        // Limit max crash to 1000x for safety
+        if (crashPoint > 1000) crashPoint = 1000;
     }
-    return { crashPoint, startTime: Date.now(), status: 'playing', bet, forceWin: win };
+    
+    return { crashPoint, startTime: Date.now(), status: 'playing', bet };
 };
 
 const handleHiLoStart = (bet) => {
@@ -163,7 +170,54 @@ const handleWheelSpin = (bet) => {
         segmentIdx = loseIndices[Math.floor(Math.random() * loseIndices.length)] || 0;
     }
     const multiplier = segments[segmentIdx];
-    return { segmentIdx, segments, multiplier, winAmount: Math.floor(bet * multiplier) };
+    // "столько + он получал к той сумме" - interpretation: Bet + (Bet * Multiplier)
+    const winAmount = multiplier > 0 ? Math.floor(bet + (bet * multiplier)) : 0;
+    return { segmentIdx, segments, multiplier, winAmount };
+};
+
+const handleTower = (bet, level) => {
+    const risk = 0.25; // 25% chance of lose on each step
+    const win = Math.random() > risk;
+    const multiplier = Math.pow(1.5, level);
+    return { win, multiplier, currentLevel: level };
+};
+
+const handleKeno = (bet, picks) => {
+    const draws = [];
+    while (draws.length < 10) {
+        const n = Math.floor(Math.random() * 40) + 1;
+        if (!draws.includes(n)) draws.push(n);
+    }
+    const matches = picks.filter(p => draws.includes(p)).length;
+    let multiplier = 0;
+    if (matches === 1) multiplier = 1.5;
+    else if (matches === 2) multiplier = 3;
+    else if (matches === 3) multiplier = 10;
+    else if (matches >= 4) multiplier = 50;
+    return { draws, matches, multiplier, winAmount: Math.floor(bet * multiplier) };
+};
+
+const handleScratch = (bet) => {
+    const win = shouldWin();
+    const symbols = ['7', 'X', 'O', 'V', 'A'];
+    if (win) {
+        const s = symbols[Math.floor(Math.random() * symbols.length)];
+        return { symbols: [s, s, s], multiplier: 5, winAmount: bet * 5 };
+    }
+    return { symbols: ['7', 'X', 'O'].sort(() => Math.random() - 0.5), multiplier: 0, winAmount: 0 };
+};
+
+const handleBaccarat = (bet, betOn) => {
+    // Simple Baccarat: Player vs Banker
+    const pValue = Math.floor(Math.random() * 10);
+    const bValue = Math.floor(Math.random() * 10);
+    let result = 'tie';
+    if (pValue > bValue) result = 'player';
+    else if (pValue < bValue) result = 'banker';
+    
+    let win = result === betOn;
+    let multiplier = win ? (betOn === 'tie' ? 8 : 2) : 0;
+    return { pValue, bValue, result, win, multiplier, winAmount: Math.floor(bet * multiplier) };
 };
 
 export {
@@ -179,6 +233,10 @@ export {
     handleCrashStart,
     handleHiLoStart,
     handleWheelSpin,
+    handleTower,
+    handleKeno,
+    handleScratch,
+    handleBaccarat,
     getCardValue,
     shouldWin
 };

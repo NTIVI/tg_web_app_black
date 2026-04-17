@@ -14,10 +14,21 @@ const Top = () => {
     setLoading(true);
     setError(null);
     try {
-      const token = sessionStorage.getItem('auth_token');
+      let token = sessionStorage.getItem('auth_token');
+      
+      // If no token, wait up to 3 seconds (it might be initializing in App.tsx)
       if (!token) {
-        // If no token, wait a bit and retry once (could be initializing)
+        let retries = 0;
+        while (!token && retries < 6) {
+           await new Promise(r => setTimeout(r, 500));
+           token = sessionStorage.getItem('auth_token');
+           retries++;
+        }
+      }
+
+      if (!token) {
         setError("Авторизация...");
+        setLoading(false);
         return;
       }
 

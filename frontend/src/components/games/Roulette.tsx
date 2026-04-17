@@ -61,12 +61,18 @@ const Roulette: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
       }
 
       const winNumber = data.winNumber;
-      // Calculate offset for the infinite tape
+      const itemWidth = 70;
       const indexInTape = ROULETTE_NUMBERS.indexOf(winNumber) + (ROULETTE_NUMBERS.length * 2);
-      const itemWidth = 70; // Adjusted for premium look
-      const offset = (indexInTape * (itemWidth + 10)) - (window.innerWidth / 2) + (itemWidth / 2) + 20;
 
-      setRotation(offset);
+      const currentOffset = rotation % (ROULETTE_NUMBERS.length * (itemWidth + 10));
+      const targetOffset = indexInTape * (itemWidth + 10) - (window.innerWidth / 2) + (itemWidth / 2) + 20;
+      
+      const additionalRotation = (targetOffset - currentOffset + (ROULETTE_NUMBERS.length * (itemWidth + 10)) * 2) % (ROULETTE_NUMBERS.length * (itemWidth + 10));
+      
+      // Ensure we spin at least one full tape
+      const finalAdditional = additionalRotation + (ROULETTE_NUMBERS.length * (itemWidth + 10));
+      
+      setRotation(prev => prev + finalAdditional);
 
       setTimeout(() => {
         setSpinning(false);

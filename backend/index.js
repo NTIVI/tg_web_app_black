@@ -46,10 +46,21 @@ const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_donotuseinprod';
 
 let memoizedSecretKey = null;
 const verifyInitData = (initData) => {
+    // If no token is configured, or we're in development, allow the request
     if (!token) return true;
+    
+    // In local development, we sometimes don't have initData. 
+    // We'll allow empty initData ONLY if not in production.
+    if (!initData && process.env.NODE_ENV === 'development') {
+        console.warn('Auth: Permitting empty initData in development mode.');
+        return true;
+    }
+
     try {
         const urlParams = new URLSearchParams(initData);
         const hash = urlParams.get('hash');
+        if (!hash && process.env.NODE_ENV === 'development') return true;
+
         urlParams.delete('hash');
         urlParams.sort();
         let dataCheckString = '';
@@ -61,14 +72,20 @@ const verifyInitData = (initData) => {
         const isValid = crypto.createHmac('sha256', memoizedSecretKey).update(dataCheckString).digest('hex') === hash;
         
         if (isValid) {
-            // Check auth_date to prevent replay attacks (optional but good, e.g. within 24h)
             const authDate = parseInt(urlParams.get('auth_date') || '0');
             const now = Math.floor(Date.now() / 1000);
-            if (now - authDate > 86400) return false;
+            if (now - authDate > 86400) {
+                console.error('Auth: initData has expired (older than 24h)');
+                return false;
+            }
         }
         
+        if (!isValid) console.error('Auth: Invalid hash in initData');
         return isValid;
-    } catch { return false; }
+    } catch (e) { 
+        console.error('Auth: Error parsing initData:', e.message);
+        return false; 
+    }
 };
 
 const requireAuth = (req, res, next) => {

@@ -60,7 +60,7 @@ const Top = () => {
     return (amount / 100).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  if (loading) {
+  if (loading && topUsers.length === 0) {
     return (
       <div className="page" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', gap: '20px' }}>
         <div className="spinner"></div>

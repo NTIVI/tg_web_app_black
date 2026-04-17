@@ -208,6 +208,12 @@ const initDB = async () => {
             await client.query(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING`, [k, v]);
         }
 
+        // Add Indexes for performance
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_game_history_tid ON game_history(telegram_id)`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_purchases_tid ON purchases(telegram_id)`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_user_quests_tid ON user_quests(telegram_id)`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_bonuses_claimed_tid ON bonuses_claimed(telegram_id)`);
+
         client.release();
         console.log('Database schema initialized.');
     } catch (err) {

@@ -43,61 +43,47 @@ function App() {
   const [showDailyModal, setShowDailyModal] = useState(false);
   const [dailyStatus, setDailyStatus] = useState<any>(null);
   const [claimingDaily, setClaimingDaily] = useState(false);
-  const [isBot, setIsBot] = useState(false);
+  
+  const [initFinished, setInitFinished] = useState(false);
+  const [tokenReceived, setTokenReceived] = useState(false);
   
   useEffect(() => {
-    // Basic Client-Side Bot Check
-    if (navigator.webdriver) {
-      setIsBot(true);
-      console.warn('Bot detected by navigator.webdriver');
-    }
-
     const tg = (window as any).Telegram?.WebApp;
     if (tg) {
       tg.ready();
       tg.expand();
-      if (tg.themeParams) {
-        Object.entries(tg.themeParams).forEach(([key, val]: [string, any]) => {
-          document.documentElement.style.setProperty(`--tg-${key.replace(/_/g, '-')}`, val);
-        });
-      }
     }
 
-    // Minimum 3.5s Luxury Loader (only if onboarded)
-    const loaderTimer = setTimeout(() => {
-        setShowLuxuryLoader(false);
-    }, 3500);
+    // Minimum delay for eye candy branding, then hide if data is ready
+    const minTime = 1200;
+    const startTime = Date.now();
 
-    // Initial load: Auth once on mount
-    init(true);
+    const startApp = async () => {
+      await init(true);
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, minTime - elapsed);
+      setTimeout(() => setShowLuxuryLoader(false), remaining);
+    };
 
-    return () => clearTimeout(loaderTimer);
+    startApp();
   }, []);
-
-  // const location = useLocation();
-  // useEffect(() => {
-  //   // Refresh data on every navigation transition (removed to avoid rate limits)
-  //   // init(false);
-  // }, [location.pathname]);
 
   const init = async (isStartup = false) => {
     const tg = (window as any).Telegram?.WebApp;
     const user = tg?.initDataUnsafe?.user || { id: "12345", username: "MockUser", first_name: "Mock", last_name: "Account" };
     const initData = tg?.initData || "";
 
-    // Optimistically set user from TG if cache is empty
     if (!localStorage.getItem('cached_user')) {
         setTgUser(user);
     }
 
-    // isStartup loading handled by LuxuryLoader logic
     setError(null);
-
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     try {
-      const res = await fetch(`${API_URL}/auth`, {
+      // Step 1: Authentication (Primary)
+      const authRes = await fetch(`${API_URL}/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ initData, tgUser: user }),
@@ -105,13 +91,18 @@ function App() {
       });
       clearTimeout(timeoutId);
 
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
-      const data = await res.json();
+      if (!authRes.ok) {
+          const errorData = await authRes.json().catch(() => ({}));
+          throw new Error(errorData.error || `Server error: ${authRes.status}`);
+      }
+      
+      const data = await authRes.json();
       
       if (data.token) {
         sessionStorage.setItem('auth_token', data.token);
+        setTokenReceived(true);
       } else {
-        console.error('No token received from auth');
+        throw new Error('Не удалось получить токен доступа');
       }
       
       if (data.user) {
@@ -121,21 +112,23 @@ function App() {
         setPurchases(data.purchases || []);
         setQuests(data.quests || []);
         
-        // Cache everything
+        // Cache
         localStorage.setItem('cached_user', JSON.stringify(updatedUser));
         localStorage.setItem('cached_balance', data.user.balance.toString());
         localStorage.setItem('cached_purchases', JSON.stringify(data.purchases || []));
         localStorage.setItem('cached_quests', JSON.stringify(data.quests || []));
         
+        // Step 2: Parallel background fetches after auth is successful
         checkDailyBonus(user.id);
       }
+      setInitFinished(true);
     } catch (e: any) {
       console.error('Init error:', e);
+      setInitFinished(true); // Still finish to hide loader
+      setTokenReceived(false);
       if (isStartup) {
-        setError(e.name === 'AbortError' ? 'Сервер не отвечает. Проверьте интернет.' : e.message);
+        setError(e.name === 'AbortError' ? 'Сервер не отвечает.' : e.message);
       }
-    } finally {
-      // isStartup loading handled by LuxuryLoader logic
     }
   };
 
@@ -299,18 +292,14 @@ function App() {
   if (showOnboarding) return <Onboarding />;
   if (showLuxuryLoader) return <LuxuryLoader />;
 
-  if (isBot) return (
-    <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px', textAlign: 'center', padding: '20px' }}>
-      <h2 style={{ color: 'var(--danger-color)' }}>Доступ ограничен</h2>
-      <p>Использование ботов и средств автоматизации запрещено. Пожалуйста, используйте официальное приложение Telegram.</p>
-    </div>
-  );
 
-  if (error && !tgUser) return (
-    <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px', textAlign: 'center' }}>
-      <h2>Ошибка входа</h2>
-      <p>{error}</p>
-      <button className="btn-primary" onClick={() => init(true)}>Попробовать снова</button>
+  if ((error || !tokenReceived) && initFinished) return (
+    <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px', textAlign: 'center', padding: '0 40px' }}>
+      <h2 style={{ marginBottom: '8px' }}>Ошибка входа</h2>
+      <p style={{ opacity: 0.7, marginBottom: '16px' }}>{error || 'Не удалось установить защищенное соединение с сервером.'}</p>
+      <button className="btn-primary" style={{ width: '200px' }} onClick={() => { setInitFinished(false); setShowLuxuryLoader(true); init(true); }}>
+        Попробовать снова
+      </button>
     </div>
   );
 

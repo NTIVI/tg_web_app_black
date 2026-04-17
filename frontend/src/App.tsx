@@ -45,7 +45,6 @@ function App() {
   const [claimingDaily, setClaimingDaily] = useState(false);
   
   const [initFinished, setInitFinished] = useState(false);
-  const [tokenReceived, setTokenReceived] = useState(false);
   
   useEffect(() => {
     const tg = (window as any).Telegram?.WebApp;
@@ -100,7 +99,6 @@ function App() {
       
       if (data.token) {
         sessionStorage.setItem('auth_token', data.token);
-        setTokenReceived(true);
       } else {
         throw new Error('Не удалось получить токен доступа');
       }
@@ -125,7 +123,6 @@ function App() {
     } catch (e: any) {
       console.error('Init error:', e);
       setInitFinished(true); // Still finish to hide loader
-      setTokenReceived(false);
       if (isStartup) {
         setError(e.name === 'AbortError' ? 'Сервер не отвечает.' : e.message);
       }

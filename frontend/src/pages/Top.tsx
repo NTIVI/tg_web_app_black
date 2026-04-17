@@ -14,28 +14,18 @@ const Top = () => {
     setLoading(true);
     setError(null);
     try {
-      let token = sessionStorage.getItem('auth_token');
+      const token = sessionStorage.getItem('auth_token');
+      // No strict token requirement here, backend handles fallback
       
-      // If no token, wait up to 3 seconds (it might be initializing in App.tsx)
-      if (!token) {
-        let retries = 0;
-        while (!token && retries < 6) {
-           await new Promise(r => setTimeout(r, 500));
-           token = sessionStorage.getItem('auth_token');
-           retries++;
-        }
-      }
-
-      if (!token) {
-        setError("Авторизация...");
-        setLoading(false);
-        return;
-      }
-
-      const headers = {
-        'Authorization': `Bearer ${token}`
+      const headers: any = {
+        'Content-Type': 'application/json'
       };
-
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      // We don't have tgUser here easily unless we pass it, 
+      // but the backend's /top might not need auth or can use session.
+      // Actually, let's just make it call without token if missing.
+      
       const res = await fetch(`${API_URL}/top`, { headers });
       if (!res.ok) throw new Error(`Ошибка: ${res.status}`);
       

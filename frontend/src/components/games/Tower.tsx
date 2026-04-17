@@ -4,7 +4,7 @@ import BetControls from './BetControls';
 import ResultOverlay from './ResultOverlay';
 import { Skull, Trophy } from 'lucide-react';
 
-const Tower: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
+const Tower: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [status, setStatus] = useState<'idle' | 'playing' | 'win' | 'lose'>('idle');
   const [level, setLevel] = useState(0);
@@ -24,18 +24,18 @@ const Tower: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   };
 
   const startGame = async () => {
-    const token = sessionStorage.getItem('auth_token');
-    if (!token) { setMessage('⚠️ Войдите снова'); return; }
     if (balance < bet) { setMessage('❌ Недостаточно баланса'); return; }
 
     setLoading(true);
     setMessage('');
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/play`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ game: 'tower', bet }),
       });
@@ -60,11 +60,13 @@ const Tower: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
     setLoading(true);
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ action: 'step', level: level + 1, choice }),
       });
@@ -93,11 +95,13 @@ const Tower: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
     if (level === 0 || loading) return;
     setLoading(true);
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ action: 'cashout' }),
       });

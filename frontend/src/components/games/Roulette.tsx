@@ -15,7 +15,7 @@ const getColor = (num: number) => {
   return reds.includes(num) ? '#ef4444' : '#1a1a1a'; // Red or Black
 };
 
-const Roulette: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
+const Roulette: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [betOn, setBetOn] = useState<'red' | 'black' | 'green'>('red');
   const [spinning, setSpinning] = useState(false);
@@ -29,12 +29,6 @@ const Roulette: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const tapeNumbers = [...ROULETTE_NUMBERS, ...ROULETTE_NUMBERS, ...ROULETTE_NUMBERS, ...ROULETTE_NUMBERS, ...ROULETTE_NUMBERS];
 
   const handlePlay = async () => {
-    const token = sessionStorage.getItem('auth_token');
-    if (!token) {
-        setMessage('⚠️ Пожалуйста, войдите снова');
-        return;
-    }
-
     if (balance < bet) {
       setMessage('❌ Недостаточно баланса');
       return;
@@ -44,11 +38,13 @@ const Roulette: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
     setMessage('');
 
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/play`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ game: 'roulette', bet, betOn }),
       });

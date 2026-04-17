@@ -15,7 +15,7 @@ const SYMBOLS = [
   { icon: <Cherry size={32} />, color: '#ef4444', value: 'cherry', label: 'Fruit', multiplier: 1 },
 ];
 
-const Slots: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
+const Slots: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [spinning, setSpinning] = useState(false);
   const [reels, setReels] = useState([[0, 1, 2], [1, 2, 0], [2, 0, 1], [0, 2, 1], [1, 0, 2]]);
@@ -25,12 +25,6 @@ const Slots: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [overlayData, setOverlayData] = useState<{ win: boolean; title: string; subtitle: string; amount?: number }>({ win: false, title: '', subtitle: '' });
 
   const spinReels = async () => {
-    const token = sessionStorage.getItem('auth_token');
-    if (!token) {
-        setMessage('⚠️ Пожалуйста, войдите снова');
-        return;
-    }
-
     if (balance < bet) {
       setMessage('❌ Недостаточно баланса');
       return;
@@ -41,11 +35,13 @@ const Slots: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
     setWinAmount(0);
 
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/play`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ game: 'slots', bet }),
       });

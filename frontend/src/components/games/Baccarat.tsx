@@ -3,7 +3,7 @@ import { API_URL } from '../../config';
 import BetControls from './BetControls';
 import ResultOverlay from './ResultOverlay';
 
-const Baccarat: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
+const Baccarat: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [betOn, setBetOn] = useState<'player' | 'banker' | 'tie'>('player');
   const [status, setStatus] = useState<'idle' | 'playing' | 'revealed'>('idle');
@@ -14,11 +14,6 @@ const Baccarat: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [overlayData, setOverlayData] = useState<any>({ win: false, title: '', subtitle: '' });
 
   const handlePlay = async () => {
-    const token = sessionStorage.getItem('auth_token');
-    if (!token) {
-        setMessage('⚠️ Пожалуйста, войдите снова');
-        return;
-    }
     if (balance < bet) { setMessage('❌ Недостаточно баланса'); return; }
 
     setLoading(true);
@@ -26,11 +21,13 @@ const Baccarat: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
     setMessage('');
 
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/play`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ game: 'baccarat', bet, betOn }),
       });

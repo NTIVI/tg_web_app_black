@@ -8,10 +8,11 @@ import { Gem, Bomb, AlertCircle, Trophy, TrendingUp } from 'lucide-react';
 interface MinesProps {
   balance: number;
   setBalance: (val: number) => void;
+  tgUser?: any;
   setTgUser?: (val: (prev: any) => any) => void;
 }
 
-const Mines: React.FC<MinesProps> = ({ balance, setBalance, setTgUser }) => {
+const Mines: React.FC<MinesProps> = ({ balance, setBalance, tgUser, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [mineCount, setMineCount] = useState(3);
   const [status, setStatus] = useState<'idle' | 'playing' | 'win' | 'lose'>('idle');
@@ -44,8 +45,6 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, setTgUser }) => {
   };
 
   const startGame = async () => {
-    const token = sessionStorage.getItem('auth_token');
-    if (!token) { setMessage('⚠️ Пожалуйста, войдите снова'); return; }
     if (balance < bet) { setMessage('❌ Недостаточно баланса'); return; }
 
     setLoading(true);
@@ -55,11 +54,13 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, setTgUser }) => {
     setMessage('');
 
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/play`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ game: 'mines', bet, mineCount }),
       });
@@ -84,11 +85,13 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, setTgUser }) => {
 
     setLoading(true);
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ action: 'open', index }),
       });
@@ -127,11 +130,13 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, setTgUser }) => {
 
     setLoading(true);
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ action: 'cashout' }),
       });

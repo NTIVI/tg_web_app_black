@@ -5,7 +5,7 @@ import BetControls from './BetControls';
 import ResultOverlay from './ResultOverlay';
 import { Zap, Rocket, History, AlertCircle } from 'lucide-react';
 
-const Crash: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
+const Crash: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [status, setStatus] = useState<'idle' | 'playing' | 'cashedOut' | 'crashed'>('idle');
   const [multiplier, setMultiplier] = useState(1.00);
@@ -50,19 +50,14 @@ const Crash: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
     hashedCashedOutRef.current = true;
     stopTimer();
 
-    const token = sessionStorage.getItem('auth_token');
-    if (!token) {
-        setMessage('⚠️ Пожалуйста, войдите снова');
-        hashedCashedOutRef.current = false;
-        return;
-    }
-
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ action: 'cashout' }),
       });
@@ -101,8 +96,6 @@ const Crash: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   }, [multiplier, setBalance, setTgUser, stopTimer, status, bet]);
 
   const startGame = async () => {
-    const token = sessionStorage.getItem('auth_token');
-    if (!token) { setMessage('⚠️ Войдите снова'); return; }
     if (balance < bet) { setMessage('❌ Недостаточно баланса'); return; }
 
     setLoading(true);
@@ -111,11 +104,13 @@ const Crash: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
     hashedCashedOutRef.current = false;
 
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/play`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ game: 'crash', bet }),
       });

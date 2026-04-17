@@ -43,7 +43,7 @@ const PremiumCard = ({ card }: { card: any }) => (
   </motion.div>
 );
 
-const HiLo: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
+const HiLo: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [status, setStatus] = useState<'idle' | 'playing' | 'win' | 'lose'>('idle');
   const [currentCard, setCurrentCard] = useState<any>(null);
@@ -62,12 +62,6 @@ const HiLo: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   };
 
   const startGame = async () => {
-    const token = sessionStorage.getItem('auth_token');
-    if (!token) {
-        setMessage('⚠️ Пожалуйста, войдите снова');
-        return;
-    }
-
     if (balance < bet) {
       setMessage('❌ Недостаточно баланса');
       return;
@@ -78,11 +72,13 @@ const HiLo: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
     setMultiplier(1.0);
     
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/play`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ game: 'hilo', bet }),
       });
@@ -108,11 +104,13 @@ const HiLo: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
     setLoading(true);
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/action`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ action: 'guess', guess }),
       });
@@ -145,11 +143,13 @@ const HiLo: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
 
     setLoading(true);
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/action`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ action: 'cashout' }),
       });

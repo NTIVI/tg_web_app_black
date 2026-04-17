@@ -5,7 +5,7 @@ import BetControls from './BetControls';
 import ResultOverlay from './ResultOverlay';
 import { Dice6, Trophy, Sparkles, AlertCircle } from 'lucide-react';
 
-const Dice: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
+const Dice: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [target, setTarget] = useState(50);
   const [type, setType] = useState<'under' | 'over'>('under');
@@ -19,12 +19,6 @@ const Dice: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const multiplier = winChance > 0 ? (98 / winChance).toFixed(2) : '0.00';
 
   const handleRoll = async () => {
-    const token = sessionStorage.getItem('auth_token');
-    if (!token) {
-        setMessage('⚠️ Пожалуйста, войдите снова');
-        return;
-    }
-
     if (balance < bet) {
       setMessage('❌ Недостаточно баланса');
       return;
@@ -35,11 +29,13 @@ const Dice: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
     setResult(null);
 
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/play`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ game: 'dice', bet, target, type }),
       });

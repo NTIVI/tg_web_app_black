@@ -53,7 +53,7 @@ const Card = ({ card, hidden, index }: { card: any, hidden?: boolean, index: num
   </motion.div>
 );
 
-const Blackjack: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
+const Blackjack: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [status, setStatus] = useState<'idle' | 'playing' | 'win' | 'lose' | 'push' | 'bust'>('idle');
   const [playerHand, setPlayerHand] = useState<any[]>([]);
@@ -72,12 +72,6 @@ const Blackjack: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   };
 
   const startLevel = async () => {
-    const token = sessionStorage.getItem('auth_token');
-    if (!token) {
-        setMessage('⚠️ Пожалуйста, войдите снова');
-        return;
-    }
-
     if (balance < bet) {
       setMessage('❌ Недостаточно баланса');
       return;
@@ -86,11 +80,13 @@ const Blackjack: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
     setLoading(true);
     setMessage('');
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/play`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ game: 'blackjack', bet }),
       });
@@ -115,11 +111,13 @@ const Blackjack: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const handleAction = async (action: 'hit' | 'stand') => {
     setLoading(true);
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/action`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ action }),
       });

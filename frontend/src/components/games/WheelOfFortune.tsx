@@ -8,7 +8,7 @@ import { Sparkles, Zap, AlertCircle } from 'lucide-react';
 const SEGMENTS = [0, 1.2, 0.5, 2, 0, 1.5, 5, 0.2, 1.1, 0, 10, 0.5, 1.2, 0, 20];
 const SEGMENT_ANGLE = 360 / SEGMENTS.length;
 
-const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
+const WheelOfFortune: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
@@ -18,11 +18,6 @@ const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [overlayData, setOverlayData] = useState<{ win: boolean; title: string; subtitle: string; amount?: number }>({ win: false, title: '', subtitle: '' });
 
   const handleSpin = async () => {
-    const token = sessionStorage.getItem('auth_token');
-    if (!token) {
-        setMessage('⚠️ Пожалуйста, войдите снова');
-        return;
-    }
 
     if (balance < bet) {
       setMessage('❌ Недостаточно баланса');
@@ -34,11 +29,13 @@ const WheelOfFortune: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
     setMessage('');
 
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/play`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ game: 'wheel', bet }),
       });

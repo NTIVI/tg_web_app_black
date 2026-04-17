@@ -3,7 +3,7 @@ import { API_URL } from '../../config';
 import BetControls from './BetControls';
 import ResultOverlay from './ResultOverlay';
 
-const Keno: React.FC<any> = ({ setBalance, setTgUser }) => {
+const Keno: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [picks, setPicks] = useState<number[]>([]);
   const [draws, setDraws] = useState<number[]>([]);
@@ -19,22 +19,20 @@ const Keno: React.FC<any> = ({ setBalance, setTgUser }) => {
 
   const handlePlay = async () => {
     if (picks.length === 0) { setMessage('⚠️ Выберите числа'); return; }
-    const token = sessionStorage.getItem('auth_token');
-    if (!token) {
-        setMessage('⚠️ Пожалуйста, войдите снова');
-        return;
-    }
+    if (balance < bet) { setMessage('❌ Недостаточно баланса'); return; }
 
     setLoading(true);
     setDraws([]);
     setMessage('');
 
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/play`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ game: 'keno', bet, picks }),
       });

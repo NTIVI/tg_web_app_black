@@ -5,7 +5,7 @@ import BetControls from './BetControls';
 import ResultOverlay from './ResultOverlay';
 import { Gift } from 'lucide-react';
 
-const Scratch: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
+const Scratch: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [status, setStatus] = useState<'idle' | 'scratching' | 'revealed'>('idle');
   const [symbols, setSymbols] = useState<string[]>(['?', '?', '?']);
@@ -16,21 +16,18 @@ const Scratch: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [overlayData, setOverlayData] = useState<any>({ win: false, title: '', subtitle: '' });
 
   const startScratch = async () => {
-    const token = sessionStorage.getItem('auth_token');
-    if (!token) {
-        setMessage('⚠️ Пожалуйста, войдите снова');
-        return;
-    }
     if (balance < bet) { setMessage('❌ Недостаточно баланса'); return; }
 
     setLoading(true);
     setMessage('');
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/play`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ game: 'scratch', bet }),
       });

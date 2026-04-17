@@ -8,7 +8,7 @@ import { Trophy, AlertCircle } from 'lucide-react';
 const ROWS = 8;
 const BUCKETS = [10, 5, 2, 0.5, 0.2, 0.2, 0.5, 2, 5, 10];
 
-const Plinko: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
+const Plinko: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
   const [bet, setBet] = useState(100);
   const [loading, setLoading] = useState(false);
   const [dropping, setDropping] = useState(false);
@@ -19,11 +19,6 @@ const Plinko: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
   const [overlayData, setOverlayData] = useState<{ win: boolean; title: string; subtitle: string; amount?: number }>({ win: false, title: '', subtitle: '' });
 
   const handleDrop = async () => {
-    const token = sessionStorage.getItem('auth_token');
-    if (!token) {
-        setMessage('⚠️ Пожалуйста, войдите снова');
-        return;
-    }
 
     if (balance < bet) {
       setMessage('❌ Недостаточно баланса');
@@ -37,11 +32,13 @@ const Plinko: React.FC<any> = ({ balance, setBalance, setTgUser }) => {
     setBallPos({ x: 50, y: 5 });
     
     try {
+      const token = sessionStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/games/play`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Telegram-Id': tgUser?.telegram_id || tgUser?.id || ''
         },
         body: JSON.stringify({ game: 'plinko', bet }),
       });

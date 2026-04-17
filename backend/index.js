@@ -88,18 +88,35 @@ const verifyInitData = (initData) => {
     }
 };
 
-const requireAuth = (req, res, next) => {
+const requireAuth = async (req, res, next) => {
     const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
-    
-    const token = authHeader.split(' ')[1];
-    try {
-        const decoded = jwt.verify(token, jwtSecret);
-        req.user = decoded;
-        next();
-    } catch (err) {
-        return res.status(401).json({ error: 'Invalid or expired token' });
+    const xTid = req.headers['x-telegram-id'];
+
+    if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        try {
+            const decoded = jwt.verify(token, jwtSecret);
+            req.user = decoded;
+            return next();
+        } catch (err) {
+            // If token is invalid but we have X-TID, we'll try the fallback
+            if (!xTid) return res.status(401).json({ error: 'Invalid or expired token' });
+        }
     }
+    
+    // Fallback: Use X-Telegram-Id header (for 'no-token' mode)
+    if (xTid) {
+        try {
+            const user = await DB.get('SELECT telegram_id, username FROM users WHERE telegram_id = ?', [xTid]);
+            if (!user) return res.status(401).json({ error: 'User not found' });
+            req.user = { id: user.telegram_id, username: user.username };
+            return next();
+        } catch (err) {
+            return res.status(500).json({ error: 'Database error during auth' });
+        }
+    }
+
+    return res.status(401).json({ error: 'Unauthorized: No token or ID provided' });
 };
 
 const requireAdmin = (req, res, next) => {

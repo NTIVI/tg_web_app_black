@@ -293,10 +293,10 @@ function App() {
   if (showLuxuryLoader) return <LuxuryLoader />;
 
 
-  if ((error || !tokenReceived) && initFinished) return (
+  if ((error && !tgUser) && initFinished) return (
     <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '20px', textAlign: 'center', padding: '0 40px' }}>
       <h2 style={{ marginBottom: '8px' }}>Ошибка входа</h2>
-      <p style={{ opacity: 0.7, marginBottom: '16px' }}>{error || 'Не удалось установить защищенное соединение с сервером.'}</p>
+      <p style={{ opacity: 0.7, marginBottom: '16px' }}>{error}</p>
       <button className="btn-primary" style={{ width: '200px' }} onClick={() => { setInitFinished(false); setShowLuxuryLoader(true); init(true); }}>
         Попробовать снова
       </button>

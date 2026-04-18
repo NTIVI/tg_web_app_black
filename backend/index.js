@@ -735,7 +735,7 @@ app.post('/api/games/action', requireAuth, async (req, res) => {
             const active = await tx.get('SELECT * FROM active_games WHERE telegram_id = ?', [telegramId]);
             if (!active) throw new Error('Нет активной игры');
 
-            const state = JSON.parse(active.state);
+            const state = typeof active.state === 'string' ? JSON.parse(active.state) : active.state;
             const bet = Number(active.bet_amount);
 
             if (active.game_name === 'blackjack') {

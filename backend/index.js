@@ -590,12 +590,21 @@ app.post('/api/games/play', requireAuth, async (req, res) => {
             }
 
             let result;
-            if (game === 'slots') result = GamesLogic.handleSlots(bet);
-            else if (game === 'roulette') result = GamesLogic.handleRoulette(bet, betOn);
-            else if (game === 'dice') result = GamesLogic.handleDice(bet, Number(req.body.target || 50), req.body.type);
-            else if (game === 'coinflip') result = GamesLogic.handleCoinFlip(bet, betOn);
-            else if (game === 'plinko') result = GamesLogic.handlePlinko(bet, risk);
-            else if (game === 'wheel') result = GamesLogic.handleWheelSpin(bet);
+            if (['slots', 'roulette', 'dice', 'coinflip', 'plinko', 'wheel'].includes(game)) {
+                if (game === 'slots') result = GamesLogic.handleSlots(bet);
+                else if (game === 'roulette') result = GamesLogic.handleRoulette(bet, betOn);
+                else if (game === 'dice') result = GamesLogic.handleDice(bet, Number(req.body.target || 50), req.body.type);
+                else if (game === 'coinflip') result = GamesLogic.handleCoinFlip(bet, betOn);
+                else if (game === 'plinko') result = GamesLogic.handlePlinko(bet, risk);
+                else if (game === 'wheel') result = GamesLogic.handleWheelSpin(bet);
+                
+                const winAmount = result.winAmount;
+                const xpGain = Math.floor(bet / 10);
+                await tx.run('UPDATE users SET balance = balance + ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ?, total_wins_sum = total_wins_sum + ?, xp = xp + ?, level = FLOOR((xp + ?) / 1000) + 1 WHERE telegram_id = ?', 
+                    [winAmount - bet, bet, winAmount, xpGain, xpGain, telegramId]);
+                const updated = await tx.get('SELECT balance, xp, level FROM users WHERE telegram_id = ?', [telegramId]);
+                return { ...result, ...updated, shouldUpdateQuests: true, winAmount, bet };
+            }
             else if (game === 'crash') {
                 const state = GamesLogic.handleCrashStart(bet);
                 await tx.run('INSERT INTO active_games (telegram_id, game_name, bet_amount, state) VALUES (?, ?, ?, ?) ON CONFLICT(telegram_id) DO UPDATE SET game_name=excluded.game_name, bet_amount=excluded.bet_amount, state=excluded.state', 
@@ -650,7 +659,7 @@ app.post('/api/games/play', requireAuth, async (req, res) => {
                  const result = GamesLogic.handleKeno(bet, req.body.picks);
                  const xpGain = Math.floor(bet / 10);
                  const winAmount = result.winAmount;
-                 await tx.run('UPDATE users SET balance = balance + ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ?, xp = xp + ?, level = FLOOR((xp + ?) / 1000) + 1 WHERE telegram_id = ?', [winAmount - bet, bet, xpGain, xpGain, telegramId]);
+                 await tx.run('UPDATE users SET balance = balance + ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ?, total_wins_sum = total_wins_sum + ?, xp = xp + ?, level = FLOOR((xp + ?) / 1000) + 1 WHERE telegram_id = ?', [winAmount - bet, bet, winAmount, xpGain, xpGain, telegramId]);
                  const updated = await tx.get('SELECT balance, xp, level FROM users WHERE telegram_id = ?', [telegramId]);
                  return { ...result, ...updated, shouldUpdateQuests: true, winAmount, bet };
             }
@@ -658,7 +667,7 @@ app.post('/api/games/play', requireAuth, async (req, res) => {
                  const result = GamesLogic.handleScratch(bet);
                  const xpGain = Math.floor(bet / 10);
                  const winAmount = result.winAmount;
-                 await tx.run('UPDATE users SET balance = balance + ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ?, xp = xp + ?, level = FLOOR((xp + ?) / 1000) + 1 WHERE telegram_id = ?', [winAmount - bet, bet, xpGain, xpGain, telegramId]);
+                 await tx.run('UPDATE users SET balance = balance + ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ?, total_wins_sum = total_wins_sum + ?, xp = xp + ?, level = FLOOR((xp + ?) / 1000) + 1 WHERE telegram_id = ?', [winAmount - bet, bet, winAmount, xpGain, xpGain, telegramId]);
                  const updated = await tx.get('SELECT balance, xp, level FROM users WHERE telegram_id = ?', [telegramId]);
                  return { ...result, ...updated, shouldUpdateQuests: true, winAmount, bet };
             }
@@ -666,7 +675,7 @@ app.post('/api/games/play', requireAuth, async (req, res) => {
                  const result = GamesLogic.handleBaccarat(bet, req.body.betOn);
                  const xpGain = Math.floor(bet / 10);
                  const winAmount = result.winAmount;
-                 await tx.run('UPDATE users SET balance = balance + ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ?, xp = xp + ?, level = FLOOR((xp + ?) / 1000) + 1 WHERE telegram_id = ?', [winAmount - bet, bet, xpGain, xpGain, telegramId]);
+                 await tx.run('UPDATE users SET balance = balance + ?, total_bets_count = total_bets_count + 1, total_bets_sum = total_bets_sum + ?, total_wins_sum = total_wins_sum + ?, xp = xp + ?, level = FLOOR((xp + ?) / 1000) + 1 WHERE telegram_id = ?', [winAmount - bet, bet, winAmount, xpGain, xpGain, telegramId]);
                  const updated = await tx.get('SELECT balance, xp, level FROM users WHERE telegram_id = ?', [telegramId]);
                  return { ...result, ...updated, shouldUpdateQuests: true, winAmount, bet };
             }

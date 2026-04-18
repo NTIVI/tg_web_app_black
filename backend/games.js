@@ -1,4 +1,4 @@
-const shouldWin = () => Math.random() < 0.35; // 35% win probability
+const shouldWin = () => Math.random() < 0.40; // 40% win probability
 
 const SYMBOLS = ['cherry', 'lemon', 'apple', 'bell', 'gem', 'star'];
 const SLOTS_PAYTABLE = {
@@ -176,7 +176,7 @@ const handleWheelSpin = (bet) => {
 };
 
 const handleTower = (bet, level) => {
-    const risk = 0.25; // 25% chance of lose on each step
+    const risk = 0.60; // 60% chance of lose on each step (40% win)
     const win = Math.random() > risk;
     const multiplier = Math.pow(1.5, level);
     return { win, multiplier, currentLevel: level };

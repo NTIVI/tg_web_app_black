@@ -34,6 +34,10 @@ function App() {
     const cached = localStorage.getItem('cached_quests');
     return cached ? JSON.parse(cached) : [];
   });
+  const [adamants, setAdamants] = useState<number>(() => {
+    const cached = localStorage.getItem('cached_adamants');
+    return cached ? parseInt(cached) : 0;
+  });
 
   const [error, setError] = useState<string | null>(null);
   const [showLuxuryLoader, setShowLuxuryLoader] = useState(true);
@@ -115,6 +119,8 @@ function App() {
         localStorage.setItem('cached_balance', data.user.balance.toString());
         localStorage.setItem('cached_purchases', JSON.stringify(data.purchases || []));
         localStorage.setItem('cached_quests', JSON.stringify(data.quests || []));
+        localStorage.setItem('cached_adamants', (data.user.adamants || 0).toString());
+        setAdamants(data.user.adamants || 0);
         
         // Step 2: Parallel background fetches after auth is successful
         checkDailyBonus(user.id);
@@ -190,6 +196,14 @@ function App() {
     });
   };
 
+  const updateAdamants = (newVal: number | ((prev: number) => number)) => {
+    setAdamants(prev => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
+      localStorage.setItem('cached_adamants', updated.toString());
+      return updated;
+    });
+  };
+
   const completeOnboarding = () => {
     localStorage.setItem('onboarding_completed', 'true');
     setShowOnboarding(false);
@@ -207,7 +221,9 @@ function App() {
     setQuests,
     dailyStatus,
     handleClaimDaily,
-    claimingDaily
+    claimingDaily,
+    adamants,
+    setAdamants: updateAdamants
   };
 
   // Luxury Loader Component

@@ -39,7 +39,8 @@ const initDB = async () => {
             last_surf_watch TIMESTAMP,
             total_bets_count INTEGER DEFAULT 0,
             total_bets_sum BIGINT DEFAULT 0,
-            total_wins_sum BIGINT DEFAULT 0
+            total_wins_sum BIGINT DEFAULT 0,
+            adamants BIGINT DEFAULT 0
         )`);
 
         // Update Users Table: Remove stock columns if they exist, add stats columns if they don't
@@ -49,6 +50,7 @@ const initDB = async () => {
             await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS total_bets_count INTEGER DEFAULT 0`);
             await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS total_bets_sum BIGINT DEFAULT 0`);
             await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS total_wins_sum BIGINT DEFAULT 0`);
+            await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS adamants BIGINT DEFAULT 0`);
         } catch (e) {}
 
         // Purchases Table
@@ -111,6 +113,16 @@ const initDB = async () => {
             bet_amount BIGINT,
             state JSONB,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`);
+        
+        // Withdrawals Table
+        await client.query(`CREATE TABLE IF NOT EXISTS withdrawals (
+            id SERIAL PRIMARY KEY,
+            telegram_id TEXT,
+            amount_adamants INTEGER NOT NULL,
+            payout_info TEXT NOT NULL,
+            status TEXT DEFAULT 'pending', -- 'pending', 'completed', 'rejected'
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`);
 
         // Settings Table

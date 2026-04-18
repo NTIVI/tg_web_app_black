@@ -18,7 +18,9 @@ import {
   Plus, 
   Minus,
   AlertCircle,
-  Zap
+  AlertCircle,
+  Zap,
+  HandCoins
 } from 'lucide-react';
 
 const Admin = () => {
@@ -28,7 +30,8 @@ const Admin = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [purchases, setPurchases] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'users' | 'ads' | 'purchases' | 'social' | 'news' | 'shop'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'ads' | 'purchases' | 'social' | 'news' | 'shop' | 'withdrawals'>('users');
+  const [withdrawals, setWithdrawals] = useState<any[]>([]);
   
   // Ads settings
   const [adsEnabled, setAdsEnabled] = useState(false);
@@ -105,6 +108,10 @@ const Admin = () => {
         const res = await fetch(`${API_URL}/shop/items`, { headers });
         const data = await res.json();
         if (data.items) setShopItems(data.items);
+      } else if (activeTab === 'withdrawals') {
+        const res = await fetch(`${API_URL}/admin/withdrawals`, { headers });
+        const data = await res.json();
+        if (data.withdrawals) setWithdrawals(data.withdrawals);
       }
     } catch (err) { 
       console.error('Fetch error in Admin:', err); 
@@ -286,6 +293,22 @@ const Admin = () => {
     });
     if (res.ok) {
       setShopItems(prev => prev.filter(item => item.id !== id));
+    }
+  };
+
+  const handleUpdateStatus = async (id: number, status: string) => {
+    const res = await fetch(`${API_URL}/admin/withdraw/status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionStorage.getItem('admin_token') || sessionStorage.getItem('auth_token')}`
+      },
+      body: JSON.stringify({ id, status })
+    });
+    if (res.ok) {
+      setSaveMessage('Статус обновлен');
+      fetchData();
+      setTimeout(() => setSaveMessage(''), 3000);
     }
   };
 
@@ -515,6 +538,31 @@ const Admin = () => {
         >
           <ShoppingCart size={18} />
           <span style={{ fontWeight: '800', fontSize: '13px' }}>Магазин</span>
+        </button>
+
+         <button 
+          className={`tab-btn ${activeTab === 'withdrawals' ? 'active' : ''}`} 
+          style={{ 
+            flex: 1, 
+            padding: '12px 16px', 
+            borderRadius: '18px', 
+            background: activeTab === 'withdrawals' ? 'linear-gradient(135deg, var(--gold-color), #ffcc00)' : 'transparent', 
+            color: activeTab === 'withdrawals' ? 'black' : 'var(--text-secondary)', 
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            minWidth: '100px',
+            boxShadow: activeTab === 'withdrawals' ? '0 10px 20px rgba(245, 158, 11, 0.3)' : 'none',
+            transform: activeTab === 'withdrawals' ? 'scale(1.02)' : 'scale(1)'
+          }}
+          onClick={() => setActiveTab('withdrawals')}
+        >
+          <HandCoins size={18} />
+          <span style={{ fontWeight: '800', fontSize: '13px' }}>Выводы</span>
         </button>
       </div>
 
@@ -965,6 +1013,75 @@ const Admin = () => {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {activeTab === 'withdrawals' && (
+        <div className="glass-panel" style={{ padding: '0' }}>
+            {withdrawals.length > 0 ? (
+                <div style={{ padding: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
+                        <HandCoins size={24} color="var(--gold-color)" />
+                        <h3 style={{ fontSize: '20px', fontWeight: '800' }}>Заявки на вывод</h3>
+                    </div>
+                    {withdrawals.map((w, i) => (
+                        <div key={w.id} style={{ padding: '24px', background: 'rgba(255,255,255,0.02)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--primary-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>{w.first_name?.[0]}</div>
+                                    <div>
+                                        <div style={{ fontWeight: '700' }}>{w.first_name} (@{w.username})</div>
+                                        <div style={{ fontSize: '12px', opacity: 0.5 }}>ID: {w.telegram_id}</div>
+                                    </div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <div style={{ color: 'var(--gold-color)', fontWeight: '900', fontSize: '18px' }}>{w.amount_adamants} адамантов</div>
+                                    <div style={{ fontSize: '12px', opacity: 0.5 }}>{new Date(w.created_at).toLocaleString()}</div>
+                                </div>
+                            </div>
+                            
+                            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                                <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Реквизиты:</div>
+                                <div style={{ fontSize: '14px', fontFamily: 'monospace' }}>{w.payout_info}</div>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ 
+                                    padding: '4px 12px', 
+                                    borderRadius: '8px', 
+                                    fontSize: '12px', 
+                                    fontWeight: '800',
+                                    background: w.status === 'pending' ? 'rgba(245, 158, 11, 0.1)' : w.status === 'completed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                    color: w.status === 'pending' ? 'var(--gold-color)' : w.status === 'completed' ? 'var(--success-color)' : 'var(--error-color)',
+                                    border: '1px solid currentColor'
+                                }}>
+                                    {w.status === 'pending' ? 'ОЖИДАЕТ' : w.status === 'completed' ? 'ВЫПЛАЧЕНО' : 'ОТКЛОНЕНО'}
+                                </div>
+
+                                {w.status === 'pending' && (
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button 
+                                            className="btn-primary" 
+                                            style={{ padding: '8px 16px', fontSize: '12px', background: 'var(--success-color)', border: 'none' }}
+                                            onClick={() => handleUpdateStatus(w.id, 'completed')}
+                                        >Подтвердить</button>
+                                        <button 
+                                            className="btn-primary" 
+                                            style={{ padding: '8px 16px', fontSize: '12px', background: 'var(--error-color)', border: 'none' }}
+                                            onClick={() => handleUpdateStatus(w.id, 'rejected')}
+                                        >Отклонить</button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div style={{ padding: '80px 20px', textAlign: 'center', opacity: 0.5 }}>
+                    <HandCoins size={64} style={{ marginBottom: '16px', opacity: 0.2 }} />
+                    <p>Пока нет ни одной заявки на вывод.</p>
+                </div>
+            )}
         </div>
       )}
     </div>

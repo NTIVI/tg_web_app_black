@@ -1,12 +1,7 @@
 import { useEffect } from 'react';
-import { Wallet, Trophy, Package, Calendar, ShieldCheck, Gamepad2, TrendingUp, DollarSign, Gem, ArrowRightLeft, HandCoins } from 'lucide-react';
-import { useState } from 'react';
-import WithdrawModal from '../components/WithdrawModal';
-import ExchangeModal from '../components/ExchangeModal';
+import { Wallet, Trophy, Package, Calendar, ShieldCheck, Gamepad2, TrendingUp, DollarSign } from 'lucide-react';
 
-const Profile = ({ balance, setBalance, tgUser, purchases, adamants, setAdamants }: any) => {
-  const [showWithdraw, setShowWithdraw] = useState(false);
-  const [showExchange, setShowExchange] = useState(false);
+const Profile = ({ balance, tgUser, purchases }: any) => {
   useEffect(() => {
     // Synchronized via global App.tsx init
   }, [tgUser?.telegram_id]);
@@ -55,7 +50,7 @@ const Profile = ({ balance, setBalance, tgUser, purchases, adamants, setAdamants
             </div>
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', padding: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '4px', justifyContent: 'center' }}>
                 <Wallet size={12} />
@@ -66,48 +61,14 @@ const Profile = ({ balance, setBalance, tgUser, purchases, adamants, setAdamants
             
             <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', padding: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '4px', justifyContent: 'center' }}>
-                <Gem size={12} color="#00f2ff" />
-                <span>Адаманты</span>
+                <ShieldCheck size={12} />
+                <span>Статус</span>
               </div>
-              <div style={{ color: '#00f2ff', fontSize: '18px', fontWeight: '800' }}>{adamants || 0}</div>
+              <div style={{ color: 'var(--primary-color)', fontSize: '18px', fontWeight: '800' }}>Активен</div>
             </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <button 
-              className="btn-secondary-luxury" 
-              style={{ padding: '12px', height: 'auto', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-              onClick={() => setShowExchange(true)}
-            >
-              <ArrowRightLeft size={16} />
-              Обменять
-            </button>
-            <button 
-              className="btn-primary" 
-              style={{ padding: '12px', height: 'auto', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-              onClick={() => setShowWithdraw(true)}
-            >
-              <HandCoins size={16} />
-              Вывести
-            </button>
           </div>
         </div>
       </div>
-
-      <WithdrawModal 
-        isOpen={showWithdraw} 
-        onClose={() => setShowWithdraw(false)} 
-        adamants={adamants} 
-        setAdamants={setAdamants}
-      />
-
-      <ExchangeModal
-        isOpen={showExchange}
-        onClose={() => setShowExchange(false)}
-        balance={balance}
-        setBalance={setBalance}
-        setAdamants={setAdamants}
-      />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
         <Gamepad2 size={20} color="var(--primary-color)" />

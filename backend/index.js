@@ -950,75 +950,10 @@ app.post('/api/games/action', requireAuth, async (req, res) => {
         }
 
         res.json(responseData);
+
     } catch (err) {
         console.error('[GameAction Error]', err);
         res.status(400).json({ error: err.message });
-    }
-});
-
-const ADAMANTS_PRICE = 10000; // 10,000 coins = 1 adamant
-const MIN_WITHDRAW_ADAMANTS = 5;
-
-// ADAMANTS & WITHDRAWALS
-app.post('/api/exchange/adamants', requireAuth, async (req, res) => {
-    const { amount } = req.body; // How many adamants to buy
-    const telegramId = req.user.id;
-
-    if (!amount || amount <= 0) return res.status(400).json({ error: 'Некорректное количество' });
-
-    try {
-        const result = await DB.transaction(async (tx) => {
-            const user = await tx.get('SELECT balance, adamants FROM users WHERE telegram_id = ?', [telegramId]);
-            const totalCost = amount * ADAMANTS_PRICE;
-
-            if (user.balance < totalCost) throw new Error('Недостаточно монет для обмена');
-
-            await tx.run('UPDATE users SET balance = balance - ?, adamants = adamants + ? WHERE telegram_id = ?', [totalCost, amount, telegramId]);
-            const updated = await tx.get('SELECT balance, adamants FROM users WHERE telegram_id = ?', [telegramId]);
-            return { success: true, balance: updated.balance, adamants: updated.adamants };
-        });
-        res.json(result);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-});
-
-app.post('/api/withdraw', requireAuth, async (req, res) => {
-    const { amount, payoutInfo } = req.body;
-    const telegramId = req.user.id;
-
-    if (!amount || amount < MIN_WITHDRAW_ADAMANTS) return res.status(400).json({ error: `Минимальная сумма вывода: ${MIN_WITHDRAW_ADAMANTS} адамантов` });
-    if (!payoutInfo) return res.status(400).json({ error: 'Укажите реквизиты для выплаты' });
-
-    try {
-        const result = await DB.transaction(async (tx) => {
-            const user = await tx.get('SELECT adamants FROM users WHERE telegram_id = ?', [telegramId]);
-            if (user.adamants < amount) throw new Error('Недостаточно адамантов');
-
-            await tx.run('UPDATE users SET adamants = adamants - ? WHERE telegram_id = ?', [amount, telegramId]);
-            await tx.run('INSERT INTO withdrawals (telegram_id, amount_adamants, payout_info) VALUES (?, ?, ?)', [telegramId, amount, payoutInfo]);
-            
-            // Notify Admin via Bot
-            if (bot) {
-                const adminId = '1944111306'; // Example admin ID or fetch from settings
-                bot.sendMessage(adminId, `🔔 *Новая заявка на вывод!*\n\nПользователь: \`${telegramId}\`\nСумма: ${amount} адамантов\nРеквизиты: \`${payoutInfo}\``, { parse_mode: 'Markdown' }).catch(e => console.error('Bot notify error:', e.message));
-            }
-
-            const updated = await tx.get('SELECT adamants FROM users WHERE telegram_id = ?', [telegramId]);
-            return { success: true, adamants: updated.adamants };
-        });
-        res.json(result);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-});
-
-app.get('/api/withdrawals', requireAuth, async (req, res) => {
-    try {
-        const rows = await DB.all('SELECT * FROM withdrawals WHERE telegram_id = ? ORDER BY created_at DESC', [req.user.id]);
-        res.json({ withdrawals: rows });
-    } catch (err) {
-        res.status(500).json({ error: 'Ошибка БД' });
     }
 });
 
@@ -1056,26 +991,6 @@ app.post('/api/admin/user/balance', requireAdmin, async (req, res) => {
     try {
         const op = action === 'add' ? '+' : '-';
         await DB.run(`UPDATE users SET balance = balance ${op} ? WHERE telegram_id = ?`, [amount * 100, telegramId]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
-});
-
-app.get('/api/admin/withdrawals', requireAdmin, async (req, res) => {
-    try {
-        const withdrawals = await DB.all(`
-            SELECT w.*, u.username, u.first_name 
-            FROM withdrawals w 
-            JOIN users u ON w.telegram_id = u.telegram_id 
-            ORDER BY w.created_at DESC
-        `);
-        res.json({ withdrawals });
-    } catch (err) { res.status(500).json({ error: 'Admin error' }); }
-});
-
-app.post('/api/admin/withdraw/status', requireAdmin, async (req, res) => {
-    const { id, status } = req.body;
-    try {
-        await DB.run('UPDATE withdrawals SET status = ? WHERE id = ?', [status, id]);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Admin error' }); }
 });

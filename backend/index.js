@@ -18,7 +18,7 @@ const token = process.env.BOT_TOKEN;
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Telegram-Id', 'X-Requested-With']
 }));
 app.use(express.json());
 app.use(helmet({

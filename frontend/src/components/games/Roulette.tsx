@@ -68,13 +68,13 @@ const Roulette: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => 
       // Ensure we spin at least one full tape
       const finalAdditional = additionalRotation + (ROULETTE_NUMBERS.length * (itemWidth + 10));
       
-      setRotation(prev => prev + finalAdditional);
+      setRotation((prev: number) => prev + finalAdditional);
 
       setTimeout(() => {
         setSpinning(false);
         setBalance(data.balance !== undefined ? data.balance : data.newBalance);
         if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
-        setHistory(prev => [winNumber, ...prev].slice(0, 10));
+        setHistory((prev: number[]) => [winNumber, ...prev].slice(0, 10));
 
         if (data.winAmount > 0) {
           setOverlayData({ win: true, title: 'ПОБЕДА!', subtitle: `Выпало ${winNumber}`, amount: data.winAmount });

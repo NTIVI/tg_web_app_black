@@ -52,7 +52,7 @@ const WheelOfFortune: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser 
         // Total rotation to reach the target segment at 0 angle (the top pointer)
         const totalNewRotation = extraSpins + (360 - targetAngle) - (rotation % 360);
         
-        setRotation(prev => prev + totalNewRotation);
+        setRotation((prev: number) => prev + totalNewRotation);
 
         setTimeout(() => {
           setSpinning(false);

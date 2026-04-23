@@ -71,7 +71,7 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, tgUser, setTgUser })
       } else {
         setStatus('playing');
         setBalance(data.balance !== undefined ? data.balance : data.newBalance);
-        if (setTgUser) setTgUser(prev => ({ ...prev, ...data }));
+        if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
       }
     } catch {
       setMessage('⚠️ Ошибка сети. Попробуйте снова.');
@@ -116,7 +116,7 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, tgUser, setTgUser })
       } else if (data.status === 'playing') {
         setRevealed(data.revealed);
         setCurrentMultiplier(data.currentMultiplier);
-        if (setTgUser) setTgUser(prev => ({ ...prev, ...data }));
+        if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
       }
     } catch {
       setMessage('⚠️ Ошибка сети');
@@ -148,7 +148,7 @@ const Mines: React.FC<MinesProps> = ({ balance, setBalance, tgUser, setTgUser })
         setStatus('win');
         setBalance(data.balance);
         setMines(data.mines || []);
-        if (setTgUser) setTgUser(prev => ({ ...prev, ...data }));
+        if (setTgUser) setTgUser((prev: any) => ({ ...prev, ...data }));
         setOverlayWin(true);
         setOverlayAmount(data.winAmount);
         setOverlayTitle('ПОБЕДА!');

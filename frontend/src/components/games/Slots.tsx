@@ -66,7 +66,7 @@ const Slots: React.FC<any> = ({ balance, setBalance, tgUser, setTgUser }) => {
       // Sequential Reel Stop Animation
       visualOutcome.forEach((o: number, i: number) => {
         setTimeout(() => {
-            setReels(prev => {
+            setReels((prev: any[]) => {
                 const next = [...prev];
                 next[i] = [
                     (o + 1) % SYMBOLS.length,

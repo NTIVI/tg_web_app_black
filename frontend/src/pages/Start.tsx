@@ -33,13 +33,13 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
 
   useEffect(() => {
     if (cooldownTime <= 0) return;
-    const t = setInterval(() => setCooldownTime(prev => prev <= 1 ? 0 : prev - 1), 1000);
+    const t = setInterval(() => setCooldownTime((prev: number) => prev <= 1 ? 0 : prev - 1), 1000);
     return () => clearInterval(t);
   }, [cooldownTime]);
 
   useEffect(() => {
     if (surfCooldownTime <= 0) return;
-    const t = setInterval(() => setSurfCooldownTime(prev => prev <= 1 ? 0 : prev - 1), 1000);
+    const t = setInterval(() => setSurfCooldownTime((prev: number) => prev <= 1 ? 0 : prev - 1), 1000);
     return () => clearInterval(t);
   }, [surfCooldownTime]);
 
@@ -81,7 +81,7 @@ const Start = ({ userId, balance, setBalance, tgUser, setTgUser }: StartProps) =
     setAdState('watching');
     setSurfCountdown(5);
     const t = setInterval(() => {
-      setSurfCountdown(prev => {
+      setSurfCountdown((prev: number) => {
         if (prev <= 1) { clearInterval(t); finishSurf(); return 0; }
         return prev - 1;
       });

@@ -175,7 +175,7 @@ function App() {
   };
 
   const updateBalance = (newVal: number | ((prev: number) => number)) => {
-    setBalance(prev => {
+    setBalance((prev: number) => {
       const updated = typeof newVal === 'function' ? newVal(prev) : newVal;
       localStorage.setItem('cached_balance', updated.toString());
       return updated;

@@ -221,7 +221,7 @@ const Admin = () => {
       }
     });
     if (res.ok) {
-      setNewsBanners(prev => prev.filter(b => b.id !== id));
+      setNewsBanners((prev: any[]) => prev.filter(b => b.id !== id));
     }
   };
 
@@ -253,7 +253,7 @@ const Admin = () => {
       }
     });
     if (res.ok) {
-      setNewsPosts(prev => prev.filter(p => p.id !== id));
+      setNewsPosts((prev: any[]) => prev.filter(p => p.id !== id));
     }
   };
 
@@ -285,7 +285,7 @@ const Admin = () => {
       }
     });
     if (res.ok) {
-      setShopItems(prev => prev.filter(item => item.id !== id));
+      setShopItems((prev: any[]) => prev.filter(item => item.id !== id));
     }
   };
 

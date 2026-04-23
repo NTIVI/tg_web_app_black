@@ -142,7 +142,7 @@ const Bonuses = ({ tgUser, setBalance, dailyStatus, handleClaimDaily, claimingDa
         if (res.ok) {
           const data = await res.json();
           if (data.success) {
-            setClaimedIds(prev => [...prev, bonus.id]);
+            setClaimedIds((prev: string[]) => [...prev, bonus.id]);
             if (data.balance !== undefined) {
               setBalance(data.balance);
             } else {

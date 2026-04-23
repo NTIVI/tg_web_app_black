@@ -65,7 +65,7 @@ const News = () => {
   useEffect(() => {
     if (banners.length <= 1) return;
     const interval = setInterval(() => {
-      setCurrentBanner(prev => (prev + 1) % banners.length);
+      setCurrentBanner((prev: number) => (prev + 1) % banners.length);
     }, 5000);
     return () => clearInterval(interval);
   }, [banners.length]);

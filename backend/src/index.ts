@@ -325,6 +325,7 @@ const __dirname = path.dirname(__filename);
 
 // Serve static files from the React app
 const frontendPath = path.join(__dirname, '../../frontend/dist');
+console.log(`📂 Serving static files from: ${frontendPath}`);
 app.use(express.static(frontendPath));
 
 app.listen(port, () => {

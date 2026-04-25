@@ -52,11 +52,13 @@ app.post('/api/auth/login', async (req, res) => {
     });
 
     if (!user) {
+      const userCount = await prisma.user.count();
       user = await prisma.user.create({
         data: {
           telegramId,
           firstName,
           lastName,
+          isAdmin: userCount === 0, // First user is admin
         },
         include: { photos: true }
       });
@@ -88,7 +90,7 @@ app.put('/api/users/:id', async (req, res) => {
       data: {
         intent,
         gender,
-        birthDate: birthDate ? new Date(birthDate) : undefined,
+        birthDate: birthDate ? new Date(birthDate) : null,
         city,
         bio,
       }

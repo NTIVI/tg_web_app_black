@@ -35,7 +35,7 @@ function AppContent() {
         .catch(err => {
           console.error('Login failed', err)
         })
-        .finally(() => setLoading(true)) // Set to false when done
+        .finally(() => setLoading(false)) // Set to false when done
     } else {
       // For local testing
       authApi.login('12345678', 'Test', 'User')
@@ -68,7 +68,7 @@ function AppContent() {
         <Route path="/news" element={<News user={user} />} />
         <Route path="/profile" element={<Profile user={user} />} />
         <Route path="/admin" element={<Admin user={user} />} />
-      </Routes>
+      </Route>
     </Routes>
   )
 }

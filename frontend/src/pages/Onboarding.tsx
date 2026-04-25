@@ -29,6 +29,7 @@ const Onboarding = ({ user, setUser }: any) => {
   const nextStep = () => setStep(step + 1)
   
   const handleComplete = async () => {
+    if (!user) return
     try {
       const updatedUser = await userApi.update(user.id, formData)
       

@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Settings, Coins, Award, LogOut } from 'lucide-react'
+import { Settings, Coins, Award, LogOut, User, ChevronRight } from 'lucide-react'
 
 const Profile = ({ user }: any) => {
   if (!user) return null
@@ -90,6 +90,6 @@ const Profile = ({ user }: any) => {
   )
 }
 
-import { ChevronRight } from 'lucide-react'
+
 
 export default Profile

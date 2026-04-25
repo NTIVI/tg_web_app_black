@@ -117,7 +117,7 @@ const Chats = ({ user }: any) => {
           chats.map((chat) => {
             const partner = chat.user1Id === user.id ? chat.user2 : chat.user1
             const avatar = partner.photos?.find((p: any) => p.isAvatar)?.url || 'https://via.placeholder.com/150'
-            const lastMsg = chat.messages[0]
+            const lastMsg = chat.messages && chat.messages.length > 0 ? chat.messages[0] : null
 
             return (
               <button

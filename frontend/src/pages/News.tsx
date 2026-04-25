@@ -1,227 +1,65 @@
-import { useState, useEffect } from 'react';
-import { Newspaper } from 'lucide-react';
-import { API_URL } from '../config';
+import React from 'react'
+import { motion } from 'framer-motion'
+import { Gift, Zap, Bell, Sparkles } from 'lucide-react'
 
-interface Banner {
-  id: number;
-  image_url: string;
-  link_url: string;
-}
-
-interface Post {
-  id: number;
-  title: string;
-  content: string;
-  image_url: string;
-  created_at: string;
-}
-
-const News = () => {
-  const [banners, setBanners] = useState<Banner[]>([]);
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [currentBanner, setCurrentBanner] = useState(0);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        console.log('Fetching news from:', API_URL);
-        const [bannersRes, postsRes] = await Promise.all([
-          fetch(`${API_URL}/news/banners`),
-          fetch(`${API_URL}/news/posts`)
-        ]);
-        
-        if (!bannersRes.ok) console.warn('Banners fetch failed:', bannersRes.status);
-        if (!postsRes.ok) console.warn('Posts fetch failed:', postsRes.status);
-
-        const bannersData = await bannersRes.json();
-        const postsData = await postsRes.json();
-        
-        console.log('News data received:', { 
-          bannersCount: bannersData.banners?.length, 
-          postsCount: postsData.posts?.length 
-        });
-
-        if (bannersData && bannersData.banners) {
-          setBanners(bannersData.banners);
-        }
-        
-        if (postsData && postsData.posts) {
-          setPosts(postsData.posts);
-        } else if (Array.isArray(postsData)) {
-          // Fallback if backend returns array directly
-          setPosts(postsData);
-        }
-      } catch (err) {
-        console.error('Error fetching news:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  // Banner carousel effect
-  useEffect(() => {
-    if (banners.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentBanner((prev: number) => (prev + 1) % banners.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [banners.length]);
-
-  if (loading) {
-    return (
-      <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-        <div className="spinner" style={{ width: '40px', height: '40px' }} />
-      </div>
-    );
-  }
+const News = ({ user }: any) => {
+  const bonuses = [
+    { title: 'Ежедневный бонус', desc: 'Заходите каждый день и получайте 5 монеток!', icon: <Gift className="text-yellow-500" />, active: true },
+    { title: 'Супер-Лайк', desc: 'Удвойте шансы на взаимность!', icon: <Zap className="text-blue-400" />, active: false },
+    { title: 'Режим Невидимки', desc: 'Скройте свой онлайн-статус на 24 часа.', icon: <Sparkles className="text-purple-400" />, active: false },
+  ]
 
   return (
-    <div className="page" style={{ paddingBottom: '100px' }}>
-      <div style={{ padding: '0 20px', marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '28px', fontWeight: '900', letterSpacing: '-0.5px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Newspaper size={32} color="var(--primary-color)" />
-          Новости
-        </h2>
+    <div className="p-6 space-y-8 h-[calc(100vh-64px)] overflow-y-auto">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Новости и Бонусы</h1>
+        <button className="p-2 glass-panel rounded-full text-text-muted">
+          <Bell size={24} />
+        </button>
       </div>
 
-      {/* Banners Carousel */}
-      {banners.length > 0 && (
-        <div style={{ padding: '0 20px', marginBottom: '40px' }}>
-          <div style={{ 
-            position: 'relative', 
-            width: '100%', 
-            height: '420px', 
-            overflow: 'hidden', 
-            borderRadius: '28px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
-            border: '1px solid rgba(255,255,255,0.08)'
-          }}>
-            {banners.map((banner, idx) => (
-              <div 
-                key={banner.id}
-                onClick={() => { if (banner.link_url) window.location.href = banner.link_url; }}
-                style={{
-                  position: 'absolute',
-                  top: 0, 
-                  left: 0, 
-                  width: '100%', 
-                  height: '100%',
-                  opacity: idx === currentBanner ? 1 : 0,
-                  transform: `translateY(${(idx - currentBanner) * 100}%)`,
-                  transition: 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-                  cursor: banner.link_url ? 'pointer' : 'default',
-                  backgroundImage: `url(${banner.image_url})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                }}
-              >
-                {/* Gradient Overlay for visibility */}
-                <div style={{ 
-                  position: 'absolute', 
-                  bottom: 0, 
-                  left: 0, 
-                  right: 0, 
-                  height: '50%', 
-                  background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)',
-                  display: 'flex',
-                  alignItems: 'flex-end',
-                  padding: '30px'
-                }}>
-                  {banner.link_url && (
-                    <div style={{ 
-                      background: 'linear-gradient(135deg, #1e40af, #a855f7)', 
-                      padding: '10px 20px', 
-                      borderRadius: '14px', 
-                      fontSize: '13px', 
-                      fontWeight: '800',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      boxShadow: '0 10px 20px rgba(0,0,0,0.3)'
-                    }}>
-                      Подробнее
-                    </div>
-                  )}
-                </div>
+      <div className="space-y-4">
+        <h3 className="text-sm font-bold uppercase text-text-muted ml-2 tracking-widest">Акции для вас</h3>
+        {bonuses.map((b, i) => (
+          <motion.div
+            key={i}
+            whileHover={{ scale: 1.02 }}
+            className="p-5 glass-panel rounded-3xl flex items-center gap-5 border border-white/5"
+          >
+            <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-2xl">
+              {b.icon}
+            </div>
+            <div className="flex-1">
+              <h4 className="font-bold">{b.title}</h4>
+              <p className="text-xs text-text-muted">{b.desc}</p>
+            </div>
+            <button className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter ${
+              b.active ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/10 text-text-muted'
+            }`}>
+              {b.active ? 'Забрать' : 'Скоро'}
+            </button>
+          </motion.div>
+        ))}
+      </div>
 
-              </div>
-            ))}
-            
-            {/* Vertical Dots Indicators */}
-            {banners.length > 1 && (
-              <div style={{ 
-                position: 'absolute', 
-                right: '20px', 
-                top: '50%', 
-                transform: 'translateY(-50%)', 
-                display: 'flex', 
-                flexDirection: 'column',
-                gap: '8px',
-                zIndex: 10
-              }}>
-                {banners.map((_, idx) => (
-                  <div 
-                    key={idx}
-                    onClick={(e) => { e.stopPropagation(); setCurrentBanner(idx); }}
-                    style={{
-                      width: '6px',
-                      height: idx === currentBanner ? '20px' : '6px',
-                      borderRadius: '3px',
-                      background: idx === currentBanner ? 'var(--primary-color)' : 'rgba(255,255,255,0.4)',
-                      transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                      cursor: 'pointer'
-                    }}
-                  />
-                ))}
-              </div>
-            )}
+      <div className="space-y-4">
+        <h3 className="text-sm font-bold uppercase text-text-muted ml-2 tracking-widest">Новости проекта</h3>
+        <div className="rounded-3xl overflow-hidden glass-panel">
+          <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80" className="w-full h-40 object-cover" />
+          <div className="p-5 space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Обновление</span>
+              <span className="text-[10px] text-text-muted uppercase">26 Апр</span>
+            </div>
+            <h4 className="text-xl font-bold">NTIVI STUDIO запущена!</h4>
+            <p className="text-sm text-text-muted leading-relaxed">
+              Мы рады представить наше новое приложение для знакомств. Теперь общение стало еще более стильным и взрослым.
+            </p>
           </div>
         </div>
-      )}
-
-      <div style={{ padding: '0 20px' }}>
-        <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '16px' }}>Последние посты</h3>
-        
-        {posts.length === 0 ? (
-          <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', opacity: 0.7 }}>
-            <Newspaper size={48} style={{ margin: '0 auto 16px auto', opacity: 0.5 }} />
-            <p>Новостей пока нет.</p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {posts.map(post => (
-              <div key={post.id} className="glass-panel" style={{ padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                {post.image_url && (
-                  <div style={{ 
-                    width: '100%', 
-                    height: '180px', 
-                    backgroundImage: `url(${post.image_url})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    borderBottom: '1px solid rgba(255,255,255,0.05)'
-                  }} />
-                )}
-                <div style={{ padding: '20px' }}>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--primary-color)', marginBottom: '8px', textTransform: 'uppercase' }}>
-                    {new Date(post.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                  <h4 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', lineHeight: '1.3' }}>{post.title}</h4>
-                  {post.content && (
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
-                      {post.content}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default News;
+export default News

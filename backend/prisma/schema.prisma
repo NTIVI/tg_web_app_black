@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(uuid())
+  telegramId     String    @unique
+  intent         String?   // e.g., 'dating', 'friendship', 'flirting', 'chatting'
+  firstName      String?
+  lastName       String?
+  birthDate      DateTime?
+  gender         String?   // 'male' or 'female'
+  city           String?
+  bio            String?
+  
+  level          Int       @default(1)
+  coins          Int       @default(0)
+  timeSpent      Int       @default(0) // in seconds or minutes
+  isOnline       Boolean   @default(true)
+  lastSeen       DateTime  @default(now())
+  
+  isBlocked      Boolean   @default(false)
+  isAdmin        Boolean   @default(false)
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  photos         Photo[]
+  
+  // Likes where this user is the sender
+  likesSent      Like[]    @relation("LikesSent")
+  // Likes where this user is the receiver
+  likesReceived  Like[]    @relation("LikesReceived")
+  
+  // Chats this user is part of
+  chatsAsUser1   Chat[]    @relation("ChatsUser1")
+  chatsAsUser2   Chat[]    @relation("ChatsUser2")
+
+  // Messages sent by this user
+  messagesSent   Message[]
+}
+
+model Photo {
+  id        String   @id @default(uuid())
+  url       String
+  isAvatar  Boolean  @default(false)
+  order     Int      @default(0)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Like {
+  id          String   @id @default(uuid())
+  fromUserId  String
+  toUserId    String
+  isMutual    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  fromUser    User     @relation("LikesSent", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser      User     @relation("LikesReceived", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@unique([fromUserId, toUserId])
+}
+
+model Chat {
+  id        String    @id @default(uuid())
+  user1Id   String
+  user2Id   String
+  createdAt DateTime  @default(now())
+
+  user1     User      @relation("ChatsUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2     User      @relation("ChatsUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+  
+  messages  Message[]
+
+  @@unique([user1Id, user2Id])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  text      String
+  senderId  String
+  chatId    String
+  createdAt DateTime @default(now())
+
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+}

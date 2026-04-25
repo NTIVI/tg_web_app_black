@@ -1,143 +1,95 @@
-import { useEffect } from 'react';
-import { Wallet, Trophy, Package, Calendar, ShieldCheck, Gamepad2, TrendingUp, DollarSign } from 'lucide-react';
+import React from 'react'
+import { motion } from 'framer-motion'
+import { Settings, Coins, Award, LogOut } from 'lucide-react'
 
-const Profile = ({ balance, tgUser, purchases }: any) => {
-  useEffect(() => {
-    // Synchronized via global App.tsx init
-  }, [tgUser?.telegram_id]);
+const Profile = ({ user }: any) => {
+  if (!user) return null
+
+  const avatar = user.photos?.find((p: any) => p.isAvatar)?.url || 'https://via.placeholder.com/150'
 
   return (
-    <div className="page" style={{ background: 'var(--background-color)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1>Профиль</h1>
-        <div className="glass-panel" style={{ padding: '8px 16px', margin: 0, borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--primary-color)' }}>
-          <Trophy size={16} color="var(--gold-color)" />
-          <span style={{ fontWeight: '800', color: 'var(--gold-color)', fontSize: '14px' }}>УР {tgUser?.level || 1}</span>
+    <div className="p-6 space-y-8 h-[calc(100vh-64px)] overflow-y-auto">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Мой Профиль</h1>
+        <button className="p-2 glass-panel rounded-full text-text-muted hover:text-white transition-colors">
+          <Settings size={24} />
+        </button>
+      </div>
+
+      <div className="flex flex-col items-center space-y-4">
+        <div className="relative">
+          <div className="w-32 h-32 rounded-full border-4 border-primary p-1">
+            <img src={avatar} className="w-full h-full object-cover rounded-full" />
+          </div>
+          <div className="absolute -bottom-2 -right-2 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+            LVL {user.level}
+          </div>
+        </div>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold">{user.firstName} {user.lastName}</h2>
+          <p className="text-text-muted">{user.city}</p>
         </div>
       </div>
 
-      <div className="glass-panel" style={{ textAlign: 'center', position: 'relative', overflow: 'hidden', padding: '40px 24px' }}>
-        <div style={{ position: 'absolute', top: '-20px', left: '50%', transform: 'translateX(-50%)', width: '200px', height: '200px', background: 'var(--primary-glow)', filter: 'blur(60px)', borderRadius: '50%', zIndex: 0, opacity: 0.5 }}></div>
-        
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ position: 'relative', display: 'inline-block', marginBottom: '20px' }}>
-            <img 
-              src={tgUser?.photo_url || ''} 
-              style={{ width: '100px', height: '100px', borderRadius: '50%', border: '3px solid var(--primary-color)', padding: '4px', background: 'rgba(0,0,0,0.3)', objectFit: 'cover' }} 
-              alt="Avatar"
-            />
-            <div style={{ position: 'absolute', bottom: '5px', right: '5px', background: 'var(--success-color)', width: '14px', height: '14px', borderRadius: '50%', border: '2px solid var(--background-color)' }}></div>
+      <div className="grid grid-cols-2 gap-4">
+        <motion.div 
+          whileHover={{ scale: 1.05 }}
+          className="p-6 glass-panel rounded-3xl flex flex-col items-center justify-center space-y-2 border border-yellow-500/10"
+        >
+          <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center text-yellow-500">
+            <Coins size={24} />
           </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
-            <h2 style={{ fontSize: '24px', fontWeight: '800' }}>{tgUser?.first_name}</h2>
-            <span style={{ color: 'var(--primary-color)', fontSize: '15px', fontWeight: '600', opacity: 0.8 }}>@{tgUser?.username || 'user'}</span>
-          </div>
+          <span className="text-2xl font-bold">{user.coins}</span>
+          <span className="text-xs font-medium text-text-muted uppercase tracking-wider">Монетки</span>
+        </motion.div>
 
-          <div style={{ maxWidth: '240px', margin: '0 auto 24px auto' }}>
-            <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ 
-                width: `${((tgUser?.xp || 0) % 1000) / 10}%`, 
-                height: '100%', 
-                background: 'linear-gradient(to right, #1e40af, #a855f7)',
-                borderRadius: '10px',
-                boxShadow: '0 0 8px var(--primary-glow)'
-              }} />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
-              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: '700', textTransform: 'uppercase' }}>Прогресс</span>
-              <span style={{ fontSize: '10px', color: 'var(--success-color)', fontWeight: '800' }}>{(tgUser?.xp || 0) % 1000} / 1000 XP</span>
-            </div>
+        <motion.div 
+          whileHover={{ scale: 1.05 }}
+          className="p-6 glass-panel rounded-3xl flex flex-col items-center justify-center space-y-2 border border-primary/10"
+        >
+          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+            <Award size={24} />
           </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', padding: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '4px', justifyContent: 'center' }}>
-                <Wallet size={12} />
-                <span>Баланс</span>
-              </div>
-              <div style={{ color: 'var(--gold-color)', fontSize: '18px', fontWeight: '800' }}>${((balance || 0) / 100).toFixed(2)}</div>
+          <span className="text-2xl font-bold">{user.level}</span>
+          <span className="text-xs font-medium text-text-muted uppercase tracking-wider">Уровень</span>
+        </motion.div>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-sm font-bold uppercase text-text-muted ml-2">Настройки</h3>
+        <div className="space-y-2">
+          <button className="w-full p-4 glass-panel rounded-2xl flex items-center gap-4 hover:bg-white/5 transition-colors">
+            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-text-muted">
+              <User size={20} />
             </div>
-            
-            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', padding: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '4px', justifyContent: 'center' }}>
-                <ShieldCheck size={12} />
-                <span>Статус</span>
-              </div>
-              <div style={{ color: 'var(--primary-color)', fontSize: '18px', fontWeight: '800' }}>Активен</div>
+            <div className="text-left flex-1">
+              <p className="font-bold">Редактировать анкету</p>
+              <p className="text-xs text-text-muted">Изменить фото, город или био</p>
             </div>
-          </div>
+            <ChevronRight size={18} className="text-text-muted" />
+          </button>
+
+          <button className="w-full p-4 glass-panel rounded-2xl flex items-center gap-4 hover:bg-white/5 transition-colors text-red-500">
+            <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+              <LogOut size={20} />
+            </div>
+            <span className="font-bold">Выйти</span>
+          </button>
         </div>
       </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-        <Gamepad2 size={20} color="var(--primary-color)" />
-        <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Статистика игр</h3>
-      </div>
-
-      <div className="glass-panel" style={{ 
-        padding: '24px', 
-        marginBottom: '24px', 
-        background: 'linear-gradient(135deg, rgba(30, 64, 175, 0.05), rgba(168, 85, 247, 0.05))',
-        border: '1px solid rgba(255, 255, 255, 0.05)',
-      }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-              <TrendingUp size={14} />
-              <span>Всего игр</span>
-            </div>
-            <div style={{ fontSize: '20px', fontWeight: '900', color: '#fff' }}>{tgUser?.total_bets_count || 0}</div>
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-              <DollarSign size={14} />
-              <span>Выиграно</span>
-            </div>
-            <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--success-color)' }}>${((tgUser?.total_wins_sum || 0) / 100).toFixed(2)}</div>
-          </div>
-        </div>
-        
-        <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Общий оборот</span>
-          <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--gold-color)' }}>${((tgUser?.total_bets_sum || 0) / 100).toFixed(2)}</span>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-        <Package size={20} color="var(--primary-color)" />
-        <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Мои покупки</h3>
-      </div>
-
-      <div className="glass-panel" style={{ padding: '0 20px' }}>
-        {purchases.length > 0 ? (
-          purchases.map((p: any, i: number) => (
-            <div key={i} style={{ padding: '20px 0', borderBottom: i === purchases.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'linear-gradient(135deg, var(--surface-color-light), #1a1a1a)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-color)', position: 'relative' }}>
-                <img src={p.photo_url || tgUser?.photo_url || ''} style={{ width: '100%', height: '100%', borderRadius: '14px', opacity: 0.8, objectFit: 'cover' }} alt="User" />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: '700', fontSize: '15px' }}>{p.item_name}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)', fontSize: '12px', marginTop: '2px' }}>
-                  <Calendar size={12} />
-                  <span>{new Date(p.purchased_at).toLocaleDateString()}</span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                <div style={{ color: 'var(--gold-color)', fontWeight: '800', fontSize: '14px' }}>-${((p.price || 0) / 100).toFixed(2)}</div>
-                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Выполнено</div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div style={{ padding: '40px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-            <Package size={32} style={{ opacity: 0.2 }} />
-            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '14px', margin: 0 }}>Вы еще не совершали покупок.</p>
-          </div>
-        )}
-      </div>
+      
+      {user.isAdmin && (
+        <button 
+          onClick={() => window.location.href = '/admin'}
+          className="w-full p-4 bg-primary/10 border border-primary/20 text-primary rounded-2xl font-bold"
+        >
+          Панель администратора
+        </button>
+      )}
     </div>
-  );
-};
+  )
+}
 
-export default Profile;
+import { ChevronRight } from 'lucide-react'
+
+export default Profile

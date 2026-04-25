@@ -62,10 +62,10 @@ function AppContent() {
   return (
     <Routes>
       <Route path="/onboarding" element={<Onboarding user={user} setUser={setUser} />} />
-      <Route element={<MainLayout user={user} />}>
+      <Route element={<MainLayout />}>
         <Route path="/feed" element={<Feed user={user} />} />
         <Route path="/chats" element={<Chats user={user} />} />
-        <Route path="/news" element={<News user={user} />} />
+        <Route path="/news" element={<News />} />
         <Route path="/profile" element={<Profile user={user} />} />
         <Route path="/admin" element={<Admin user={user} />} />
       </Route>

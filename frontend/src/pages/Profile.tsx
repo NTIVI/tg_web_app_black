@@ -1,4 +1,3 @@
-import React from 'react'
 import { motion } from 'framer-motion'
 import { Settings, Coins, Award, LogOut, User, ChevronRight } from 'lucide-react'
 

@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect, useRef } from 'react'
 import { userApi, chatApi } from '../api'
 import { Search, Send, ChevronLeft, MoreVertical } from 'lucide-react'
 

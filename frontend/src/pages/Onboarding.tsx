@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { userApi } from '../api'
@@ -22,8 +22,7 @@ const Onboarding = ({ user, setUser }: any) => {
     bio: '',
     gender: 'male',
   })
-  const [photos, setPhotos] = useState<any[]>([])
-  const [avatar, setAvatar] = useState('')
+  const [avatar] = useState('')
   const navigate = useNavigate()
 
   const nextStep = () => setStep(step + 1)

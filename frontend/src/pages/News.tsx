@@ -1,8 +1,7 @@
-import React from 'react'
 import { motion } from 'framer-motion'
 import { Gift, Zap, Bell, Sparkles } from 'lucide-react'
 
-const News = ({ user }: any) => {
+const News = () => {
   const bonuses = [
     { title: 'Ежедневный бонус', desc: 'Заходите каждый день и получайте 5 монеток!', icon: <Gift className="text-yellow-500" />, active: true },
     { title: 'Супер-Лайк', desc: 'Удвойте шансы на взаимность!', icon: <Zap className="text-blue-400" />, active: false },

@@ -1,8 +1,7 @@
-import React from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
 import { LayoutGrid, MessageCircle, Star, User } from 'lucide-react'
 
-const MainLayout = ({ user }: any) => {
+const MainLayout = () => {
   return (
     <div className="min-h-screen bg-dark text-text-main pb-20 overflow-x-hidden">
       <main className="max-w-md mx-auto min-h-screen relative">

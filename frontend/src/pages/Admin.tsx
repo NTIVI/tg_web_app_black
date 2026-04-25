@@ -22,6 +22,16 @@ const Admin = ({ user }: any) => {
     }
   }
 
+  const handleDeletePhoto = async (userId: string, photoId: string) => {
+    if (!window.confirm('Удалить эту фотографию?')) return
+    try {
+      await adminApi.deletePhoto(photoId)
+      setUsers(users.map(u => u.id === userId ? { ...u, photos: u.photos.filter((p: any) => p.id !== photoId) } : u))
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   if (!user?.isAdmin) return <div className="p-10 text-center">Доступ запрещен</div>
   if (loading) return <div className="p-10 text-center text-text-muted animate-pulse">Загрузка данных...</div>
 
@@ -76,8 +86,14 @@ const Admin = ({ user }: any) => {
             {u.photos && u.photos.length > 0 && (
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                 {u.photos.map((p: any, idx: number) => (
-                  <div key={idx} className="w-16 h-20 rounded-lg overflow-hidden glass-panel flex-shrink-0">
-                    <img src={p.url} className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" />
+                  <div key={idx} className="relative w-16 h-20 rounded-lg overflow-hidden glass-panel flex-shrink-0 group">
+                    <img src={p.url} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                    <button 
+                      onClick={() => handleDeletePhoto(u.id, p.id)}
+                      className="absolute top-1 right-1 bg-red-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <UserX size={8} className="text-white" />
+                    </button>
                   </div>
                 ))}
               </div>

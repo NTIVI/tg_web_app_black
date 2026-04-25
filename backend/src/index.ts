@@ -94,6 +94,8 @@ app.put('/api/users/:id', async (req, res) => {
         city,
         bio,
         timeSpent: timeSpent !== undefined ? timeSpent : undefined,
+        lastSeen: new Date(),
+        isOnline: true,
       }
     });
     
@@ -145,6 +147,9 @@ app.get('/api/feed/:userId', async (req, res) => {
 
     const targetGender = currentUser.gender === 'male' ? 'female' : 'male';
     
+    // Auto-offline users who haven't been seen for 5 minutes
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    
     // Find users of target gender, not already liked by current user
     const users = await prisma.user.findMany({
       where: {
@@ -160,17 +165,22 @@ app.get('/api/feed/:userId', async (req, res) => {
       include: {
         photos: true
       },
-      // Simple ordering logic for now (can enhance with city match logic later)
       orderBy: {
         lastSeen: 'desc'
       },
       take: 20
     });
 
+    // Update isOnline flag in memory for the response
+    const usersWithOnlineStatus = users.map(u => ({
+      ...u,
+      isOnline: u.lastSeen > fiveMinutesAgo
+    }));
+
     // In a real app we'd sort by city -> nearest -> other. 
     // For demo, sort in memory:
-    const sameCity = users.filter(u => u.city === currentUser.city);
-    const otherCity = users.filter(u => u.city !== currentUser.city);
+    const sameCity = usersWithOnlineStatus.filter(u => u.city === currentUser.city);
+    const otherCity = usersWithOnlineStatus.filter(u => u.city !== currentUser.city);
 
     res.json([...sameCity, ...otherCity]);
   } catch (error) {
@@ -311,6 +321,17 @@ app.post('/api/admin/users/:id/block', async (req, res) => {
       data: { isBlocked }
     });
     res.json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.delete('/api/admin/photos/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.photo.delete({ where: { id } });
+    res.json({ success: true });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error' });

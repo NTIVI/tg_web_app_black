@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import TelegramBot from 'node-telegram-bot-api';
@@ -345,7 +346,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Serve static files from the React app
-const frontendPath = path.join(__dirname, '../../frontend/dist');
+let frontendPath = path.join(__dirname, '../../frontend/dist');
+
+// Fallback for different deployment environments
+if (!fs.existsSync(frontendPath)) {
+  frontendPath = path.join(process.cwd(), 'frontend/dist');
+}
+if (!fs.existsSync(frontendPath)) {
+  frontendPath = path.join(process.cwd(), '../frontend/dist');
+}
+
 console.log(`📂 Serving static files from: ${frontendPath}`);
 app.use(express.static(frontendPath));
 
@@ -355,5 +365,10 @@ app.listen(port, () => {
 
 // The "catchall" handler: for any request that doesn't match one above, send back React's index.html file.
 app.get('*', (req, res) => {
-  res.sendFile(path.join(frontendPath, 'index.html'));
+  const indexPath = path.join(frontendPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).send('Frontend not found. Please run build.');
+  }
 });

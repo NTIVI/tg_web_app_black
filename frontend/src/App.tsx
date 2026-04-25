@@ -9,55 +9,81 @@ import News from './pages/News'
 import Profile from './pages/Profile'
 import Admin from './pages/Admin'
 import { authApi } from './api'
+import { AlertCircle } from 'lucide-react'
 
 function AppContent() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
 
   useEffect(() => {
-    WebApp.ready()
-    WebApp.expand()
+    try {
+      WebApp.ready()
+      WebApp.expand()
 
-    const initData = WebApp.initDataUnsafe
-    const tgUser = initData.user
+      const initData = WebApp.initDataUnsafe
+      const tgUser = initData.user
 
-    if (tgUser) {
-      authApi.login(tgUser.id.toString(), tgUser.first_name, tgUser.last_name)
-        .then(res => {
+      const performLogin = async (id: string, fName: string, lName: string) => {
+        try {
+          const res = await authApi.login(id, fName, lName)
           setUser(res.data)
-          if (!res.data.intent || !res.data.city || res.data.photos.length === 0) {
+          if (!res.data.intent || !res.data.city || !res.data.photos || res.data.photos.length === 0) {
             navigate('/onboarding')
           } else {
             navigate('/feed')
           }
-        })
-        .catch(err => {
+        } catch (err: any) {
           console.error('Login failed', err)
-        })
-        .finally(() => setLoading(false)) // Set to false when done
-    } else {
-      // For local testing
-      authApi.login('12345678', 'Test', 'User')
-        .then(res => {
-          setUser(res.data)
-          if (!res.data.intent || !res.data.city || res.data.photos.length === 0) {
-            navigate('/onboarding')
-          } else {
-            navigate('/feed')
-          }
-        })
-        .finally(() => setLoading(false))
+          setError(err.response?.data?.error || 'Ошибка подключения к серверу. Пожалуйста, убедитесь, что сервер запущен.')
+        } finally {
+          setLoading(false)
+        }
+      }
+
+      if (tgUser) {
+        performLogin(tgUser.id.toString(), tgUser.first_name, tgUser.last_name || '')
+      } else {
+        // For local testing
+        performLogin('12345678', 'Test', 'User')
+      }
+    } catch (e: any) {
+      setError('Ошибка инициализации Telegram SDK: ' + e.message)
+      setLoading(false)
     }
   }, [])
 
-  if (loading && !user) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-dark">
+      <div className="flex flex-col items-center justify-center h-screen bg-dark space-y-4">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <p className="text-text-muted text-sm font-medium animate-pulse">NTIVI STUDIO Загрузка...</p>
       </div>
     )
   }
+
+  if (error && !user) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-dark p-10 text-center space-y-6">
+        <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center text-red-500">
+          <AlertCircle size={40} />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold text-white">Упс! Что-то пошло не так</h2>
+          <p className="text-text-muted text-sm">{error}</p>
+        </div>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-8 py-3 bg-primary text-white rounded-2xl font-bold shadow-lg shadow-primary/20"
+        >
+          Попробовать снова
+        </button>
+      </div>
+    )
+  }
+
+  if (!user) return null;
 
   return (
     <Routes>

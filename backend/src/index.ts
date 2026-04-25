@@ -359,16 +359,16 @@ if (!fs.existsSync(frontendPath)) {
 console.log(`📂 Serving static files from: ${frontendPath}`);
 app.use(express.static(frontendPath));
 
-app.listen(port, () => {
-  console.log(`🚀 Backend running on port ${port}`);
+// Catch-all middleware for SPA routing
+app.use((req, res, next) => {
+  // If it's an API request, let it through to 404 handler
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  // Otherwise serve index.html
+  res.sendFile(path.resolve(frontendPath, 'index.html'));
 });
 
-// The "catchall" handler: for any request that doesn't match one above, send back React's index.html file.
-app.get('*', (req, res) => {
-  const indexPath = path.join(frontendPath, 'index.html');
-  if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
-  } else {
-    res.status(404).send('Frontend not found. Please run build.');
-  }
+app.listen(port, () => {
+  console.log(`🚀 Backend running on port ${port}`);
 });

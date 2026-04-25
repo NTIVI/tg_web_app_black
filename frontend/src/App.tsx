@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom'
-import WebApp from '@twa-dev/sdk'
+import * as WebAppModule from '@twa-dev/sdk'
+const WebApp = (WebAppModule as any).default || WebAppModule;
 import Onboarding from './pages/Onboarding'
 import MainLayout from './components/MainLayout'
 import Feed from './pages/Feed'
@@ -18,6 +19,13 @@ function AppContent() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    const handleError = (e: ErrorEvent) => {
+      setError(`Критическая ошибка: ${e.message}`);
+      setLoading(false);
+    };
+
+    window.addEventListener('error', handleError);
+
     try {
       // Use window.Telegram.WebApp if available, otherwise fallback to the imported SDK
       const tg = (window as any).Telegram?.WebApp || WebApp;
@@ -57,6 +65,8 @@ function AppContent() {
       setError('Ошибка инициализации Telegram SDK: ' + e.message)
       setLoading(false)
     }
+
+    return () => window.removeEventListener('error', handleError);
   }, [])
 
   // Heartbeat to update timeSpent and online status

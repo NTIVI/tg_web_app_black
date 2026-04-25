@@ -83,7 +83,7 @@ app.post('/api/auth/login', async (req, res) => {
 app.put('/api/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { intent, gender, birthDate, city, bio } = req.body;
+    const { intent, gender, birthDate, city, bio, timeSpent } = req.body;
     
     const user = await prisma.user.update({
       where: { id },
@@ -93,6 +93,7 @@ app.put('/api/users/:id', async (req, res) => {
         birthDate: birthDate ? new Date(birthDate) : null,
         city,
         bio,
+        timeSpent: timeSpent !== undefined ? timeSpent : undefined,
       }
     });
     

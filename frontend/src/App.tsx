@@ -8,7 +8,7 @@ import Chats from './pages/Chats'
 import News from './pages/News'
 import Profile from './pages/Profile'
 import Admin from './pages/Admin'
-import { authApi } from './api'
+import { authApi, userApi } from './api'
 import { AlertCircle } from 'lucide-react'
 
 function AppContent() {
@@ -53,6 +53,18 @@ function AppContent() {
       setLoading(false)
     }
   }, [])
+
+  // Heartbeat to update timeSpent and online status
+  useEffect(() => {
+    if (!user) return
+    
+    const interval = setInterval(() => {
+      userApi.update(user.id, { timeSpent: user.timeSpent + 60 })
+        .catch(err => console.warn('Heartbeat failed', err))
+    }, 60000) // every minute
+
+    return () => clearInterval(interval)
+  }, [user])
 
   if (loading) {
     return (

@@ -19,11 +19,16 @@ function AppContent() {
 
   useEffect(() => {
     try {
-      WebApp.ready()
-      WebApp.expand()
+      // Use window.Telegram.WebApp if available, otherwise fallback to the imported SDK
+      const tg = (window as any).Telegram?.WebApp || WebApp;
+      
+      if (tg && typeof tg.ready === 'function') {
+        tg.ready();
+        tg.expand();
+      }
 
-      const initData = WebApp.initDataUnsafe
-      const tgUser = initData.user
+      const initData = tg?.initDataUnsafe || {};
+      const tgUser = initData.user;
 
       const performLogin = async (id: string, fName: string, lName: string) => {
         try {

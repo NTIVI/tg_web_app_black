@@ -56,6 +56,24 @@ const Profile = ({ user }: any) => {
         </motion.div>
       </div>
 
+      {user.photos && user.photos.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-bold uppercase text-text-muted ml-2">Мои фотографии</h3>
+          <div className="flex overflow-x-auto gap-4 pb-4 snap-x no-scrollbar px-2">
+            {[...user.photos].sort((a: any, b: any) => a.order - b.order).map((photo: any) => (
+              <div key={photo.id || photo.order} className="min-w-[140px] w-[140px] h-[180px] rounded-2xl overflow-hidden snap-center relative border border-white/10 shrink-0 shadow-lg">
+                <img src={photo.url} className="w-full h-full object-cover" />
+                {photo.isAvatar && (
+                  <div className="absolute top-2 left-2 bg-primary/80 backdrop-blur text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                    Аватар
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="space-y-3">
         <h3 className="text-sm font-bold uppercase text-text-muted ml-2">Настройки</h3>
         <div className="space-y-2">

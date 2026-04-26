@@ -19,7 +19,17 @@ const botToken = process.env.BOT_TOKEN || '8798417025:AAEt4SpgZWHlm4J7id0tryXrqT
 const webAppUrl = process.env.WEB_APP_URL || 'https://tg-web-app-black.vercel.app/';
 
 if (botToken) {
-  const bot = new TelegramBot(botToken, { polling: true });
+  const bot = new TelegramBot(botToken);
+  
+  // Set Webhook for Render (wakes up the server on new messages)
+  const serverUrl = process.env.RENDER_EXTERNAL_URL || 'https://tg-web-app-black.onrender.com';
+  bot.setWebHook(`${serverUrl}/api/bot${botToken}`);
+
+  // Express route to receive webhook updates from Telegram
+  app.post(`/api/bot${botToken}`, (req, res) => {
+    bot.processUpdate(req.body);
+    res.sendStatus(200);
+  });
 
   // Set the menu button for the bot
   bot.setChatMenuButton({

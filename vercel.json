@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://tg-web-app-black.onrender.com/api/$1" },
-    { "source": "/(.*)", "destination": "/frontend/dist/$1" }
+    { "source": "/api/:path*", "destination": "https://tg-web-app-black.onrender.com/api/:path*" },
+    { "source": "/((?!api/).*)", "destination": "/frontend/dist/index.html" }
   ]
 }

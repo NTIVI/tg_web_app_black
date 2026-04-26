@@ -10,7 +10,6 @@ const EditProfile = ({ user, setUser }: any) => {
     bio: user?.bio || '',
     gender: user?.gender || 'male',
   })
-  })
   const [avatar, setAvatar] = useState(user?.photos?.find((p: any) => p.isAvatar)?.url || '')
   const [photos, setPhotos] = useState(() => {
     const existingPhotos = user?.photos?.filter((p: any) => !p.isAvatar).sort((a: any, b: any) => a.order - b.order) || []

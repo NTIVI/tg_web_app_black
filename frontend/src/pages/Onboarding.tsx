@@ -147,7 +147,7 @@ const Onboarding = ({ user, setUser }: any) => {
                   type="date"
                   value={formData.birthDate}
                   onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                  className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:ring-2 focus:ring-primary outline-none"
+                  className="w-full max-w-full box-border p-4 rounded-xl bg-white/5 border border-white/10 focus:ring-2 focus:ring-primary outline-none"
                 />
               </div>
 
@@ -256,9 +256,10 @@ const Onboarding = ({ user, setUser }: any) => {
 
               <button
                 onClick={handleComplete}
-                className="w-full p-4 bg-primary rounded-xl font-bold hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
+                disabled={!avatar}
+                className="w-full p-4 bg-primary rounded-xl font-bold hover:bg-primary-dark transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Начать пользоваться <Check size={20} />
+                {avatar ? 'Начать пользоваться' : 'Загрузите аватар'} <Check size={20} />
               </button>
               
               <p className="text-center text-[12px] text-[#888]">

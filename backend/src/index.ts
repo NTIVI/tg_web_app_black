@@ -23,10 +23,11 @@ if (botToken) {
   
   // Set Webhook for Render (wakes up the server on new messages)
   const serverUrl = process.env.RENDER_EXTERNAL_URL || 'https://tg-web-app-black.onrender.com';
-  bot.setWebHook(`${serverUrl}/api/bot${botToken}`);
+  const webhookPath = `/api/bot-webhook`;
+  bot.setWebHook(`${serverUrl}${webhookPath}`);
 
   // Express route to receive webhook updates from Telegram
-  app.post(`/api/bot${botToken}`, (req, res) => {
+  app.post(webhookPath, (req, res) => {
     bot.processUpdate(req.body);
     res.sendStatus(200);
   });

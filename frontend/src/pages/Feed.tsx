@@ -71,7 +71,7 @@ const Feed = ({ user, setUser }: any) => {
 
           {/* Avatar and Info Toggle */}
           <div className="absolute top-4 left-4 flex items-center gap-3">
-            <button 
+            <button
               onClick={() => setSelectedProfile(currentProfile)}
               className="w-12 h-12 rounded-full border-2 border-primary overflow-hidden hover:scale-110 transition-transform shadow-lg"
             >
@@ -97,7 +97,7 @@ const Feed = ({ user, setUser }: any) => {
                   <span>{currentProfile.city}</span>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setSelectedProfile(currentProfile)}
                 className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-primary"
               >
@@ -125,11 +125,11 @@ const Feed = ({ user, setUser }: any) => {
         </button>
       </div>
 
-      <MatchModal 
-        isOpen={!!matchData} 
-        onClose={() => setMatchData(null)} 
-        user={user} 
-        partner={matchData} 
+      <MatchModal
+        isOpen={!!matchData}
+        onClose={() => setMatchData(null)}
+        user={user}
+        partner={matchData}
       />
 
       {/* Profile Detail Modal */}
@@ -152,7 +152,7 @@ const Feed = ({ user, setUser }: any) => {
               <div className="aspect-square rounded-3xl overflow-hidden glass-panel">
                 <img src={avatar} className="w-full h-full object-cover" />
               </div>
-              
+
               <div className="space-y-2">
                 <h3 className="text-3xl font-bold">{selectedProfile.firstName} {selectedProfile.lastName}</h3>
                 <p className="text-text-muted flex items-center gap-2">
@@ -180,7 +180,7 @@ const Feed = ({ user, setUser }: any) => {
                   </div>
                 ))}
               </div>
-              
+
               <div className="text-center text-text-muted text-sm pt-4">
                 Проведено в приложении: {Math.floor(selectedProfile.timeSpent / 60)} мин
               </div>

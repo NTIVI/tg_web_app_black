@@ -13,8 +13,7 @@ const MainLayout = () => {
         <NavLink
           to="/feed"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center w-16 h-full transition-all ${
-              isActive ? 'text-primary scale-110' : 'text-text-muted hover:text-white'
+            `flex flex-col items-center justify-center w-16 h-full transition-all ${isActive ? 'text-primary scale-110' : 'text-text-muted hover:text-white'
             }`
           }
         >
@@ -25,8 +24,7 @@ const MainLayout = () => {
         <NavLink
           to="/chats"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center w-16 h-full transition-all ${
-              isActive ? 'text-primary scale-110' : 'text-text-muted hover:text-white'
+            `flex flex-col items-center justify-center w-16 h-full transition-all ${isActive ? 'text-primary scale-110' : 'text-text-muted hover:text-white'
             }`
           }
         >
@@ -37,8 +35,7 @@ const MainLayout = () => {
         <NavLink
           to="/news"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center w-16 h-full transition-all ${
-              isActive ? 'text-primary scale-110' : 'text-text-muted hover:text-white'
+            `flex flex-col items-center justify-center w-16 h-full transition-all ${isActive ? 'text-primary scale-110' : 'text-text-muted hover:text-white'
             }`
           }
         >
@@ -49,8 +46,7 @@ const MainLayout = () => {
         <NavLink
           to="/profile"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center w-16 h-full transition-all ${
-              isActive ? 'text-primary scale-110' : 'text-text-muted hover:text-white'
+            `flex flex-col items-center justify-center w-16 h-full transition-all ${isActive ? 'text-primary scale-110' : 'text-text-muted hover:text-white'
             }`
           }
         >

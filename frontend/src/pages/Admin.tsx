@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { adminApi } from '../api'
-import { Shield, UserX, AlertCircle } from 'lucide-react'
+import { Shield, UserX, AlertCircle, Trash2 } from 'lucide-react'
 
 const Admin = ({ user }: any) => {
   const [users, setUsers] = useState<any[]>([])
@@ -19,6 +19,17 @@ const Admin = ({ user }: any) => {
       setUsers(users.map(u => u.id === id ? { ...u, isBlocked } : u))
     } catch (err) {
       console.error(err)
+    }
+  }
+
+  const handleDeleteUser = async (id: string) => {
+    if (!window.confirm('ВНИМАНИЕ: Это полностью удалит пользователя и все его данные (фото, чаты). Продолжить?')) return
+    try {
+      await adminApi.deleteUser(id)
+      setUsers(users.filter(u => u.id !== id))
+    } catch (err) {
+      console.error(err)
+      alert('Ошибка при удалении')
     }
   }
 
@@ -71,17 +82,25 @@ const Admin = ({ user }: any) => {
                   <span className="text-yellow-500">{u.coins} COINS</span>
                 </div>
               </div>
-              <button
-                onClick={() => handleBlock(u.id, !u.isBlocked)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  u.isBlocked 
-                    ? 'bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500/20' 
-                    : 'bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20'
-                }`}
-              >
-                {u.isBlocked ? 'Разблокировать' : 'Заблокировать'}
-              </button>
-            </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleBlock(u.id, !u.isBlocked)}
+                    className={`px-3 py-2 rounded-xl text-[10px] font-bold transition-all ${
+                      u.isBlocked 
+                        ? 'bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500/20' 
+                        : 'bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20'
+                    }`}
+                  >
+                    {u.isBlocked ? 'Разблок.' : 'Блок.'}
+                  </button>
+                  <button
+                    onClick={() => handleDeleteUser(u.id)}
+                    className="p-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl hover:bg-red-500/20 transition-all"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
 
             {u.photos && u.photos.length > 0 && (
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">

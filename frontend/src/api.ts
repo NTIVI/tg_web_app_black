@@ -34,6 +34,7 @@ export const adminApi = {
   getUsers: () => api.get('/admin/users'),
   blockUser: (id: string, isBlocked: boolean) =>
     api.post(`/admin/users/${id}/block`, { isBlocked }),
+  deleteUser: (id: string) => api.delete(`/admin/users/${id}`),
   deletePhoto: (id: string) => api.delete(`/admin/photos/${id}`),
 };
 

@@ -384,6 +384,17 @@ app.post('/api/admin/users/:id/block', async (req, res) => {
   }
 });
 
+app.delete('/api/admin/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.user.delete({ where: { id } });
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.delete('/api/admin/photos/:id', async (req, res) => {
   try {
     const { id } = req.params;

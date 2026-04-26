@@ -27,14 +27,37 @@ const Onboarding = ({ user, setUser }: any) => {
 
     const reader = new FileReader()
     reader.onloadend = () => {
-      const base64String = reader.result as string
-      if (type === 'avatar') {
-        setAvatar(base64String)
-      } else if (type === 'photo' && index !== undefined) {
-        const newPhotos = [...photos]
-        newPhotos[index] = base64String
-        setPhotos(newPhotos)
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let width = img.width
+        let height = img.height
+        const maxSize = 800
+
+        if (width > height && width > maxSize) {
+          height *= maxSize / width
+          width = maxSize
+        } else if (height > maxSize) {
+          width *= maxSize / height
+          height = maxSize
+        }
+
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx?.drawImage(img, 0, 0, width, height)
+
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8)
+
+        if (type === 'avatar') {
+          setAvatar(compressedBase64)
+        } else if (type === 'photo' && index !== undefined) {
+          const newPhotos = [...photos]
+          newPhotos[index] = compressedBase64
+          setPhotos(newPhotos)
+        }
       }
+      img.src = reader.result as string
     }
     reader.readAsDataURL(file)
   }
@@ -61,8 +84,9 @@ const Onboarding = ({ user, setUser }: any) => {
         setUser({ ...updatedUser.data })
       }
       navigate('/feed')
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
+      alert(err?.response?.data?.error || err.message || 'Произошла ошибка при сохранении профиля')
     }
   }
 

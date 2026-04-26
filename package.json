@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "install-all": "npm install --prefix backend && npm install --prefix frontend",
-    "build": "npm install --prefix frontend && npm run build --prefix frontend && npm install --prefix backend && cd backend && npx prisma@5.22.0 generate",
+    "build": "npm install --prefix frontend && npm run build --prefix frontend && npm install --prefix backend && cd backend && npx prisma@5.22.0 generate && mv prisma/schema.prisma prisma/schema.prisma.bak",
     "start": "npm start --prefix backend"
   },
   "dependencies": {

@@ -66,7 +66,6 @@ const Feed = ({ user, setUser }: any) => {
 
   const currentProfile = profiles[currentIndex]
   const avatar = currentProfile.photos?.find((p: any) => p.isAvatar)?.url || 'https://via.placeholder.com/150'
-  const mainPhoto = currentProfile.photos?.find((p: any) => !p.isAvatar)?.url || avatar
 
   return (
     <div className="h-[calc(100vh-64px)] p-4 flex flex-col relative overflow-hidden">

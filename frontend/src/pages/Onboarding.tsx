@@ -15,25 +15,51 @@ const Onboarding = ({ user, setUser }: any) => {
     bio: '',
     gender: 'male',
   })
-  const [avatar] = useState('')
+  const [avatar, setAvatar] = useState('')
+  const [photos, setPhotos] = useState(['', '', ''])
   const navigate = useNavigate()
 
   const nextStep = () => setStep(step + 1)
   
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'photo', index?: number) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const base64String = reader.result as string
+      if (type === 'avatar') {
+        setAvatar(base64String)
+      } else if (type === 'photo' && index !== undefined) {
+        const newPhotos = [...photos]
+        newPhotos[index] = base64String
+        setPhotos(newPhotos)
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
   const handleComplete = async () => {
     if (!user) return
     try {
       const updatedUser = await userApi.update(user.id, formData)
       
-      const demoPhotos = [
-        { url: avatar || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&h=400', isAvatar: true, order: 0 },
-        { url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400', isAvatar: false, order: 1 },
-        { url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=400', isAvatar: false, order: 2 },
-        { url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&h=400', isAvatar: false, order: 3 },
-      ]
+      const finalPhotos: any[] = []
+      if (avatar) {
+        finalPhotos.push({ url: avatar, isAvatar: true, order: 0 })
+      }
+      photos.forEach((photoStr, i) => {
+        if (photoStr) {
+          finalPhotos.push({ url: photoStr, isAvatar: false, order: i + 1 })
+        }
+      })
       
-      await userApi.uploadPhotos(user.id, demoPhotos)
-      setUser({ ...updatedUser.data, photos: demoPhotos })
+      if (finalPhotos.length > 0) {
+        await userApi.uploadPhotos(user.id, finalPhotos)
+        setUser({ ...updatedUser.data, photos: finalPhotos })
+      } else {
+        setUser({ ...updatedUser.data })
+      }
       navigate('/feed')
     } catch (err) {
       console.error(err)
@@ -157,18 +183,32 @@ const Onboarding = ({ user, setUser }: any) => {
 
             <div className="space-y-6">
               <div className="flex justify-center">
-                <div className="relative w-32 h-32 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 hover:border-primary transition-colors cursor-pointer group">
-                  <Camera size={32} className="text-[#888] group-hover:text-primary" />
-                  <span className="absolute bottom-2 text-[10px] uppercase font-bold text-[#888]">Avatar</span>
-                </div>
+                <label className="relative w-32 h-32 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 hover:border-primary transition-colors cursor-pointer group">
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'avatar')} />
+                  {avatar ? (
+                    <img src={avatar} className="w-full h-full object-cover" />
+                  ) : (
+                    <>
+                      <Camera size={32} className="text-[#888] group-hover:text-primary" />
+                      <span className="absolute bottom-2 text-[10px] uppercase font-bold text-[#888]">Avatar</span>
+                    </>
+                  )}
+                </label>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="aspect-[3/4] rounded-xl bg-white/5 flex items-center justify-center border-2 border-dashed border-white/20 hover:border-primary transition-colors cursor-pointer group relative">
-                    <Camera size={24} className="text-[#888] group-hover:text-primary" />
-                    <span className="absolute bottom-2 text-[10px] uppercase font-bold text-[#888]">Photo {i}</span>
-                  </div>
+                {[0, 1, 2].map((i) => (
+                  <label key={i} className="aspect-[3/4] rounded-xl bg-white/5 flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 hover:border-primary transition-colors cursor-pointer group relative">
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'photo', i)} />
+                    {photos[i] ? (
+                      <img src={photos[i]} className="w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <Camera size={24} className="text-[#888] group-hover:text-primary" />
+                        <span className="absolute bottom-2 text-[10px] uppercase font-bold text-[#888]">Photo {i + 1}</span>
+                      </>
+                    )}
+                  </label>
                 ))}
               </div>
 

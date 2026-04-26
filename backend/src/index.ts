@@ -12,7 +12,7 @@ const port = process.env.PORT || 3000;
 const prisma = new PrismaClient();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
 // Telegram Bot Setup
 const botToken = process.env.BOT_TOKEN;
@@ -25,7 +25,7 @@ if (botToken) {
   bot.setChatMenuButton({
     menu_button: {
       type: 'web_app',
-      text: 'Открыть NTIVI',
+      text: 'открыть',
       web_app: { url: webAppUrl }
     }
   }).catch(err => console.error('Error setting menu button:', err));
@@ -35,7 +35,7 @@ if (botToken) {
     bot.sendMessage(chatId, 'Добро пожаловать в NTIVI STUDIO 🖤\n\nПриложение для тех, кто ищет стиль и искренность. Найди свою идеальную пару прямо сейчас.', {
       reply_markup: {
         inline_keyboard: [
-          [{ text: '🔥 Открыть NTIVI STUDIO', web_app: { url: webAppUrl } }]
+          [{ text: 'открыть', web_app: { url: webAppUrl } }]
         ]
       }
     });

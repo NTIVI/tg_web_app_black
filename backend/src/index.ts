@@ -16,7 +16,7 @@ app.use(express.json({ limit: '50mb' }));
 
 // Telegram Bot Setup
 const botToken = process.env.BOT_TOKEN || '8798417025:AAEt4SpgZWHlm4J7id0tryXrqTAyT2CYFno';
-const webAppUrl = process.env.WEB_APP_URL || 'https://tg-web-app-black.onrender.com/';
+const webAppUrl = process.env.WEB_APP_URL || 'https://tg-web-app-black.vercel.app/';
 
 if (botToken) {
   const bot = new TelegramBot(botToken, { polling: true });
@@ -25,7 +25,7 @@ if (botToken) {
   bot.setChatMenuButton({
     menu_button: {
       type: 'web_app',
-      text: 'открыть',
+      text: 'Открыть',
       web_app: { url: webAppUrl }
     }
   }).catch(err => console.error('Error setting menu button:', err));
@@ -35,7 +35,7 @@ if (botToken) {
     bot.sendMessage(chatId, 'Добро пожаловать в NTIVI STUDIO 🖤\n\nПриложение для тех, кто ищет стиль и искренность. Найди свою идеальную пару прямо сейчас.', {
       reply_markup: {
         inline_keyboard: [
-          [{ text: 'открыть', web_app: { url: webAppUrl } }]
+          [{ text: 'Открыть', web_app: { url: webAppUrl } }]
         ]
       }
     });

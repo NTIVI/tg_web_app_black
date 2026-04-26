@@ -21,18 +21,27 @@ const webAppUrl = process.env.WEB_APP_URL || 'https://tg-web-app-black.vercel.ap
 if (botToken) {
   const bot = new TelegramBot(botToken, { polling: true });
 
+  // Set the menu button for the bot
+  bot.setChatMenuButton({
+    menu_button: {
+      type: 'web_app',
+      text: 'Открыть NTIVI',
+      web_app: { url: webAppUrl }
+    }
+  }).catch(err => console.error('Error setting menu button:', err));
+
   bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
-    bot.sendMessage(chatId, 'Добро пожаловать в NTIVI STUDIO 🖤\nНайди свою идеальную пару прямо сейчас.', {
+    bot.sendMessage(chatId, 'Добро пожаловать в NTIVI STUDIO 🖤\n\nПриложение для тех, кто ищет стиль и искренность. Найди свою идеальную пару прямо сейчас.', {
       reply_markup: {
         inline_keyboard: [
-          [{ text: '🔥 Открыть приложение', web_app: { url: webAppUrl } }]
+          [{ text: '🔥 Открыть NTIVI STUDIO', web_app: { url: webAppUrl } }]
         ]
       }
     });
   });
 
-  console.log('🤖 Telegram bot is running...');
+  console.log('🤖 Telegram bot is running with new token...');
 } else {
   console.warn('⚠️ BOT_TOKEN is missing. Telegram bot not started.');
 }

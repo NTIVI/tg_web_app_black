@@ -183,8 +183,13 @@ const Onboarding = ({ user, setUser }: any) => {
 
             <div className="space-y-6">
               <div className="flex justify-center">
-                <label htmlFor="avatar-upload" className="relative w-32 h-32 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 hover:border-primary transition-colors cursor-pointer group">
-                  <input id="avatar-upload" type="file" accept="image/png, image/jpeg, image/jpg" className="sr-only" onChange={(e) => handleImageUpload(e, 'avatar')} />
+                <div className="relative w-32 h-32 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 hover:border-primary transition-colors group">
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={(e) => handleImageUpload(e, 'avatar')} 
+                    style={{ opacity: 0.01, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 100, cursor: 'pointer' }}
+                  />
                   {avatar ? (
                     <img src={avatar} className="w-full h-full object-cover" />
                   ) : (
@@ -193,13 +198,18 @@ const Onboarding = ({ user, setUser }: any) => {
                       <span className="absolute bottom-2 text-[10px] uppercase font-bold text-[#888]">Avatar</span>
                     </>
                   )}
-                </label>
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 {[0, 1, 2].map((i) => (
-                  <label key={i} htmlFor={`photo-upload-${i}`} className="aspect-[3/4] rounded-xl bg-white/5 flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 hover:border-primary transition-colors cursor-pointer group relative">
-                    <input id={`photo-upload-${i}`} type="file" accept="image/png, image/jpeg, image/jpg" className="sr-only" onChange={(e) => handleImageUpload(e, 'photo', i)} />
+                  <div key={i} className="aspect-[3/4] rounded-xl bg-white/5 flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 hover:border-primary transition-colors group relative">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={(e) => handleImageUpload(e, 'photo', i)} 
+                      style={{ opacity: 0.01, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 100, cursor: 'pointer' }}
+                    />
                     {photos[i] ? (
                       <img src={photos[i]} className="w-full h-full object-cover" />
                     ) : (
@@ -208,7 +218,7 @@ const Onboarding = ({ user, setUser }: any) => {
                         <span className="absolute bottom-2 text-[10px] uppercase font-bold text-[#888]">Photo {i + 1}</span>
                       </>
                     )}
-                  </label>
+                  </div>
                 ))}
               </div>
 

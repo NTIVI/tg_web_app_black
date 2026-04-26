@@ -182,48 +182,43 @@ const Onboarding = ({ user, setUser }: any) => {
             </div>
 
             <div className="space-y-6">
-              <div className="flex justify-center">
-                <div className="relative w-32 h-32 rounded-full bg-white/5 border-2 border-dashed border-white/20 hover:border-primary transition-colors overflow-hidden">
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    {avatar ? (
-                      <img src={avatar} className="w-full h-full object-cover" />
-                    ) : (
-                      <>
-                        <Camera size={32} className="text-[#888]" />
-                        <span className="mt-1 text-[10px] uppercase font-bold text-[#888]">Avatar</span>
-                      </>
-                    )}
-                  </div>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={(e) => handleImageUpload(e, 'avatar')} 
-                    className="absolute inset-0 w-full h-full opacity-0 z-50 cursor-pointer"
-                  />
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-32 h-32 rounded-full bg-white/5 border-2 border-dashed border-white/20 overflow-hidden flex items-center justify-center">
+                  {avatar ? (
+                    <img src={avatar} className="w-full h-full object-cover" />
+                  ) : (
+                    <Camera size={32} className="text-[#888]" />
+                  )}
                 </div>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => handleImageUpload(e, 'avatar')} 
+                  className="block w-full max-w-xs text-sm text-[#888] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-white/10 file:text-white hover:file:bg-white/20 cursor-pointer"
+                />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="relative aspect-[3/4] rounded-xl bg-white/5 border-2 border-dashed border-white/20 hover:border-primary transition-colors overflow-hidden">
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                      {photos[i] ? (
-                        <img src={photos[i]} className="w-full h-full object-cover" />
-                      ) : (
-                        <>
+              <div className="space-y-4">
+                <p className="text-sm font-bold text-center">Дополнительные фото</p>
+                <div className="grid grid-cols-1 gap-6">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="flex flex-col items-center gap-3 bg-white/5 p-4 rounded-xl border border-white/10">
+                      <div className="w-24 h-32 rounded-xl bg-black/20 border-2 border-dashed border-white/10 overflow-hidden flex items-center justify-center">
+                        {photos[i] ? (
+                          <img src={photos[i]} className="w-full h-full object-cover" />
+                        ) : (
                           <Camera size={24} className="text-[#888]" />
-                          <span className="mt-1 text-[10px] uppercase font-bold text-[#888]">Photo {i + 1}</span>
-                        </>
-                      )}
+                        )}
+                      </div>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={(e) => handleImageUpload(e, 'photo', i)} 
+                        className="block w-full text-xs text-[#888] file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-white/10 file:text-white hover:file:bg-white/20 cursor-pointer"
+                      />
                     </div>
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={(e) => handleImageUpload(e, 'photo', i)} 
-                      className="absolute inset-0 w-full h-full opacity-0 z-50 cursor-pointer"
-                    />
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
               <button

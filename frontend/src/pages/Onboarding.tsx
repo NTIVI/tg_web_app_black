@@ -64,30 +64,39 @@ const Onboarding = ({ user, setUser }: any) => {
 
   const handleComplete = async () => {
     if (!user) return
+    
+    let updatedUser: any;
     try {
-      const updatedUser = await userApi.update(user.id, formData)
-      
-      const finalPhotos: any[] = []
-      if (avatar) {
-        finalPhotos.push({ url: avatar, isAvatar: true, order: 0 })
-      }
-      photos.forEach((photoStr, i) => {
-        if (photoStr) {
-          finalPhotos.push({ url: photoStr, isAvatar: false, order: i + 1 })
-        }
-      })
-      
-      if (finalPhotos.length > 0) {
-        await userApi.uploadPhotos(user.id, finalPhotos)
-        setUser({ ...updatedUser.data, photos: finalPhotos })
-      } else {
-        setUser({ ...updatedUser.data })
-      }
-      navigate('/feed')
+      updatedUser = await userApi.update(user.id, formData)
     } catch (err: any) {
       console.error(err)
-      alert(err?.response?.data?.error || err.message || 'Произошла ошибка при сохранении профиля')
+      alert('Ошибка обновления профиля: ' + (err?.response?.data?.error || err.message || 'Server error'))
+      return;
     }
+      
+    const finalPhotos: any[] = []
+    if (avatar) {
+      finalPhotos.push({ url: avatar, isAvatar: true, order: 0 })
+    }
+    photos.forEach((photoStr, i) => {
+      if (photoStr) {
+        finalPhotos.push({ url: photoStr, isAvatar: false, order: i + 1 })
+      }
+    })
+    
+    if (finalPhotos.length > 0) {
+      try {
+        await userApi.uploadPhotos(user.id, finalPhotos)
+        setUser({ ...updatedUser.data, photos: finalPhotos })
+      } catch (err: any) {
+        console.error(err)
+        alert('Ошибка загрузки фото: ' + (err?.response?.data?.error || err.message || 'Server error'))
+        return;
+      }
+    } else {
+      setUser({ ...updatedUser.data })
+    }
+    navigate('/feed')
   }
 
   return (

@@ -327,6 +327,64 @@ app.get('/api/users/:id/chats', async (req, res) => {
   }
 });
 
+// Get Chat Messages & Typing Status
+app.get('/api/chats/:chatId/messages', async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const { userId } = req.query;
+
+    const chat = await prisma.chat.findUnique({
+      where: { id: chatId },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' }
+        }
+      }
+    });
+
+    if (!chat) return res.status(404).json({ error: 'Chat not found' });
+
+    // Determine if the other user is typing
+    const isUser1 = chat.user1Id === userId;
+    const partnerTypingAt = isUser1 ? chat.user2TypingAt : chat.user1TypingAt;
+    const isPartnerTyping = partnerTypingAt 
+      ? new Date().getTime() - new Date(partnerTypingAt).getTime() < 5000 
+      : false;
+
+    res.json({
+      messages: chat.messages,
+      isPartnerTyping
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Update Typing Status
+app.post('/api/chats/:chatId/typing', async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const { userId } = req.body;
+
+    const chat = await prisma.chat.findUnique({ where: { id: chatId } });
+    if (!chat) return res.status(404).json({ error: 'Chat not found' });
+
+    const isUser1 = chat.user1Id === userId;
+    await prisma.chat.update({
+      where: { id: chatId },
+      data: {
+        [isUser1 ? 'user1TypingAt' : 'user2TypingAt']: new Date()
+      }
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Send Message
 app.post('/api/chats/:chatId/messages', async (req, res) => {
   try {

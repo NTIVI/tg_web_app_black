@@ -81,6 +81,9 @@ model Chat {
   user1     User      @relation("ChatsUser1", fields: [user1Id], references: [id], onDelete: Cascade)
   user2     User      @relation("ChatsUser2", fields: [user2Id], references: [id], onDelete: Cascade)
   
+  user1TypingAt DateTime?
+  user2TypingAt DateTime?
+  
   messages  Message[]
 
   @@unique([user1Id, user2Id])

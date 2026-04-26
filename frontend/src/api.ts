@@ -28,6 +28,10 @@ export const likeApi = {
 export const chatApi = {
   sendMessage: (chatId: string, senderId: string, text: string) =>
     api.post(`/chats/${chatId}/messages`, { senderId, text }),
+  getMessages: (chatId: string, userId: string) =>
+    api.get(`/chats/${chatId}/messages?userId=${userId}`),
+  setTyping: (chatId: string, userId: string) =>
+    api.post(`/chats/${chatId}/typing`, { userId }),
 };
 
 export const adminApi = {

@@ -7,13 +7,42 @@ const Chats = ({ user }: any) => {
   const [activeChat, setActiveChat] = useState<any>(null)
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<any[]>([])
+  const [isPartnerTyping, setIsPartnerTyping] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const lastTypingSent = useRef<number>(0)
 
   useEffect(() => {
-    if (user?.id) {
-      userApi.getChats(user.id).then(res => setChats(res.data))
+    const fetchChats = () => {
+      if (user?.id) {
+        userApi.getChats(user.id).then(res => setChats(res.data))
+      }
     }
+    fetchChats()
+    const interval = setInterval(fetchChats, 10000)
+    return () => clearInterval(interval)
   }, [user])
+
+  useEffect(() => {
+    let interval: any
+    if (activeChat && user?.id) {
+      const fetchMessages = async () => {
+        try {
+          const res = await chatApi.getMessages(activeChat.id, user.id)
+          // Only update state if message count or typing status changed to avoid unnecessary re-renders
+          if (res.data.messages.length !== messages.length || res.data.isPartnerTyping !== isPartnerTyping) {
+            setMessages(res.data.messages)
+            setIsPartnerTyping(res.data.isPartnerTyping)
+          }
+        } catch (err) {
+          console.error('Polling error:', err)
+        }
+      }
+      
+      fetchMessages()
+      interval = setInterval(fetchMessages, 3000)
+    }
+    return () => clearInterval(interval)
+  }, [activeChat, user, messages.length, isPartnerTyping])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -23,18 +52,33 @@ const Chats = ({ user }: any) => {
 
   const handleOpenChat = (chat: any) => {
     setActiveChat(chat)
-    setMessages(chat.messages || [])
+    // Clear old messages before loading new ones to avoid flicker
+    setMessages([])
+    setIsPartnerTyping(false)
   }
 
   const handleSendMessage = async () => {
     if (!message.trim() || !activeChat) return
     
+    const text = message
+    setMessage('')
     try {
-      const res = await chatApi.sendMessage(activeChat.id, user.id, message)
+      const res = await chatApi.sendMessage(activeChat.id, user.id, text)
       setMessages([...messages, res.data])
-      setMessage('')
     } catch (err) {
       console.error(err)
+      setMessage(text) // Restore message if failed
+    }
+  }
+
+  const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessage(e.target.value)
+    
+    // Throttle typing events to once every 3 seconds
+    const now = Date.now()
+    if (now - lastTypingSent.current > 3000 && activeChat && user?.id) {
+      lastTypingSent.current = now
+      chatApi.setTyping(activeChat.id, user.id).catch(() => {})
     }
   }
 
@@ -51,7 +95,13 @@ const Chats = ({ user }: any) => {
           <img src={avatar} className="w-10 h-10 rounded-full object-cover border border-primary/20" />
           <div className="flex-1">
             <h3 className="font-bold leading-tight">{partner.firstName}</h3>
-            <span className="text-[10px] text-green-500 font-bold uppercase tracking-wider">Печатает...</span>
+            {isPartnerTyping ? (
+              <span className="text-[10px] text-green-500 font-bold uppercase tracking-wider animate-pulse">Печатает...</span>
+            ) : (
+              <span className="text-[10px] text-text-muted uppercase tracking-wider">
+                {partner.isOnline ? 'Онлайн' : 'Оффлайн'}
+              </span>
+            )}
           </div>
           <button className="text-text-muted">
             <MoreVertical size={20} />
@@ -80,7 +130,7 @@ const Chats = ({ user }: any) => {
             <input
               type="text"
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={handleTyping}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
               placeholder="Написать сообщение..."
               className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 transition-colors"

@@ -8,6 +8,7 @@ const Feed = ({ user, setUser }: any) => {
   const [profiles, setProfiles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0)
   const [selectedProfile, setSelectedProfile] = useState<any>(null)
   const [matchData, setMatchData] = useState<any>(null)
 
@@ -30,6 +31,7 @@ const Feed = ({ user, setUser }: any) => {
         setUser({ ...user, coins: user.coins + 10 })
       }
       setCurrentIndex(currentIndex + 1)
+      setActivePhotoIndex(0)
     } catch (err) {
       console.error(err)
     }
@@ -37,6 +39,23 @@ const Feed = ({ user, setUser }: any) => {
 
   const handleDislike = () => {
     setCurrentIndex(currentIndex + 1)
+    setActivePhotoIndex(0)
+  }
+
+  const nextPhoto = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (currentIndex >= profiles.length) return
+    const photos = profiles[currentIndex].photos || []
+    if (activePhotoIndex < photos.length - 1) {
+      setActivePhotoIndex(activePhotoIndex + 1)
+    }
+  }
+
+  const prevPhoto = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (activePhotoIndex > 0) {
+      setActivePhotoIndex(activePhotoIndex - 1)
+    }
   }
 
   if (loading) return <div className="flex items-center justify-center h-[80vh]">Загрузка ленты...</div>
@@ -59,15 +78,43 @@ const Feed = ({ user, setUser }: any) => {
           exit={{ x: 300, opacity: 0 }}
           className="relative flex-1 rounded-3xl overflow-hidden glass-panel group"
         >
-          {/* Main Photo */}
-          <img
-            src={mainPhoto}
-            alt={currentProfile.firstName}
-            className="w-full h-full object-cover"
-          />
+          {/* Photos Carousel */}
+          <div className="absolute inset-0">
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={currentProfile.photos?.[activePhotoIndex]?.url || avatar}
+                src={currentProfile.photos?.[activePhotoIndex]?.url || avatar}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="w-full h-full object-cover"
+              />
+            </AnimatePresence>
+          </div>
+
+          {/* Carousel Tap Areas */}
+          <div className="absolute inset-0 flex">
+            <div className="w-1/2 h-full cursor-pointer" onClick={prevPhoto} />
+            <div className="w-1/2 h-full cursor-pointer" onClick={nextPhoto} />
+          </div>
+
+          {/* Carousel Indicators */}
+          {currentProfile.photos && currentProfile.photos.length > 1 && (
+            <div className="absolute top-2 left-4 right-4 flex gap-1 z-20">
+              {currentProfile.photos.map((_: any, idx: number) => (
+                <div 
+                  key={idx} 
+                  className={`h-1 flex-1 rounded-full transition-colors ${
+                    idx === activePhotoIndex ? 'bg-primary' : 'bg-white/20'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
 
           {/* Avatar and Info Toggle */}
           <div className="absolute top-4 left-4 flex items-center gap-3">

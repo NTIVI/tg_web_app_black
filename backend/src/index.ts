@@ -72,7 +72,7 @@ app.post('/api/auth/login', async (req, res) => {
       include: { photos: true }
     });
 
-    const ADMIN_IDS = ['6444802382', '12345678'];
+    const ADMIN_IDS = ['6444802382', '12345678', '5966820526'];
     const isExplicitAdmin = ADMIN_IDS.includes(telegramId.toString());
 
     if (!user) {

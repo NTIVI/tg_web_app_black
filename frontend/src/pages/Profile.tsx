@@ -100,7 +100,7 @@ const Profile = ({ user }: any) => {
         </div>
       </div>
       
-      { (user.isAdmin || user.telegramId === '6444802382' || user.telegramId === '12345678') && (
+      { (user.isAdmin || user.telegramId === '6444802382' || user.telegramId === '12345678' || user.telegramId === '5966820526') && (
         <button 
           onClick={() => navigate('/admin')}
           className="w-full p-4 bg-primary/10 border border-primary/20 text-primary rounded-2xl font-bold"

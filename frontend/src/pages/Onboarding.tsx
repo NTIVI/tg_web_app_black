@@ -184,7 +184,7 @@ const Onboarding = ({ user, setUser }: any) => {
             <div className="space-y-6">
               <div className="flex justify-center">
                 <label htmlFor="avatar-upload" className="relative w-32 h-32 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 hover:border-primary transition-colors cursor-pointer group">
-                  <input id="avatar-upload" type="file" accept="image/png, image/jpeg, image/jpg" className="hidden" onChange={(e) => handleImageUpload(e, 'avatar')} />
+                  <input id="avatar-upload" type="file" accept="image/png, image/jpeg, image/jpg" className="sr-only" onChange={(e) => handleImageUpload(e, 'avatar')} />
                   {avatar ? (
                     <img src={avatar} className="w-full h-full object-cover" />
                   ) : (
@@ -199,7 +199,7 @@ const Onboarding = ({ user, setUser }: any) => {
               <div className="grid grid-cols-3 gap-4">
                 {[0, 1, 2].map((i) => (
                   <label key={i} htmlFor={`photo-upload-${i}`} className="aspect-[3/4] rounded-xl bg-white/5 flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 hover:border-primary transition-colors cursor-pointer group relative">
-                    <input id={`photo-upload-${i}`} type="file" accept="image/png, image/jpeg, image/jpg" className="hidden" onChange={(e) => handleImageUpload(e, 'photo', i)} />
+                    <input id={`photo-upload-${i}`} type="file" accept="image/png, image/jpeg, image/jpg" className="sr-only" onChange={(e) => handleImageUpload(e, 'photo', i)} />
                     {photos[i] ? (
                       <img src={photos[i]} className="w-full h-full object-cover" />
                     ) : (

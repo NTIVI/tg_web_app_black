@@ -4,3 +4,6 @@ dist/
 *.sqlite
 *.sqlite3
 .DS_Store
+backend/src/*.js
+backend/src/*.d.ts
+backend/src/*.map

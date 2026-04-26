@@ -121,9 +121,9 @@ app.put('/api/users/:id', async (req, res) => {
     });
     
     res.json(user);
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: error.message || 'Server error' });
   }
 });
 
@@ -182,9 +182,9 @@ app.post('/api/users/:id/photos', async (req, res) => {
     );
     
     res.json(createdPhotos);
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: error.message || 'Server error' });
   }
 });
 

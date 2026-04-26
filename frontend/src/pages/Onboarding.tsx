@@ -183,41 +183,45 @@ const Onboarding = ({ user, setUser }: any) => {
 
             <div className="space-y-6">
               <div className="flex justify-center">
-                <div className="relative w-32 h-32 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 hover:border-primary transition-colors group">
+                <div className="relative w-32 h-32 rounded-full bg-white/5 border-2 border-dashed border-white/20 hover:border-primary transition-colors overflow-hidden">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    {avatar ? (
+                      <img src={avatar} className="w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <Camera size={32} className="text-[#888]" />
+                        <span className="mt-1 text-[10px] uppercase font-bold text-[#888]">Avatar</span>
+                      </>
+                    )}
+                  </div>
                   <input 
                     type="file" 
                     accept="image/*" 
                     onChange={(e) => handleImageUpload(e, 'avatar')} 
-                    style={{ opacity: 0.01, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 100, cursor: 'pointer' }}
+                    className="absolute inset-0 w-full h-full opacity-0 z-50 cursor-pointer"
                   />
-                  {avatar ? (
-                    <img src={avatar} className="w-full h-full object-cover" />
-                  ) : (
-                    <>
-                      <Camera size={32} className="text-[#888] group-hover:text-primary" />
-                      <span className="absolute bottom-2 text-[10px] uppercase font-bold text-[#888]">Avatar</span>
-                    </>
-                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 {[0, 1, 2].map((i) => (
-                  <div key={i} className="aspect-[3/4] rounded-xl bg-white/5 flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 hover:border-primary transition-colors group relative">
+                  <div key={i} className="relative aspect-[3/4] rounded-xl bg-white/5 border-2 border-dashed border-white/20 hover:border-primary transition-colors overflow-hidden">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      {photos[i] ? (
+                        <img src={photos[i]} className="w-full h-full object-cover" />
+                      ) : (
+                        <>
+                          <Camera size={24} className="text-[#888]" />
+                          <span className="mt-1 text-[10px] uppercase font-bold text-[#888]">Photo {i + 1}</span>
+                        </>
+                      )}
+                    </div>
                     <input 
                       type="file" 
                       accept="image/*" 
                       onChange={(e) => handleImageUpload(e, 'photo', i)} 
-                      style={{ opacity: 0.01, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 100, cursor: 'pointer' }}
+                      className="absolute inset-0 w-full h-full opacity-0 z-50 cursor-pointer"
                     />
-                    {photos[i] ? (
-                      <img src={photos[i]} className="w-full h-full object-cover" />
-                    ) : (
-                      <>
-                        <Camera size={24} className="text-[#888] group-hover:text-primary" />
-                        <span className="absolute bottom-2 text-[10px] uppercase font-bold text-[#888]">Photo {i + 1}</span>
-                      </>
-                    )}
                   </div>
                 ))}
               </div>

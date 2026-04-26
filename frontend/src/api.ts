@@ -16,6 +16,7 @@ export const userApi = {
   uploadPhotos: (id: string, photos: any[]) => api.post(`/users/${id}/photos`, photos),
   getFeed: (userId: string) => api.get(`/feed/${userId}`),
   getChats: (userId: string) => api.get(`/users/${userId}/chats`),
+  claimDailyBonus: (userId: string) => api.post(`/users/${userId}/claim-daily`),
 };
 
 export const likeApi = {

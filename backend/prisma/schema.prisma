@@ -24,6 +24,7 @@ model User {
   level          Int       @default(1)
   coins          Int       @default(0)
   timeSpent      Int       @default(0) // in seconds or minutes
+  lastBonusClaim DateTime?
   isOnline       Boolean   @default(true)
   lastSeen       DateTime  @default(now())
   

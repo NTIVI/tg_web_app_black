@@ -107,6 +107,38 @@ app.put('/api/users/:id', async (req, res) => {
   }
 });
 
+app.post('/api/users/:id/claim-daily', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await prisma.user.findUnique({ where: { id } });
+    
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    const now = new Date();
+    const lastClaim = user.lastBonusClaim;
+    
+    if (lastClaim) {
+      const isToday = lastClaim.toDateString() === now.toDateString();
+      if (isToday) {
+        return res.status(400).json({ error: 'Вы уже получили сегодняшний бонус!' });
+      }
+    }
+    
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        coins: { increment: 5 },
+        lastBonusClaim: now
+      }
+    });
+    
+    res.json({ success: true, coins: updatedUser.coins });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Upload Photos Route
 app.post('/api/users/:id/photos', async (req, res) => {
   try {

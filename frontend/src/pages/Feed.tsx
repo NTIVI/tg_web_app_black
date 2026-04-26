@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { userApi, likeApi } from '../api'
 import { Heart, X, MapPin, Info } from 'lucide-react'
+import MatchModal from '../components/MatchModal'
 
-const Feed = ({ user }: any) => {
+const Feed = ({ user, setUser }: any) => {
   const [profiles, setProfiles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedProfile, setSelectedProfile] = useState<any>(null)
+  const [matchData, setMatchData] = useState<any>(null)
 
   useEffect(() => {
     if (user?.id) {
@@ -24,7 +26,8 @@ const Feed = ({ user }: any) => {
     try {
       const res = await likeApi.like(user.id, toUserId)
       if (res.data.mutual) {
-        alert('У вас взаимный лайк! ❤️ Чатик открыт.')
+        setMatchData(profiles[currentIndex])
+        setUser({ ...user, coins: user.coins + 10 })
       }
       setCurrentIndex(currentIndex + 1)
     } catch (err) {
@@ -122,6 +125,13 @@ const Feed = ({ user }: any) => {
         </button>
       </div>
 
+      <MatchModal 
+        isOpen={!!matchData} 
+        onClose={() => setMatchData(null)} 
+        user={user} 
+        partner={matchData} 
+      />
+
       {/* Profile Detail Modal */}
       <AnimatePresence>
         {selectedProfile && (
@@ -129,7 +139,7 @@ const Feed = ({ user }: any) => {
             initial={{ opacity: 0, y: 100 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 100 }}
-            className="fixed inset-0 z-[100] bg-dark/95 p-6 overflow-y-auto"
+            className="fixed inset-0 z-[100] bg-dark/95 p-6 overflow-y-auto pb-24"
           >
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold">Профиль</h2>

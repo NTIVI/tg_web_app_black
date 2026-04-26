@@ -1,12 +1,43 @@
 import { motion } from 'framer-motion'
 import { Gift, Zap, Bell, Sparkles } from 'lucide-react'
+import { userApi } from '../api'
+import { useState } from 'react'
 
-const News = () => {
+const News = ({ user, setUser }: any) => {
+  const [claiming, setClaiming] = useState(false)
+  
+  const isClaimedToday = user?.lastBonusClaim && 
+    new Date(user.lastBonusClaim).toDateString() === new Date().toDateString();
+
   const bonuses = [
-    { title: 'Ежедневный бонус', desc: 'Заходите каждый день и получайте 5 монеток!', icon: <Gift className="text-yellow-500" />, active: true },
-    { title: 'Супер-Лайк', desc: 'Удвойте шансы на взаимность!', icon: <Zap className="text-blue-400" />, active: false },
-    { title: 'Режим Невидимки', desc: 'Скройте свой онлайн-статус на 24 часа.', icon: <Sparkles className="text-purple-400" />, active: false },
+    { 
+      id: 'daily',
+      title: 'Ежедневный бонус', 
+      desc: 'Заходите каждый день и получайте 5 монеток!', 
+      icon: <Gift className="text-yellow-500" />, 
+      active: !isClaimedToday,
+      btnText: isClaimedToday ? 'Получено' : 'Забрать'
+    },
+    { title: 'Супер-Лайк', desc: 'Удвойте шансы на взаимность!', icon: <Zap className="text-blue-400" />, active: false, btnText: 'Скоро' },
+    { title: 'Режим Невидимки', desc: 'Скройте свой онлайн-статус на 24 часа.', icon: <Sparkles className="text-purple-400" />, active: false, btnText: 'Скоро' },
   ]
+
+  const handleClaim = async (id: string) => {
+    if (id !== 'daily' || isClaimedToday || claiming) return
+    
+    setClaiming(true)
+    try {
+      const res = await userApi.claimDailyBonus(user.id)
+      if (res.data.success) {
+        setUser({ ...user, coins: res.data.coins, lastBonusClaim: new Date().toISOString() })
+        alert('Поздравляем! Вы получили 5 монеток. 🪙')
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Ошибка при получении бонуса')
+    } finally {
+      setClaiming(false)
+    }
+  }
 
   return (
     <div className="p-6 space-y-8 h-[calc(100vh-64px)] overflow-y-auto">
@@ -22,8 +53,8 @@ const News = () => {
         {bonuses.map((b, i) => (
           <motion.div
             key={i}
-            whileHover={{ scale: 1.02 }}
-            className="p-5 glass-panel rounded-3xl flex items-center gap-5 border border-white/5"
+            whileHover={b.active ? { scale: 1.02 } : {}}
+            className={`p-5 glass-panel rounded-3xl flex items-center gap-5 border border-white/5 ${!b.active && 'opacity-60'}`}
           >
             <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-2xl">
               {b.icon}
@@ -32,10 +63,16 @@ const News = () => {
               <h4 className="font-bold">{b.title}</h4>
               <p className="text-xs text-text-muted">{b.desc}</p>
             </div>
-            <button className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter ${
-              b.active ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/10 text-text-muted'
-            }`}>
-              {b.active ? 'Забрать' : 'Скоро'}
+            <button 
+              disabled={!b.active || claiming}
+              onClick={() => b.id && handleClaim(b.id)}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all ${
+                b.active 
+                  ? 'bg-primary text-white shadow-lg shadow-primary/20 hover:scale-105 active:scale-95' 
+                  : 'bg-white/10 text-text-muted'
+              }`}
+            >
+              {claiming && b.id === 'daily' ? '...' : b.btnText}
             </button>
           </motion.div>
         ))}

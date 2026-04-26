@@ -1,13 +1,15 @@
 import { motion } from 'framer-motion'
 import { Settings, Coins, Award, LogOut, User, ChevronRight } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 const Profile = ({ user }: any) => {
+  const navigate = useNavigate()
   if (!user) return null
 
   const avatar = user.photos?.find((p: any) => p.isAvatar)?.url || 'https://via.placeholder.com/150'
 
   return (
-    <div className="p-6 space-y-8 h-[calc(100vh-64px)] overflow-y-auto">
+    <div className="p-6 space-y-8 h-[calc(100vh-64px)] overflow-y-auto pb-24">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Мой Профиль</h1>
         <button className="p-2 glass-panel rounded-full text-text-muted hover:text-white transition-colors">
@@ -57,7 +59,10 @@ const Profile = ({ user }: any) => {
       <div className="space-y-3">
         <h3 className="text-sm font-bold uppercase text-text-muted ml-2">Настройки</h3>
         <div className="space-y-2">
-          <button className="w-full p-4 glass-panel rounded-2xl flex items-center gap-4 hover:bg-white/5 transition-colors">
+          <button 
+            onClick={() => navigate('/edit-profile')}
+            className="w-full p-4 glass-panel rounded-2xl flex items-center gap-4 hover:bg-white/5 transition-colors"
+          >
             <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-text-muted">
               <User size={20} />
             </div>

@@ -7,6 +7,7 @@ import Chats from './pages/Chats'
 import News from './pages/News'
 import Profile from './pages/Profile'
 import Admin from './pages/Admin'
+import EditProfile from './pages/EditProfile'
 import { authApi, userApi } from './api'
 import { AlertCircle } from 'lucide-react'
 
@@ -128,11 +129,12 @@ function AppContent() {
     <Routes>
       <Route path="/onboarding" element={<Onboarding user={user} setUser={setUser} />} />
       <Route element={<MainLayout />}>
-        <Route path="/feed" element={<Feed user={user} />} />
-        <Route path="/chats" element={<Chats user={user} />} />
-        <Route path="/news" element={<News />} />
-        <Route path="/profile" element={<Profile user={user} />} />
-        <Route path="/admin" element={<Admin user={user} />} />
+        <Route path="/feed" element={<Feed user={user} setUser={setUser} />} />
+        <Route path="/chats" element={<Chats user={user} setUser={setUser} />} />
+        <Route path="/news" element={<News user={user} setUser={setUser} />} />
+        <Route path="/profile" element={<Profile user={user} setUser={setUser} />} />
+        <Route path="/edit-profile" element={<EditProfile user={user} setUser={setUser} />} />
+        <Route path="/admin" element={<Admin user={user} setUser={setUser} />} />
       </Route>
     </Routes>
   )

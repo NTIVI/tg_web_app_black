@@ -17,8 +17,6 @@ const Onboarding = ({ user, setUser }: any) => {
   })
   const [avatar, setAvatar] = useState('')
   const [photos, setPhotos] = useState(['', '', ''])
-  const avatarRef = useRef<HTMLInputElement>(null)
-  const photoRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)]
   const navigate = useNavigate()
 
   const nextStep = () => setStep(step + 1)
@@ -185,8 +183,8 @@ const Onboarding = ({ user, setUser }: any) => {
 
             <div className="space-y-6">
               <div className="flex justify-center">
-                <div onClick={() => avatarRef.current?.click()} className="relative w-32 h-32 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 hover:border-primary transition-colors cursor-pointer group">
-                  <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'avatar')} />
+                <div className="relative w-32 h-32 rounded-full bg-white/5 flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 hover:border-primary transition-colors group">
+                  <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={(e) => handleImageUpload(e, 'avatar')} />
                   {avatar ? (
                     <img src={avatar} className="w-full h-full object-cover" />
                   ) : (
@@ -200,8 +198,8 @@ const Onboarding = ({ user, setUser }: any) => {
 
               <div className="grid grid-cols-3 gap-4">
                 {[0, 1, 2].map((i) => (
-                  <div key={i} onClick={() => photoRefs[i].current?.click()} className="aspect-[3/4] rounded-xl bg-white/5 flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 hover:border-primary transition-colors cursor-pointer group relative">
-                    <input ref={photoRefs[i]} type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'photo', i)} />
+                  <div key={i} className="aspect-[3/4] rounded-xl bg-white/5 flex items-center justify-center overflow-hidden border-2 border-dashed border-white/20 hover:border-primary transition-colors group relative">
+                    <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={(e) => handleImageUpload(e, 'photo', i)} />
                     {photos[i] ? (
                       <img src={photos[i]} className="w-full h-full object-cover" />
                     ) : (

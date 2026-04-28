@@ -18,6 +18,7 @@ export const userApi = {
   getFeed: (userId: string) => api.get(`/feed/${userId}`),
   getChats: (userId: string) => api.get(`/users/${userId}/chats`),
   claimDailyBonus: (userId: string) => api.post(`/users/${userId}/claim-daily`),
+  blockUser: (userId: string, targetUserId: string) => api.post(`/users/${userId}/block-user`, { targetUserId }),
 };
 
 export const likeApi = {
@@ -32,6 +33,7 @@ export const chatApi = {
     api.get(`/chats/${chatId}/messages?userId=${userId}`),
   setTyping: (chatId: string, userId: string) =>
     api.post(`/chats/${chatId}/typing`, { userId }),
+  deleteChat: (chatId: string) => api.delete(`/chats/${chatId}`),
 };
 
 export const adminApi = {
@@ -42,6 +44,9 @@ export const adminApi = {
   deletePhoto: (id: string) => api.delete(`/admin/photos/${id}`),
   adjustStats: (id: string, level: number, coins: number) =>
     api.post(`/admin/users/${id}/adjust`, { level, coins }),
+  getReports: () => api.get('/admin/reports'),
+  deleteReport: (id: string) => api.delete(`/admin/reports/${id}`),
+  approveReport: (id: string, adminTelegramId: string) => api.post(`/admin/reports/${id}/approve`, { adminTelegramId }),
 };
 
 export const newsApi = {
@@ -49,6 +54,10 @@ export const newsApi = {
   createNews: (data: { title: string; content: string; imageUrl?: string }) => api.post('/admin/news', data),
   updateNews: (id: string, data: { title: string; content: string; imageUrl?: string }) => api.put(`/admin/news/${id}`, data),
   deleteNews: (id: string) => api.delete(`/admin/news/${id}`),
+};
+
+export const reportApi = {
+  createReport: (data: { reporterId: string; reportedUserId: string; reason: string }) => api.post('/reports', data),
 };
 
 export default api;

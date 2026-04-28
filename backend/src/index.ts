@@ -534,6 +534,126 @@ app.post('/api/admin/users/:id/adjust', async (req, res) => {
   }
 });
 
+app.post('/api/users/:id/block-user', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { targetUserId } = req.body;
+    await prisma.user.update({
+      where: { id },
+      data: {
+        blockedUsers: {
+          connect: { id: targetUserId }
+        }
+      }
+    });
+    // Optional: delete any existing chat between them
+    const chat = await prisma.chat.findFirst({
+      where: {
+        OR: [
+          { user1Id: id, user2Id: targetUserId },
+          { user1Id: targetUserId, user2Id: id }
+        ]
+      }
+    });
+    if (chat) {
+      await prisma.chat.delete({ where: { id: chat.id } });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.delete('/api/chats/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.chat.delete({ where: { id } });
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Reports API
+app.post('/api/reports', async (req, res) => {
+  try {
+    const { reporterId, reportedUserId, reason } = req.body;
+    const report = await prisma.report.create({
+      data: { reporterId, reportedUserId, reason }
+    });
+    res.json(report);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/admin/reports', async (req, res) => {
+  try {
+    const reports = await prisma.report.findMany({
+      include: {
+        reporter: true,
+        reportedUser: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(reports);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.delete('/api/admin/reports/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.report.delete({ where: { id } });
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/admin/reports/:id/approve', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { adminTelegramId } = req.body;
+    
+    const report = await prisma.report.findUnique({
+      where: { id },
+      include: {
+        reportedUser: true,
+        reporter: true
+      }
+    });
+    
+    if (!report) return res.status(404).json({ error: 'Report not found' });
+    
+    if (botToken) {
+      const bot = new TelegramBot(botToken);
+      const message = `🚨 Обнаружено нарушение!\n\nЖалоба от: ${report.reporter.firstName} (ID: ${report.reporter.telegramId})\nНа пользователя: ${report.reportedUser.firstName} (ID: ${report.reportedUser.telegramId})\nПричина: ${report.reason}`;
+      const targetId = adminTelegramId || '6444802382';
+      
+      try {
+        await bot.sendMessage(targetId, message);
+      } catch (err) {
+        console.error('Failed to send telegram message to admin:', err);
+      }
+    }
+
+    // After approval, delete the report from the DB
+    await prisma.report.delete({ where: { id } });
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 import path from 'path';
 import { fileURLToPath } from 'url';
 

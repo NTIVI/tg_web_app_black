@@ -3,9 +3,10 @@ import { adminApi, newsApi } from '../api'
 import { Shield, UserX, AlertCircle, Trash2, Plus, Users, Newspaper, Coins } from 'lucide-react'
 
 const Admin = ({ user }: any) => {
-  const [activeTab, setActiveTab] = useState<'users' | 'news' | 'economy'>('users')
+  const [activeTab, setActiveTab] = useState<'users' | 'news' | 'economy' | 'reports'>('users')
   const [users, setUsers] = useState<any[]>([])
   const [news, setNews] = useState<any[]>([])
+  const [reports, setReports] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   // News form state
@@ -23,12 +24,14 @@ const Admin = ({ user }: any) => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const [usersRes, newsRes] = await Promise.all([
+      const [usersRes, newsRes, reportsRes] = await Promise.all([
         adminApi.getUsers(),
-        newsApi.getNews()
+        newsApi.getNews(),
+        adminApi.getReports()
       ])
       setUsers(usersRes.data)
       setNews(newsRes.data)
+      setReports(reportsRes.data)
       
       const initialEco: Record<string, { level: number, coins: number }> = {}
       usersRes.data.forEach((u: any) => {
@@ -109,6 +112,27 @@ const Admin = ({ user }: any) => {
     }
   }
 
+  const handleApproveReport = async (reportId: string) => {
+    try {
+      await adminApi.approveReport(reportId, user.telegramId)
+      setReports(reports.filter(r => r.id !== reportId))
+      alert('Жалоба одобрена. Создатель уведомлен.')
+    } catch (err) {
+      console.error(err)
+      alert('Ошибка при одобрении жалобы')
+    }
+  }
+
+  const handleRejectReport = async (reportId: string) => {
+    try {
+      await adminApi.deleteReport(reportId)
+      setReports(reports.filter(r => r.id !== reportId))
+    } catch (err) {
+      console.error(err)
+      alert('Ошибка при отклонении жалобы')
+    }
+  }
+
   if (!user?.isAdmin) return <div className="p-10 text-center">Доступ запрещен</div>
   if (loading) return <div className="p-10 text-center text-text-muted animate-pulse">Загрузка данных...</div>
 
@@ -122,24 +146,35 @@ const Admin = ({ user }: any) => {
       </div>
 
       {/* Tabs */}
-      <div className="flex bg-dark/50 p-1 rounded-xl border border-white/5">
+      <div className="flex bg-dark/50 p-1 rounded-xl border border-white/5 overflow-x-auto no-scrollbar gap-1">
         <button 
           onClick={() => setActiveTab('users')}
-          className={`flex-1 py-2 flex items-center justify-center gap-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'users' ? 'bg-primary text-white' : 'text-text-muted'}`}
+          className={`px-4 py-2 flex items-center justify-center gap-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${activeTab === 'users' ? 'bg-primary text-white' : 'text-text-muted hover:bg-white/5'}`}
         >
           <Users size={14} /> Пользователи
         </button>
         <button 
           onClick={() => setActiveTab('news')}
-          className={`flex-1 py-2 flex items-center justify-center gap-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'news' ? 'bg-primary text-white' : 'text-text-muted'}`}
+          className={`px-4 py-2 flex items-center justify-center gap-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${activeTab === 'news' ? 'bg-primary text-white' : 'text-text-muted hover:bg-white/5'}`}
         >
           <Newspaper size={14} /> Новости
         </button>
         <button 
           onClick={() => setActiveTab('economy')}
-          className={`flex-1 py-2 flex items-center justify-center gap-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'economy' ? 'bg-primary text-white' : 'text-text-muted'}`}
+          className={`px-4 py-2 flex items-center justify-center gap-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${activeTab === 'economy' ? 'bg-primary text-white' : 'text-text-muted hover:bg-white/5'}`}
         >
           <Coins size={14} /> Экономика
+        </button>
+        <button 
+          onClick={() => setActiveTab('reports')}
+          className={`px-4 py-2 flex items-center justify-center gap-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${activeTab === 'reports' ? 'bg-red-500 text-white' : 'text-text-muted hover:bg-white/5'}`}
+        >
+          <AlertCircle size={14} /> Жалобы
+          {reports.length > 0 && (
+            <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === 'reports' ? 'bg-white text-red-500' : 'bg-red-500 text-white'}`}>
+              {reports.length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -309,6 +344,55 @@ const Admin = ({ user }: any) => {
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Reports Tab */}
+      {activeTab === 'reports' && (
+        <div className="space-y-4">
+          <h2 className="text-sm font-bold uppercase text-text-muted ml-2">Жалобы ({reports.length})</h2>
+          {reports.length === 0 ? (
+            <div className="text-center py-10 text-text-muted">
+              <AlertCircle size={48} className="mx-auto mb-4 opacity-50 text-red-500" />
+              <p>Жалоб пока нет</p>
+            </div>
+          ) : (
+            reports.map(report => (
+              <div key={report.id} className="p-4 glass-panel rounded-2xl space-y-4 border border-red-500/20 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-red-500/10 blur-xl rounded-full translate-x-1/2 -translate-y-1/2" />
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold text-red-400">На: {report.reportedUser.firstName}</h3>
+                    <p className="text-xs text-text-muted">ID: {report.reportedUser.telegramId}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] text-text-muted">От: {report.reporter.firstName}</p>
+                    <p className="text-[10px] text-text-muted">{new Date(report.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+
+                <div className="bg-dark/50 p-3 rounded-xl border border-white/5">
+                  <p className="text-sm font-medium">Причина:</p>
+                  <p className="text-sm text-text-muted mt-1">{report.reason}</p>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button 
+                    onClick={() => handleRejectReport(report.id)}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors font-bold text-sm"
+                  >
+                    Отклонить ❌
+                  </button>
+                  <button 
+                    onClick={() => handleApproveReport(report.id)}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500/20 text-red-500 border border-red-500/20 rounded-xl hover:bg-red-500/30 transition-colors font-bold text-sm shadow-lg shadow-red-500/10"
+                  >
+                    Одобрить ✅
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
     </div>

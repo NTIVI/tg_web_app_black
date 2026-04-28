@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { userApi, chatApi } from '../api'
-import { Search, Send, ChevronLeft, MoreVertical } from 'lucide-react'
+import { userApi, chatApi, reportApi } from '../api'
+import { Search, Send, ChevronLeft, MoreVertical, Ban, Trash2, AlertTriangle, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const Chats = ({ user }: any) => {
   const [chats, setChats] = useState<any[]>([])
@@ -10,6 +11,10 @@ const Chats = ({ user }: any) => {
   const [isPartnerTyping, setIsPartnerTyping] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const lastTypingSent = useRef<number>(0)
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+  const [reportReason, setReportReason] = useState('')
 
   useEffect(() => {
     const fetchChats = () => {
@@ -28,7 +33,6 @@ const Chats = ({ user }: any) => {
       const fetchMessages = async () => {
         try {
           const res = await chatApi.getMessages(activeChat.id, user.id)
-          // Only update state if message count or typing status changed to avoid unnecessary re-renders
           if (res.data.messages.length !== messages.length || res.data.isPartnerTyping !== isPartnerTyping) {
             setMessages(res.data.messages)
             setIsPartnerTyping(res.data.isPartnerTyping)
@@ -52,9 +56,9 @@ const Chats = ({ user }: any) => {
 
   const handleOpenChat = (chat: any) => {
     setActiveChat(chat)
-    // Clear old messages before loading new ones to avoid flicker
     setMessages([])
     setIsPartnerTyping(false)
+    setIsMenuOpen(false)
   }
 
   const handleSendMessage = async () => {
@@ -67,18 +71,58 @@ const Chats = ({ user }: any) => {
       setMessages([...messages, res.data])
     } catch (err) {
       console.error(err)
-      setMessage(text) // Restore message if failed
+      setMessage(text)
     }
   }
 
   const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value)
-    
-    // Throttle typing events to once every 3 seconds
     const now = Date.now()
     if (now - lastTypingSent.current > 3000 && activeChat && user?.id) {
       lastTypingSent.current = now
       chatApi.setTyping(activeChat.id, user.id).catch(() => {})
+    }
+  }
+
+  const handleBlockUser = async (targetUserId: string) => {
+    if (!window.confirm('Вы уверены, что хотите заблокировать этого пользователя? Вы больше не сможете переписываться.')) return
+    try {
+      await userApi.blockUser(user.id, targetUserId)
+      setChats(chats.filter(c => c.id !== activeChat.id))
+      setActiveChat(null)
+    } catch (err) {
+      console.error(err)
+      alert('Ошибка при блокировке')
+    }
+  }
+
+  const handleDeleteChat = async () => {
+    if (!window.confirm('Вы уверены, что хотите удалить этот чат полностью? История переписки удалится у обоих.')) return
+    try {
+      await chatApi.deleteChat(activeChat.id)
+      setChats(chats.filter(c => c.id !== activeChat.id))
+      setActiveChat(null)
+    } catch (err) {
+      console.error(err)
+      alert('Ошибка при удалении чата')
+    }
+  }
+
+  const handleReport = async (targetUserId: string) => {
+    if (!reportReason.trim()) return alert('Пожалуйста, укажите причину жалобы.')
+    try {
+      await reportApi.createReport({
+        reporterId: user.id,
+        reportedUserId: targetUserId,
+        reason: reportReason
+      })
+      alert('Жалоба успешно отправлена администрации.')
+      setIsReportModalOpen(false)
+      setReportReason('')
+      setIsMenuOpen(false)
+    } catch (error) {
+      console.error(error)
+      alert('Ошибка при отправке жалобы')
     }
   }
 
@@ -88,7 +132,7 @@ const Chats = ({ user }: any) => {
 
     return (
       <div className="h-screen bg-dark flex flex-col fixed inset-0 z-[100] max-w-md mx-auto">
-        <header className="h-16 glass-panel border-b border-white/5 flex items-center px-4 gap-4">
+        <header className="h-16 glass-panel border-b border-white/5 flex items-center px-4 gap-4 relative">
           <button onClick={() => setActiveChat(null)} className="p-2 -ml-2 text-text-muted hover:text-white">
             <ChevronLeft size={24} />
           </button>
@@ -103,9 +147,48 @@ const Chats = ({ user }: any) => {
               </span>
             )}
           </div>
-          <button className="text-text-muted">
-            <MoreVertical size={20} />
+          
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 -mr-2 text-text-muted hover:text-white relative">
+            <MoreVertical size={24} />
           </button>
+
+          {/* Dropdown Menu */}
+          <AnimatePresence>
+            {isMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)} />
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="absolute top-14 right-4 z-50 bg-[#1A1A1A] border border-white/10 rounded-2xl p-2 w-56 shadow-2xl flex flex-col gap-1"
+                >
+                  <button 
+                    onClick={() => { setIsMenuOpen(false); handleBlockUser(partner.id) }}
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-sm font-medium"
+                  >
+                    <Ban size={16} className="text-red-500" />
+                    Заблокировать
+                  </button>
+                  <button 
+                    onClick={() => { setIsMenuOpen(false); handleDeleteChat() }}
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-sm font-medium"
+                  >
+                    <Trash2 size={16} className="text-red-500" />
+                    Удалить чат
+                  </button>
+                  <div className="h-[1px] bg-white/10 my-1 mx-2" />
+                  <button 
+                    onClick={() => { setIsMenuOpen(false); setIsReportModalOpen(true) }}
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-sm font-medium"
+                  >
+                    <AlertTriangle size={16} className="text-yellow-500" />
+                    Пожаловаться
+                  </button>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
         </header>
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -143,6 +226,52 @@ const Chats = ({ user }: any) => {
             </button>
           </div>
         </div>
+
+        {/* Report Modal */}
+        <AnimatePresence>
+          {isReportModalOpen && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[110] bg-dark/80 backdrop-blur-sm flex items-center justify-center p-6"
+            >
+              <motion.div 
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                className="w-full bg-[#1A1A1A] border border-white/10 rounded-3xl p-6 relative shadow-2xl"
+              >
+                <button 
+                  onClick={() => setIsReportModalOpen(false)}
+                  className="absolute top-4 right-4 p-2 bg-white/5 rounded-full hover:bg-white/10"
+                >
+                  <X size={20} />
+                </button>
+                <div className="flex items-center gap-3 text-yellow-500 mb-4">
+                  <AlertTriangle size={28} />
+                  <h2 className="text-xl font-bold text-white">Жалоба</h2>
+                </div>
+                <p className="text-sm text-text-muted mb-4">Опишите причину вашей жалобы на пользователя <span className="font-bold text-white">{partner.firstName}</span>. Модераторы проверят эту информацию.</p>
+                
+                <textarea 
+                  value={reportReason}
+                  onChange={e => setReportReason(e.target.value)}
+                  placeholder="Оскорбление, спам, фейк..."
+                  className="w-full bg-dark/50 border border-white/10 rounded-2xl p-4 h-32 resize-none outline-none focus:border-primary transition-colors text-sm mb-4"
+                />
+                
+                <button 
+                  onClick={() => handleReport(partner.id)}
+                  className="w-full bg-primary py-4 rounded-xl font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary-hover transition-colors"
+                >
+                  Отправить жалобу
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </div>
     )
   }

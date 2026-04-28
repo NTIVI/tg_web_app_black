@@ -45,6 +45,14 @@ model User {
   chatsAsUser1   Chat[]    @relation("ChatsUser1")
   chatsAsUser2   Chat[]    @relation("ChatsUser2")
 
+  // Blocked users
+  blockedUsers   User[]    @relation("UserBlocks")
+  blockedByUsers User[]    @relation("UserBlocks")
+
+  // Reports
+  reportsSent    Report[]  @relation("ReportedBy")
+  reportsReceived Report[] @relation("ReportTarget")
+
   // Messages sent by this user
   messagesSent   Message[]
 }
@@ -107,5 +115,16 @@ model News {
   imageUrl  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Report {
+  id             String   @id @default(uuid())
+  reporterId     String
+  reportedUserId String
+  reason         String
+  createdAt      DateTime @default(now())
+
+  reporter       User     @relation("ReportedBy", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser   User     @relation("ReportTarget", fields: [reportedUserId], references: [id], onDelete: Cascade)
 }
 

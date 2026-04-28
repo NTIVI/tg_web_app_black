@@ -16,7 +16,7 @@ app.use(express.json({ limit: '50mb' }));
 
 // Telegram Bot Setup
 const botToken = process.env.BOT_TOKEN || '8798417025:AAEt4SpgZWHlm4J7id0tryXrqTAyT2CYFno';
-const webAppUrl = process.env.WEB_APP_URL || 'https://tg-web-app-black.vercel.app/';
+const webAppUrl = 'https://tg-web-app-black.vercel.app/'; // Vercel never sleeps!
 
 if (botToken) {
   const bot = new TelegramBot(botToken);

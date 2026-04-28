@@ -464,6 +464,76 @@ app.delete('/api/admin/photos/:id', async (req, res) => {
   }
 });
 
+// News Routes
+app.get('/api/news', async (req, res) => {
+  try {
+    const news = await prisma.news.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(news);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/admin/news', async (req, res) => {
+  try {
+    const { title, content, imageUrl } = req.body;
+    const news = await prisma.news.create({
+      data: { title, content, imageUrl }
+    });
+    res.json(news);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.put('/api/admin/news/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content, imageUrl } = req.body;
+    const news = await prisma.news.update({
+      where: { id },
+      data: { title, content, imageUrl }
+    });
+    res.json(news);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.delete('/api/admin/news/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.news.delete({ where: { id } });
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/admin/users/:id/adjust', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { level, coins } = req.body;
+    const user = await prisma.user.update({
+      where: { id },
+      data: {
+        level: level !== undefined ? parseInt(level, 10) : undefined,
+        coins: coins !== undefined ? parseInt(coins, 10) : undefined,
+      }
+    });
+    res.json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 import path from 'path';
 import { fileURLToPath } from 'url';
 

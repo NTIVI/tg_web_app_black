@@ -40,6 +40,15 @@ export const adminApi = {
     api.post(`/admin/users/${id}/block`, { isBlocked }),
   deleteUser: (id: string) => api.delete(`/admin/users/${id}`),
   deletePhoto: (id: string) => api.delete(`/admin/photos/${id}`),
+  adjustStats: (id: string, level: number, coins: number) =>
+    api.post(`/admin/users/${id}/adjust`, { level, coins }),
+};
+
+export const newsApi = {
+  getNews: () => api.get('/news'),
+  createNews: (data: { title: string; content: string; imageUrl?: string }) => api.post('/admin/news', data),
+  updateNews: (id: string, data: { title: string; content: string; imageUrl?: string }) => api.put(`/admin/news/${id}`, data),
+  deleteNews: (id: string) => api.delete(`/admin/news/${id}`),
 };
 
 export default api;

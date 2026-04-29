@@ -268,7 +268,7 @@ const Profile = ({ user }: any) => {
         <div className="flex-1 ml-6 flex flex-col justify-center">
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-xl font-bold truncate max-w-[150px]">
-              __{user.telegramId || user.firstName}
+              {user.firstName} {user.lastName}
             </h2>
             {user.level > 10 && <Award size={16} className="text-primary" />}
           </div>

@@ -8,6 +8,7 @@ import News from './pages/News'
 import Profile from './pages/Profile'
 import Admin from './pages/Admin'
 import EditProfile from './pages/EditProfile'
+import Welcome from './pages/Welcome'
 import { authApi, userApi } from './api'
 import { AlertCircle } from 'lucide-react'
 
@@ -18,6 +19,7 @@ function AppContent() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('hasSeenWelcomeScreen'))
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -93,6 +95,10 @@ function AppContent() {
     }, 60000)
     return () => clearInterval(interval)
   }, [user])
+
+  if (showWelcome) {
+    return <Welcome onContinue={() => setShowWelcome(false)} />
+  }
 
   if (loading) {
     return (

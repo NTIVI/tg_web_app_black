@@ -520,12 +520,14 @@ app.post('/api/admin/users/:id/adjust', async (req, res) => {
   try {
     const { id } = req.params;
     const { level, coins } = req.body;
+    
+    const updateData: any = {};
+    if (level !== undefined) updateData.level = parseInt(level, 10);
+    if (coins !== undefined) updateData.coins = parseInt(coins, 10);
+
     const user = await prisma.user.update({
       where: { id },
-      data: {
-        level: level !== undefined ? parseInt(level, 10) : undefined,
-        coins: coins !== undefined ? parseInt(coins, 10) : undefined,
-      }
+      data: updateData
     });
     res.json(user);
   } catch (error) {

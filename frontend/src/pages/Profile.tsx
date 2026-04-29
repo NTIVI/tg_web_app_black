@@ -293,7 +293,7 @@ const Profile = ({ user }: any) => {
 
       {/* Bio Section */}
       <div className="px-4 py-4 space-y-1 text-sm border-b border-white/5">
-        <h3 className="font-bold">{user.firstName} {user.lastName}</h3>
+        <h3 className="text-xs uppercase text-text-muted font-bold tracking-wider mb-2">О себе</h3>
         {user.bio ? (
           <p className="whitespace-pre-wrap text-text-main/90 leading-relaxed text-[13px]">
             {user.bio}

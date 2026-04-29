@@ -1,31 +1,53 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #e11d48;
-  --color-primary-dark: #be123c;
-  --color-dark: #0f172a;
-  --color-dark-light: #1e293b;
-  --color-dark-lighter: #334155;
-  --color-text-main: #f8fafc;
-  --color-text-muted: #94a3b8;
+  --color-primary: #f43f5e; /* Rose 500 */
+  --color-primary-dark: #e11d48; /* Rose 600 */
+  --color-dark: #09090b; /* Zinc 950 */
+  --color-dark-light: #18181b; /* Zinc 900 */
+  --color-dark-lighter: #27272a; /* Zinc 800 */
+  --color-text-main: #fafafa;
+  --color-text-muted: #a1a1aa;
 }
 
 @layer base {
   body {
     background-color: var(--color-dark);
     color: var(--color-text-main);
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    /* Deep elegant background gradient */
+    background-image: radial-gradient(circle at 50% -20%, rgba(244, 63, 94, 0.15), transparent 60%);
+    background-attachment: fixed;
   }
 }
 
 .glass-panel {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  background: rgba(24, 24, 27, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.glass-panel-premium {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #f43f5e, #fb7185);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #f43f5e, #e11d48);
 }
 
 /* Custom Scrollbar for hidden overflows */

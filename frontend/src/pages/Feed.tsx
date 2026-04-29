@@ -75,7 +75,7 @@ const Feed = ({ user, setUser }: any) => {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ x: 300, opacity: 0 }}
-          className="relative flex-1 rounded-3xl overflow-hidden glass-panel group"
+          className="relative flex-1 rounded-[2.5rem] overflow-hidden glass-panel-premium shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10 group"
         >
           {/* Photos Carousel */}
           <div className="absolute inset-0">
@@ -145,9 +145,9 @@ const Feed = ({ user, setUser }: any) => {
               </div>
               <button
                 onClick={() => setSelectedProfile(currentProfile)}
-                className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-primary"
+                className="w-12 h-12 rounded-full glass-panel-premium flex items-center justify-center text-white hover:text-primary transition-colors shadow-lg"
               >
-                <Info size={20} />
+                <Info size={24} />
               </button>
             </div>
             <p className="text-sm line-clamp-2 text-text-main/80">{currentProfile.bio}</p>
@@ -156,18 +156,18 @@ const Feed = ({ user, setUser }: any) => {
       </AnimatePresence>
 
       {/* Action Buttons */}
-      <div className="flex justify-center gap-6 py-6">
+      <div className="flex justify-center gap-8 py-8 items-center">
         <button
           onClick={handleDislike}
-          className="w-16 h-16 rounded-full glass-panel flex items-center justify-center text-text-muted hover:text-white transition-colors hover:scale-110 active:scale-95 shadow-xl"
+          className="w-16 h-16 rounded-full glass-panel-premium flex items-center justify-center text-text-muted hover:text-white transition-all hover:scale-110 active:scale-95 shadow-[0_10px_25px_rgba(0,0,0,0.5)] border border-white/10 hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]"
         >
           <X size={32} />
         </button>
         <button
           onClick={() => handleLike(currentProfile.id)}
-          className="w-16 h-16 rounded-full glass-panel flex items-center justify-center text-primary hover:bg-primary/20 transition-all hover:scale-110 active:scale-95 shadow-xl border border-primary/20"
+          className="w-20 h-20 rounded-full bg-gradient-primary flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 shadow-[0_10px_30px_rgba(244,63,94,0.4)] hover:shadow-[0_0_30px_rgba(244,63,94,0.6)] border-[3px] border-dark-light"
         >
-          <Heart size={32} fill="currentColor" />
+          <Heart size={40} fill="currentColor" />
         </button>
       </div>
 
@@ -219,10 +219,10 @@ const Feed = ({ user, setUser }: any) => {
                 <p>{selectedProfile.bio}</p>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-3">
                 {selectedProfile.photos?.map((p: any, idx: number) => (
-                  <div key={idx} className="aspect-[3/4] rounded-lg overflow-hidden glass-panel">
-                    <img src={p.url} className="w-full h-full object-cover" />
+                  <div key={idx} className="aspect-[3/4] rounded-2xl overflow-hidden glass-panel-premium shadow-lg">
+                    <img src={p.url} className="w-full h-full object-cover hover:scale-110 transition-transform duration-500" />
                   </div>
                 ))}
               </div>

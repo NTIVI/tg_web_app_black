@@ -155,54 +155,58 @@ const Profile = ({ user }: any) => {
         </button>
       </div>
 
-      <div className="flex flex-col items-center space-y-4">
-        <div className="relative">
-          <div className="w-32 h-32 rounded-full border-4 border-primary p-1">
-            <img src={avatar} className="w-full h-full object-cover rounded-full" />
+      <div className="flex flex-col items-center space-y-4 mt-4">
+        <div className="relative group">
+          <div className="w-36 h-36 rounded-full p-[3px] bg-gradient-to-tr from-primary via-purple-500 to-pink-500 shadow-[0_0_20px_rgba(244,63,94,0.4)] transition-all duration-500 group-hover:scale-105 group-hover:shadow-[0_0_30px_rgba(244,63,94,0.6)]">
+            <div className="w-full h-full rounded-full border-4 border-dark overflow-hidden">
+              <img src={avatar} className="w-full h-full object-cover" />
+            </div>
           </div>
-          <div className="absolute -bottom-2 -right-2 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+          <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-gradient-primary text-white text-xs font-black px-4 py-1.5 rounded-full shadow-[0_4px_10px_rgba(244,63,94,0.5)] border-2 border-dark z-10 whitespace-nowrap">
             LVL {user.level}
           </div>
         </div>
-        <div className="text-center">
-          <h2 className="text-2xl font-bold">{user.firstName} {user.lastName}</h2>
-          <p className="text-text-muted">{user.city}</p>
+        <div className="text-center mt-2">
+          <h2 className="text-3xl font-extrabold tracking-tight">{user.firstName} {user.lastName}</h2>
+          <p className="text-text-muted mt-1 font-medium">{user.city}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 mt-6">
         <motion.div 
           whileHover={{ scale: 1.05 }}
-          className="p-6 glass-panel rounded-3xl flex flex-col items-center justify-center space-y-2 border border-yellow-500/10"
+          className="p-6 glass-panel-premium rounded-[2rem] flex flex-col items-center justify-center space-y-3 relative overflow-hidden group"
         >
-          <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center text-yellow-500">
-            <Coins size={24} />
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 flex items-center justify-center text-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
+            <Coins size={28} />
           </div>
-          <span className="text-2xl font-bold">{user.coins}</span>
-          <span className="text-xs font-medium text-text-muted uppercase tracking-wider">Монетки</span>
+          <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">{user.coins}</span>
+          <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Монетки</span>
         </motion.div>
 
         <motion.div 
           whileHover={{ scale: 1.05 }}
-          className="p-6 glass-panel rounded-3xl flex flex-col items-center justify-center space-y-2 border border-primary/10"
+          className="p-6 glass-panel-premium rounded-[2rem] flex flex-col items-center justify-center space-y-3 relative overflow-hidden group"
         >
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-            <Award size={24} />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-[0_0_15px_rgba(244,63,94,0.2)]">
+            <Award size={28} />
           </div>
-          <span className="text-2xl font-bold">{user.level}</span>
-          <span className="text-xs font-medium text-text-muted uppercase tracking-wider">Уровень</span>
+          <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary to-pink-500">{user.level}</span>
+          <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Уровень</span>
         </motion.div>
       </div>
 
       {user.photos && user.photos.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-bold uppercase text-text-muted ml-2">Мои фотографии</h3>
+        <div className="space-y-4 mt-4">
+          <h3 className="text-xs font-black uppercase tracking-widest text-text-muted ml-2">Мои фотографии</h3>
           <div className="flex overflow-x-auto gap-4 pb-4 snap-x no-scrollbar px-2">
             {[...user.photos].sort((a: any, b: any) => a.order - b.order).map((photo: any) => (
-              <div key={photo.id || photo.order} className="min-w-[140px] w-[140px] h-[180px] rounded-2xl overflow-hidden snap-center relative border border-white/10 shrink-0 shadow-lg">
-                <img src={photo.url} className="w-full h-full object-cover" />
+              <div key={photo.id || photo.order} className="min-w-[140px] w-[140px] h-[180px] rounded-[1.5rem] overflow-hidden snap-center relative glass-panel-premium shrink-0 shadow-lg group">
+                <img src={photo.url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                 {photo.isAvatar && (
-                  <div className="absolute top-2 left-2 bg-primary/80 backdrop-blur text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                  <div className="absolute top-2 left-2 bg-dark/60 backdrop-blur-md text-primary text-[10px] font-black px-3 py-1 rounded-full border border-primary/20">
                     Аватар
                   </div>
                 )}

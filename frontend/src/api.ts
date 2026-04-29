@@ -54,6 +54,7 @@ export const adminApi = {
 export const newsApi = {
   getNews: () => api.get('/news'),
   createNews: (data: { title: string; content: string; imageUrl?: string }) => api.post('/admin/news', data),
+  editNews: (id: string, data: { title: string; content: string; imageUrl?: string }) => api.put(`/admin/news/${id}`, data),
   updateNews: (id: string, data: { title: string; content: string; imageUrl?: string }) => api.put(`/admin/news/${id}`, data),
   deleteNews: (id: string) => api.delete(`/admin/news/${id}`),
 };

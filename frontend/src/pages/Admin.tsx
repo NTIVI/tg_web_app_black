@@ -13,6 +13,7 @@ const Admin = ({ user }: any) => {
   const [newsTitle, setNewsTitle] = useState('')
   const [newsContent, setNewsContent] = useState('')
   const [newsImageUrl, setNewsImageUrl] = useState('')
+  const [editNewsId, setEditNewsId] = useState<string | null>(null)
 
   // Economy state
   const [economyData, setEconomyData] = useState<Record<string, { level: number, coins: number }>>({})
@@ -78,15 +79,37 @@ const Admin = ({ user }: any) => {
   const handleCreateNews = async () => {
     if (!newsTitle || !newsContent) return alert('Заполните заголовок и текст')
     try {
-      await newsApi.createNews({ title: newsTitle, content: newsContent, imageUrl: newsImageUrl })
+      if (editNewsId) {
+        await newsApi.editNews(editNewsId, { title: newsTitle, content: newsContent, imageUrl: newsImageUrl })
+        alert('Новость обновлена!')
+      } else {
+        await newsApi.createNews({ title: newsTitle, content: newsContent, imageUrl: newsImageUrl })
+        alert('Новость создана!')
+      }
       setNewsTitle('')
       setNewsContent('')
       setNewsImageUrl('')
+      setEditNewsId(null)
       fetchData() // Refresh news
     } catch (error) {
       console.error(error)
-      alert('Ошибка при создании новости')
+      alert('Ошибка при сохранении новости')
     }
+  }
+
+  const handleEditNews = (newsItem: any) => {
+    setEditNewsId(newsItem.id)
+    setNewsTitle(newsItem.title)
+    setNewsContent(newsItem.content)
+    setNewsImageUrl(newsItem.imageUrl || '')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleCancelEdit = () => {
+    setEditNewsId(null)
+    setNewsTitle('')
+    setNewsContent('')
+    setNewsImageUrl('')
   }
 
   const handleDeleteNews = async (id: string) => {
@@ -258,7 +281,10 @@ const Admin = ({ user }: any) => {
       {activeTab === 'news' && (
         <div className="space-y-6">
           <div className="glass-panel p-4 rounded-2xl border border-white/5 space-y-4">
-            <h2 className="font-bold flex items-center gap-2"><Plus size={16} className="text-primary"/> Создать новость</h2>
+            <h2 className="font-bold flex items-center gap-2">
+              <Plus size={16} className="text-primary"/> 
+              {editNewsId ? 'Редактировать новость' : 'Создать новость'}
+            </h2>
             <input 
               type="text" 
               placeholder="Заголовок" 
@@ -279,18 +305,30 @@ const Admin = ({ user }: any) => {
               value={newsImageUrl}
               onChange={e => setNewsImageUrl(e.target.value)}
             />
-            <button onClick={handleCreateNews} className="w-full bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary-hover transition-colors">
-              Опубликовать
-            </button>
+            <div className="flex gap-2">
+              <button onClick={handleCreateNews} className="flex-1 bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary-hover transition-colors">
+                {editNewsId ? 'Сохранить' : 'Опубликовать'}
+              </button>
+              {editNewsId && (
+                <button onClick={handleCancelEdit} className="flex-1 bg-white/10 text-white font-bold py-3 rounded-xl hover:bg-white/20 transition-colors">
+                  Отмена
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="space-y-4">
             <h2 className="text-sm font-bold uppercase text-text-muted ml-2">Опубликованные новости ({news.length})</h2>
             {news.map(n => (
               <div key={n.id} className="glass-panel p-4 rounded-2xl border border-white/5 relative">
-                <button onClick={() => handleDeleteNews(n.id)} className="absolute top-4 right-4 text-red-500 bg-red-500/10 p-2 rounded-xl">
-                  <Trash2 size={16} />
-                </button>
+                <div className="absolute top-4 right-4 flex gap-2">
+                  <button onClick={() => handleEditNews(n)} className="text-blue-500 bg-blue-500/10 p-2 rounded-xl hover:bg-blue-500/20 transition-colors">
+                    <span className="text-xs font-bold px-1">Ред.</span>
+                  </button>
+                  <button onClick={() => handleDeleteNews(n.id)} className="text-red-500 bg-red-500/10 p-2 rounded-xl hover:bg-red-500/20 transition-colors">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
                 {n.imageUrl && <img src={n.imageUrl} className="w-full h-32 object-cover rounded-xl mb-3" />}
                 <h3 className="font-bold text-lg">{n.title}</h3>
                 <p className="text-sm text-text-muted mt-2 whitespace-pre-wrap pr-10">{n.content}</p>

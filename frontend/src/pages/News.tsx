@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion'
 import { Gift, Zap, Bell, Sparkles } from 'lucide-react'
-import { userApi } from '../api'
-import { useState } from 'react'
+import { userApi, newsApi } from '../api'
+import { useState, useEffect } from 'react'
 
 const News = ({ user, setUser }: any) => {
   const [claiming, setClaiming] = useState(false)
+  const [newsList, setNewsList] = useState<any[]>([])
   
   const isClaimedToday = user?.lastBonusClaim && 
     new Date(user.lastBonusClaim).toDateString() === new Date().toDateString();
@@ -21,6 +22,12 @@ const News = ({ user, setUser }: any) => {
     { title: 'Супер-Лайк', desc: 'Удвойте шансы на взаимность!', icon: <Zap className="text-blue-400" />, active: false, btnText: 'Скоро' },
     { title: 'Режим Невидимки', desc: 'Скройте свой онлайн-статус на 24 часа.', icon: <Sparkles className="text-purple-400" />, active: false, btnText: 'Скоро' },
   ]
+
+  useEffect(() => {
+    newsApi.getNews()
+      .then(res => setNewsList(res.data))
+      .catch(err => console.error('Failed to fetch news', err))
+  }, [])
 
   const handleClaim = async (id: string) => {
     if (id !== 'daily' || isClaimedToday || claiming) return
@@ -80,19 +87,30 @@ const News = ({ user, setUser }: any) => {
 
       <div className="space-y-4">
         <h3 className="text-sm font-bold uppercase text-text-muted ml-2 tracking-widest">Новости проекта</h3>
-        <div className="rounded-3xl overflow-hidden glass-panel">
-          <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80" className="w-full h-40 object-cover" />
-          <div className="p-5 space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Обновление</span>
-              <span className="text-[10px] text-text-muted uppercase">26 Апр</span>
+        
+        {newsList.length === 0 ? (
+          <div className="text-center py-10 text-text-muted text-sm">Пока нет новостей</div>
+        ) : (
+          newsList.map(n => (
+            <div key={n.id} className="rounded-3xl overflow-hidden glass-panel mb-4 border border-white/5">
+              {n.imageUrl && (
+                <img src={n.imageUrl} className="w-full h-40 object-cover" />
+              )}
+              <div className="p-5 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Обновление</span>
+                  <span className="text-[10px] text-text-muted uppercase">
+                    {new Date(n.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+                  </span>
+                </div>
+                <h4 className="text-xl font-bold">{n.title}</h4>
+                <p className="text-sm text-text-muted leading-relaxed whitespace-pre-wrap">
+                  {n.content}
+                </p>
+              </div>
             </div>
-            <h4 className="text-xl font-bold">NTIVI STUDIO запущена!</h4>
-            <p className="text-sm text-text-muted leading-relaxed">
-              Мы рады представить наше новое приложение для знакомств. Теперь общение стало еще более стильным и взрослым.
-            </p>
-          </div>
-        </div>
+          ))
+        )}
       </div>
     </div>
   )

@@ -1,17 +1,29 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Settings, Coins, Award, LogOut, User, ChevronRight, X, Trash2, Info, UserCircle } from 'lucide-react'
+import { Coins, Award, LogOut, ChevronRight, X, Trash2, Info, UserCircle, Settings2, Unlock, ShieldAlert } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { adminApi } from '../api'
+import { adminApi, userApi } from '../api'
 
 const Profile = ({ user }: any) => {
   const navigate = useNavigate()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [activeSettingsTab, setActiveSettingsTab] = useState<'menu' | 'account' | 'info'>('menu')
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'menu' | 'account' | 'info' | 'blocked'>('menu')
+  const [blockedUsers, setBlockedUsers] = useState<any[]>([])
+  const [loadingBlocked, setLoadingBlocked] = useState(false)
   
   if (!user) return null
 
   const avatar = user.photos?.find((p: any) => p.isAvatar)?.url || 'https://via.placeholder.com/150'
+
+  useEffect(() => {
+    if (activeSettingsTab === 'blocked') {
+      setLoadingBlocked(true)
+      userApi.getBlockedUsers(user.id)
+        .then(res => setBlockedUsers(res.data))
+        .catch(err => console.error(err))
+        .finally(() => setLoadingBlocked(false))
+    }
+  }, [activeSettingsTab, user.id])
 
   const handleDeleteAccount = async () => {
     if (window.confirm('ВНИМАНИЕ: Это действие навсегда удалит ваш аккаунт, все фотографии и переписки. Вы уверены?')) {
@@ -26,7 +38,63 @@ const Profile = ({ user }: any) => {
     }
   }
 
+  const handleUnblock = async (targetId: string) => {
+    try {
+      await userApi.unblockUser(user.id, targetId)
+      setBlockedUsers(prev => prev.filter(u => u.id !== targetId))
+    } catch (error) {
+      console.error('Failed to unblock', error)
+      alert('Ошибка при разблокировке')
+    }
+  }
+
   const renderSettingsContent = () => {
+    if (activeSettingsTab === 'blocked') {
+      return (
+        <motion.div initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="space-y-6">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setActiveSettingsTab('menu')} className="p-2 glass-panel rounded-full hover:bg-white/10">
+              <ChevronRight size={20} className="rotate-180" />
+            </button>
+            <h2 className="text-xl font-bold">Заблокированные</h2>
+          </div>
+
+          <div className="space-y-3">
+            {loadingBlocked ? (
+              <p className="text-text-muted text-center py-10">Загрузка...</p>
+            ) : blockedUsers.length === 0 ? (
+              <div className="glass-panel p-8 rounded-3xl text-center space-y-4">
+                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto text-white/20">
+                  <ShieldAlert size={32} />
+                </div>
+                <p className="text-text-muted">У вас нет заблокированных пользователей.</p>
+              </div>
+            ) : (
+              blockedUsers.map(blockedUser => {
+                const blockedAvatar = blockedUser.photos?.find((p: any) => p.isAvatar)?.url || 'https://via.placeholder.com/150'
+                return (
+                  <div key={blockedUser.id} className="glass-panel p-4 rounded-2xl flex items-center gap-4">
+                    <img src={blockedAvatar} alt="avatar" className="w-12 h-12 rounded-full object-cover border border-white/10" />
+                    <div className="flex-1">
+                      <h3 className="font-bold">{blockedUser.firstName}</h3>
+                      <p className="text-xs text-text-muted">{blockedUser.city || 'Нет города'}</p>
+                    </div>
+                    <button 
+                      onClick={() => handleUnblock(blockedUser.id)}
+                      className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-bold rounded-xl transition-colors flex items-center gap-2"
+                    >
+                      <Unlock size={14} />
+                      Разблок.
+                    </button>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </motion.div>
+      )
+    }
+
     if (activeSettingsTab === 'account') {
       return (
         <motion.div initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="space-y-6">
@@ -124,6 +192,20 @@ const Profile = ({ user }: any) => {
         </button>
 
         <button 
+          onClick={() => setActiveSettingsTab('blocked')}
+          className="w-full p-4 glass-panel rounded-2xl flex items-center gap-4 hover:bg-white/5 transition-colors border border-white/5"
+        >
+          <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500">
+            <ShieldAlert size={20} />
+          </div>
+          <div className="text-left flex-1">
+            <p className="font-bold">Заблокированные</p>
+            <p className="text-[10px] text-text-muted uppercase">Управление ЧС</p>
+          </div>
+          <ChevronRight size={18} className="text-text-muted" />
+        </button>
+
+        <button 
           onClick={() => setActiveSettingsTab('info')}
           className="w-full p-4 glass-panel rounded-2xl flex items-center gap-4 hover:bg-white/5 transition-colors border border-white/5"
         >
@@ -136,120 +218,132 @@ const Profile = ({ user }: any) => {
           </div>
           <ChevronRight size={18} className="text-text-muted" />
         </button>
+
+        { (user.isAdmin || user.telegramId === '6444802382' || user.telegramId === '12345678' || user.telegramId === '5966820526') && (
+          <button 
+            onClick={() => navigate('/admin')}
+            className="w-full p-4 mt-4 bg-primary/10 border border-primary/20 text-primary rounded-2xl font-bold hover:bg-primary/20 transition-colors"
+          >
+            Панель администратора
+          </button>
+        )}
+
+        <button 
+          onClick={() => {
+            localStorage.clear()
+            window.location.reload()
+          }}
+          className="w-full p-4 glass-panel rounded-2xl flex items-center gap-4 hover:bg-white/5 transition-colors text-red-500 mt-4"
+        >
+          <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+            <LogOut size={20} />
+          </div>
+          <span className="font-bold">Выйти</span>
+        </button>
       </motion.div>
     )
   }
 
   return (
-    <div className="p-6 space-y-8 h-[calc(100vh-64px)] overflow-y-auto pb-24 relative">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Мой Профиль</h1>
+    <div className="h-[calc(100vh-64px)] overflow-y-auto pb-24 relative bg-dark">
+      
+      {/* Top Header Section - Instagram Style */}
+      <div className="px-4 pt-6 pb-4 flex items-center justify-between border-b border-white/5">
+        
+        {/* Left: Avatar with Note Badge */}
+        <div className="relative shrink-0">
+          <div className="absolute -top-4 -right-2 bg-dark-lighter px-3 py-1.5 rounded-2xl rounded-bl-sm z-10 shadow-xl border border-white/5 pointer-events-none">
+            <span className="text-[10px] font-medium text-text-muted">Заметка...</span>
+            <div className="absolute -bottom-1 left-2 w-2 h-2 bg-dark-lighter rounded-full"></div>
+            <div className="absolute -bottom-2 left-3 w-1 h-1 bg-dark-lighter rounded-full"></div>
+          </div>
+          <div className="w-24 h-24 rounded-full p-[2px] bg-gradient-to-tr from-dark-lighter to-dark-light">
+            <div className="w-full h-full rounded-full border-2 border-dark overflow-hidden">
+              <img src={avatar} alt="avatar" className="w-full h-full object-cover" />
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Info & Stats */}
+        <div className="flex-1 ml-6 flex flex-col justify-center">
+          <div className="flex items-center gap-2 mb-1">
+            <h2 className="text-xl font-bold truncate max-w-[150px]">
+              __{user.telegramId || user.firstName}
+            </h2>
+            {user.level > 10 && <Award size={16} className="text-primary" />}
+          </div>
+          <p className="text-xs text-text-muted mb-3 font-medium">NTIVI STUDIO {user.city ? `• ${user.city}` : ''}</p>
+          
+          <div className="flex gap-4">
+            <div className="text-center">
+              <div className="font-extrabold text-sm">{user.level}</div>
+              <div className="text-[10px] text-text-muted">Уровень</div>
+            </div>
+            <div className="text-center">
+              <div className="font-extrabold text-sm">{user.coins}</div>
+              <div className="text-[10px] text-text-muted">Монеток</div>
+            </div>
+            <div className="text-center">
+              <div className="font-extrabold text-sm">{user.photos?.length || 0}</div>
+              <div className="text-[10px] text-text-muted">Фото</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bio Section */}
+      <div className="px-4 py-4 space-y-1 text-sm border-b border-white/5">
+        <h3 className="font-bold">{user.firstName} {user.lastName}</h3>
+        {user.bio ? (
+          <p className="whitespace-pre-wrap text-text-main/90 leading-relaxed text-[13px]">
+            {user.bio}
+          </p>
+        ) : (
+          <p className="text-text-muted text-xs italic">Информация о себе не заполнена</p>
+        )}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="px-4 py-4 flex gap-2">
+        <button 
+          onClick={() => navigate('/edit-profile')}
+          className="flex-1 bg-white/10 hover:bg-white/15 text-white font-bold py-2 rounded-xl text-sm transition-colors"
+        >
+          Редактировать профиль
+        </button>
         <button 
           onClick={() => {
             setActiveSettingsTab('menu')
             setIsSettingsOpen(true)
           }}
-          className="p-2 glass-panel rounded-full text-text-muted hover:text-white transition-colors"
+          className="flex-1 bg-white/10 hover:bg-white/15 text-white font-bold py-2 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
         >
-          <Settings size={24} />
+          <Settings2 size={16} />
+          Настройки
         </button>
       </div>
 
-      <div className="flex flex-col items-center space-y-4 mt-4">
-        <div className="relative group">
-          <div className="w-36 h-36 rounded-full p-[3px] bg-gradient-to-tr from-primary via-purple-500 to-pink-500 shadow-[0_0_20px_rgba(244,63,94,0.4)] transition-all duration-500 group-hover:scale-105 group-hover:shadow-[0_0_30px_rgba(244,63,94,0.6)]">
-            <div className="w-full h-full rounded-full border-4 border-dark overflow-hidden">
-              <img src={avatar} className="w-full h-full object-cover" />
-            </div>
-          </div>
-          <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-gradient-primary text-white text-xs font-black px-4 py-1.5 rounded-full shadow-[0_4px_10px_rgba(244,63,94,0.5)] border-2 border-dark z-10 whitespace-nowrap">
-            LVL {user.level}
-          </div>
-        </div>
-        <div className="text-center mt-2">
-          <h2 className="text-3xl font-extrabold tracking-tight">{user.firstName} {user.lastName}</h2>
-          <p className="text-text-muted mt-1 font-medium">{user.city}</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 mt-6">
-        <motion.div 
-          whileHover={{ scale: 1.05 }}
-          className="p-6 glass-panel-premium rounded-[2rem] flex flex-col items-center justify-center space-y-3 relative overflow-hidden group"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 flex items-center justify-center text-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
-            <Coins size={28} />
-          </div>
-          <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">{user.coins}</span>
-          <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Монетки</span>
-        </motion.div>
-
-        <motion.div 
-          whileHover={{ scale: 1.05 }}
-          className="p-6 glass-panel-premium rounded-[2rem] flex flex-col items-center justify-center space-y-3 relative overflow-hidden group"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-[0_0_15px_rgba(244,63,94,0.2)]">
-            <Award size={28} />
-          </div>
-          <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary to-pink-500">{user.level}</span>
-          <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Уровень</span>
-        </motion.div>
-      </div>
-
-      {user.photos && user.photos.length > 0 && (
-        <div className="space-y-4 mt-4">
-          <h3 className="text-xs font-black uppercase tracking-widest text-text-muted ml-2">Мои фотографии</h3>
-          <div className="flex overflow-x-auto gap-4 pb-4 snap-x no-scrollbar px-2">
-            {[...user.photos].sort((a: any, b: any) => a.order - b.order).map((photo: any) => (
-              <div key={photo.id || photo.order} className="min-w-[140px] w-[140px] h-[180px] rounded-[1.5rem] overflow-hidden snap-center relative glass-panel-premium shrink-0 shadow-lg group">
-                <img src={photo.url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+      {/* Photo Grid (3 Columns) */}
+      <div className="px-1 mt-2">
+        <div className="grid grid-cols-3 gap-1">
+          {user.photos && user.photos.length > 0 ? (
+            [...user.photos].sort((a: any, b: any) => a.order - b.order).map((photo: any) => (
+              <div key={photo.id || photo.order} className="aspect-square relative group overflow-hidden bg-dark-lighter">
+                <img src={photo.url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 {photo.isAvatar && (
-                  <div className="absolute top-2 left-2 bg-dark/60 backdrop-blur-md text-primary text-[10px] font-black px-3 py-1 rounded-full border border-primary/20">
-                    Аватар
+                  <div className="absolute top-1 right-1">
+                    <UserCircle size={16} className="text-white drop-shadow-md" />
                   </div>
                 )}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-3">
-        <h3 className="text-sm font-bold uppercase text-text-muted ml-2">Настройки</h3>
-        <div className="space-y-2">
-          <button 
-            onClick={() => navigate('/edit-profile')}
-            className="w-full p-4 glass-panel rounded-2xl flex items-center gap-4 hover:bg-white/5 transition-colors"
-          >
-            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-text-muted">
-              <User size={20} />
+            ))
+          ) : (
+            <div className="col-span-3 text-center py-10 text-text-muted text-sm">
+              Нет загруженных фотографий
             </div>
-            <div className="text-left flex-1">
-              <p className="font-bold">Редактировать анкету</p>
-              <p className="text-xs text-text-muted">Изменить фото, город или био</p>
-            </div>
-            <ChevronRight size={18} className="text-text-muted" />
-          </button>
-
-          <button className="w-full p-4 glass-panel rounded-2xl flex items-center gap-4 hover:bg-white/5 transition-colors text-red-500">
-            <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
-              <LogOut size={20} />
-            </div>
-            <span className="font-bold">Выйти</span>
-          </button>
+          )}
         </div>
       </div>
-      
-      { (user.isAdmin || user.telegramId === '6444802382' || user.telegramId === '12345678' || user.telegramId === '5966820526') && (
-        <button 
-          onClick={() => navigate('/admin')}
-          className="w-full p-4 bg-primary/10 border border-primary/20 text-primary rounded-2xl font-bold"
-        >
-          Панель администратора
-        </button>
-      )}
 
       {/* Settings Modal */}
       <AnimatePresence>
@@ -258,18 +352,18 @@ const Profile = ({ user }: any) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex flex-col bg-dark/95 backdrop-blur-xl"
+            className="fixed inset-0 z-[100] flex flex-col bg-dark/95 backdrop-blur-2xl"
           >
-            <div className="flex justify-end p-4">
+            <div className="flex justify-end p-4 border-b border-white/5">
               <button 
                 onClick={() => setIsSettingsOpen(false)}
-                className="p-3 bg-white/5 hover:bg-white/10 rounded-full transition-colors"
+                className="p-2 text-text-muted hover:text-white transition-colors"
               >
-                <X size={24} />
+                <X size={28} />
               </button>
             </div>
             
-            <div className="flex-1 overflow-y-auto px-6 pb-20">
+            <div className="flex-1 overflow-y-auto px-6 py-6">
               {renderSettingsContent()}
             </div>
           </motion.div>

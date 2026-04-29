@@ -19,6 +19,8 @@ export const userApi = {
   getChats: (userId: string) => api.get(`/users/${userId}/chats`),
   claimDailyBonus: (userId: string) => api.post(`/users/${userId}/claim-daily`),
   blockUser: (userId: string, targetUserId: string) => api.post(`/users/${userId}/block-user`, { targetUserId }),
+  getBlockedUsers: (userId: string) => api.get(`/users/${userId}/blocked-users`),
+  unblockUser: (userId: string, targetUserId: string) => api.post(`/users/${userId}/unblock-user`, { targetUserId }),
 };
 
 export const likeApi = {

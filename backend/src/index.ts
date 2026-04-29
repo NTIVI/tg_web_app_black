@@ -565,6 +565,44 @@ app.post('/api/users/:id/block-user', async (req, res) => {
   }
 });
 
+app.get('/api/users/:id/blocked-users', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        blockedUsers: {
+          include: { photos: true }
+        }
+      }
+    });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user.blockedUsers);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/users/:id/unblock-user', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { targetUserId } = req.body;
+    await prisma.user.update({
+      where: { id },
+      data: {
+        blockedUsers: {
+          disconnect: { id: targetUserId }
+        }
+      }
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.delete('/api/chats/:id', async (req, res) => {
   try {
     const { id } = req.params;
